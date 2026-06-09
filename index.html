@@ -409,7 +409,6 @@ function saveCfg() { localStorage.setItem('psn_cfg3', JSON.stringify(cfg)); }
 async function apiPost(payload) {
   const r = await fetch(API, {
     method: 'POST',
-    headers: {'Content-Type':'application/json'},
     body: JSON.stringify(payload)
   });
   const text = await r.text();
