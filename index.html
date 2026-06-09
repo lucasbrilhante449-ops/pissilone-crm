@@ -30,16 +30,16 @@ body{background:var(--G);color:var(--K);font-family:'Barlow',sans-serif;min-heig
 .stxt{font-size:11px;color:rgba(255,255,255,.4)}
 .hdr-ubtn{font-size:11px;padding:4px 12px;cursor:pointer;border-radius:20px;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.5);transition:.15s;font-family:'Barlow',sans-serif}
 .hdr-ubtn:hover,.hdr-ubtn.on{background:rgba(255,255,255,.12);color:var(--W)}
-.hdr-sync{font-size:11px;padding:4px 8px;cursor:pointer;border-radius:4px;border:1px solid rgba(255,255,255,.12);background:transparent;color:rgba(255,255,255,.35);font-size:14px}
+.hdr-sync{font-size:16px;padding:3px 8px;cursor:pointer;border-radius:4px;border:1px solid rgba(255,255,255,.12);background:transparent;color:rgba(255,255,255,.35)}
 .hdr-sync:hover{color:var(--W)}
 
 .tabs-bar{background:var(--K);border-top:1px solid rgba(255,255,255,.06);padding:0 1.25rem}
-.tabs{display:flex;gap:0;overflow-x:auto}
+.tabs{display:flex}
 .tb{font-size:12px;font-weight:500;padding:9px 16px;cursor:pointer;border:none;background:none;color:rgba(255,255,255,.35);border-bottom:2px solid transparent;white-space:nowrap;transition:.15s;font-family:'Barlow',sans-serif}
 .tb.active{color:var(--L);border-bottom-color:var(--L)}
 .tb:hover:not(.active){color:rgba(255,255,255,.7)}
 
-.cnt{padding:1rem;max-width:1200px;margin:0 auto}
+.cnt{padding:1rem;max-width:1300px;margin:0 auto}
 .pane{display:none}.pane.active{display:block}
 
 /* BUTTONS */
@@ -50,7 +50,7 @@ body{background:var(--G);color:var(--K);font-family:'Barlow',sans-serif;min-heig
 .btn.danger{border-color:var(--VM2);color:var(--VM)}
 .btn.danger:hover{background:var(--VM2)}
 .btn.sm{font-size:11px;padding:4px 10px}
-.btn.xs{font-size:10px;padding:2px 8px}
+.btn.xs{font-size:10px;padding:2px 7px}
 .btn.full{width:100%;justify-content:center}
 .btn.laranja{background:var(--L);color:var(--W);border-color:var(--L)}
 .btn.laranja:hover{background:var(--L2)}
@@ -65,16 +65,71 @@ textarea.fi{resize:vertical;min-height:60px}
 .fg3{grid-template-columns:1fr 1fr 1fr}
 .fg1{grid-template-columns:1fr}
 .fcard{background:var(--W);border:1px solid var(--G2);border-radius:10px;padding:1.25rem;margin-bottom:1rem}
-.ftitle{font-size:13px;font-weight:600;color:var(--K);margin-bottom:1rem;padding-bottom:.625rem;border-bottom:1px solid var(--G2);display:flex;align-items:center;justify-content:space-between}
+.ftitle{font-size:13px;font-weight:600;margin-bottom:1rem;padding-bottom:.625rem;border-bottom:1px solid var(--G2);display:flex;align-items:center;justify-content:space-between}
 
-/* BADGES */
-.bdg{display:inline-flex;align-items:center;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;white-space:nowrap}
-.bdg-canal{background:var(--G);color:var(--G3);border:1px solid var(--G2)}
+/* KANBAN */
+.funil-sel{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.ft{font-size:12px;padding:5px 14px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:var(--W);color:var(--G3);transition:.15s;font-weight:500}
+.ft.active{background:var(--K);color:var(--W);border-color:var(--K)}
+.ft:hover:not(.active){background:var(--G)}
 
-/* DIVIDER / LABEL */
-.slbl{font-size:10px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.1em;margin:.875rem 0 .5rem}
-.divider{height:1px;background:var(--G2);margin:1rem 0}
-.empty{text-align:center;padding:2rem 1rem;color:var(--G3);font-size:13px}
+.board-wrap{overflow-x:auto;padding-bottom:.75rem}
+.board{display:flex;gap:10px;align-items:flex-start;min-width:max-content}
+.kcol{width:200px;flex-shrink:0;background:var(--W);border:1px solid var(--G2);border-radius:10px;display:flex;flex-direction:column}
+.kcol.over{border-color:var(--L);background:var(--L3)}
+.kcol-hdr{padding:.625rem .875rem;border-bottom:1px solid var(--G2);display:flex;align-items:center;justify-content:space-between;gap:6px}
+.kcol-nome{font-size:12px;font-weight:600;color:var(--K);flex:1}
+.kcol-cnt{background:var(--G);border-radius:20px;padding:1px 8px;font-size:11px;color:var(--G3);white-space:nowrap}
+.kcol-edit{font-size:11px;padding:2px 5px;cursor:pointer;border-radius:4px;border:1px solid var(--G2);background:transparent;color:var(--G3);line-height:1.4}
+.kcol-edit:hover{background:var(--G)}
+.kcol-body{padding:.5rem;flex:1;min-height:120px}
+.kcol-footer{padding:.5rem;border-top:1px solid var(--G2)}
+.add-col{width:150px;flex-shrink:0;background:transparent;border:2px dashed var(--G2);border-radius:10px;padding:2rem .75rem;text-align:center;cursor:pointer;color:var(--G3);font-size:12px;transition:.15s;display:flex;flex-direction:column;align-items:center;gap:6px;min-height:180px;justify-content:center}
+.add-col:hover{border-color:var(--L);color:var(--L);background:var(--L3)}
+
+/* KCARD */
+.kc{background:var(--W);border:1px solid var(--G2);border-radius:8px;padding:.625rem .75rem;margin-bottom:6px;cursor:grab;user-select:none;transition:border-color .15s,box-shadow .15s;position:relative}
+.kc:hover{border-color:var(--L);box-shadow:0 2px 8px rgba(209,117,67,.12)}
+.kc.dragging{opacity:.4;cursor:grabbing}
+.kc-nome{font-size:13px;font-weight:500;color:var(--K);margin-bottom:2px}
+.kc-sub{font-size:11px;color:var(--G3);display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:6px}
+.kc-actions{display:flex;gap:4px;align-items:center;justify-content:space-between}
+.kc-left{display:flex;gap:4px}
+
+/* ATIVIDADE DOT */
+.atv-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;cursor:pointer;border:2px solid rgba(0,0,0,.1);transition:transform .15s}
+.atv-dot:hover{transform:scale(1.3)}
+.atv-verde{background:#4CAF50}
+.atv-vermelho{background:#E53935}
+.atv-amarelo{background:#FDD835}
+.atv-cinza{background:#9E9E9E}
+
+/* CONTATO CARD */
+.cc{background:var(--W);border:1px solid var(--G2);border-radius:10px;padding:.875rem 1rem;margin-bottom:8px}
+.cc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
+.cc-nome{font-size:14px;font-weight:500;color:var(--K)}
+.cc-info{font-size:12px;color:var(--G3);line-height:1.6}
+
+/* FILTROS */
+.filtros{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.875rem}
+.filtro{font-size:11px;padding:4px 12px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:var(--W);color:var(--G3);transition:.15s}
+.filtro.active,.filtro:hover{background:var(--K);color:var(--W);border-color:var(--K)}
+
+.bw{position:relative;margin-bottom:.875rem}
+.bi{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--G3);pointer-events:none}
+.busca-fi{padding-left:30px}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:flex;align-items:center;justify-content:center;padding:1rem}
+.modal{background:var(--W);border-radius:12px;padding:1.5rem;width:100%;max-width:500px;max-height:90vh;overflow-y:auto}
+.mtitle{font-size:15px;font-weight:600;color:var(--K);margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between}
+.mcl{font-size:18px;cursor:pointer;color:var(--G3);background:none;border:none;padding:2px 6px;line-height:1}
+.mcl:hover{color:var(--K)}
+
+/* CHIPS */
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.75rem}
+.chip{font-size:11px;padding:4px 10px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:transparent;color:var(--G3);transition:.15s}
+.chip:hover,.chip.sel{background:var(--VM2);color:var(--VM);border-color:var(--VM2)}
 
 /* METRICS */
 .mg{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:1rem}
@@ -84,92 +139,27 @@ textarea.fi{resize:vertical;min-height:60px}
 .mc-s{font-size:11px;font-weight:500;margin-top:2px}
 .mc-s.v{color:var(--VD)}.mc-s.a{color:var(--AM)}.mc-s.r{color:var(--VM)}
 
-/* BARRA */
 .bb{margin-bottom:.625rem}
 .bb-row{display:flex;justify-content:space-between;font-size:12px;color:var(--G3);margin-bottom:3px}
 .bb-row span:last-child{font-weight:500;color:var(--K)}
 .bar{height:7px;background:var(--G2);border-radius:4px;overflow:hidden}
 .bar-f{height:100%;border-radius:4px;transition:width .4s}
 
-/* KANBAN */
-.funil-sel{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
-.ft{font-size:12px;padding:5px 14px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:var(--W);color:var(--G3);transition:.15s;font-weight:500}
-.ft.active{background:var(--K);color:var(--W);border-color:var(--K)}
-.ft:hover:not(.active){background:var(--G)}
-
-.funil-wrap{overflow-x:auto;padding-bottom:.75rem}
-.board{display:flex;gap:10px;align-items:flex-start}
-.col{width:230px;flex-shrink:0;background:var(--W);border:1px solid var(--G2);border-radius:10px;display:flex;flex-direction:column;min-height:200px}
-.col.over{border-color:var(--L);background:var(--L3)}
-.col-hdr{padding:.625rem .875rem;border-bottom:1px solid var(--G2);display:flex;align-items:center;justify-content:space-between}
-.col-hdr-nome{font-size:12px;font-weight:600;color:var(--K)}
-.col-cnt{background:var(--G);border-radius:20px;padding:1px 7px;font-size:11px;color:var(--G3)}
-.col-edit{font-size:11px;padding:2px 6px;cursor:pointer;border-radius:4px;border:1px solid var(--G2);background:transparent;color:var(--G3)}
-.col-edit:hover{background:var(--G)}
-.col-body{padding:.5rem;flex:1}
-.col-footer{padding:.5rem;border-top:1px solid var(--G2)}
-.add-col{width:160px;flex-shrink:0;background:transparent;border:2px dashed var(--G2);border-radius:10px;padding:2rem 1rem;text-align:center;cursor:pointer;color:var(--G3);font-size:12px;transition:.15s;display:flex;flex-direction:column;align-items:center;gap:6px;min-height:200px;justify-content:center}
-.add-col:hover{border-color:var(--L);color:var(--L);background:var(--L3)}
-
-/* KCARD */
-.kc{background:var(--W);border:1px solid var(--G2);border-radius:8px;padding:.625rem .75rem;margin-bottom:6px;cursor:grab;user-select:none;transition:.15s}
-.kc:hover{border-color:var(--L);box-shadow:0 2px 8px rgba(209,117,67,.12)}
-.kc.dragging{opacity:.45;cursor:grabbing}
-.kc-nome{font-size:13px;font-weight:500;color:var(--K);margin-bottom:3px}
-.kc-meta{font-size:11px;color:var(--G3);display:flex;gap:5px;flex-wrap:wrap;margin-bottom:5px}
-.kc-btns{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
-
-/* ATIVIDADE BOTÃO */
-.atv-btn{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;border:none;cursor:pointer;letter-spacing:.04em;transition:.15s}
-.atv-verde{background:#C8E6C9;color:#1B5E20}
-.atv-verde:hover{background:#A5D6A7}
-.atv-vermelho{background:#FFCDD2;color:#B71C1C}
-.atv-vermelho:hover{background:#EF9A9A}
-.atv-amarelo{background:#FFF9C4;color:#F57F17}
-.atv-amarelo:hover{background:#FFF59D}
-.atv-cinza{background:var(--G2);color:var(--G3)}
-.atv-cinza:hover{background:#C8C0B4}
-
-/* CONTATO CARD */
-.cc{background:var(--W);border:1px solid var(--G2);border-radius:10px;padding:.875rem 1rem;margin-bottom:8px}
-.cc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
-.cc-nome{font-size:14px;font-weight:500;color:var(--K)}
-.cc-info{font-size:12px;color:var(--G3);line-height:1.6;margin-bottom:6px}
-
-/* FILTROS */
-.filtros{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.875rem}
-.filtro{font-size:11px;padding:4px 12px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:var(--W);color:var(--G3);transition:.15s}
-.filtro.active,.filtro:hover{background:var(--K);color:var(--W);border-color:var(--K)}
-
-/* BUSCA */
-.bw{position:relative;margin-bottom:.875rem}
-.bi{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--G3);pointer-events:none;font-size:14px}
-.busca{padding-left:30px}
-
-/* MODAL */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:flex;align-items:center;justify-content:center;padding:1rem}
-.modal{background:var(--W);border-radius:12px;padding:1.5rem;width:100%;max-width:500px;max-height:90vh;overflow-y:auto}
-.modal-title{font-size:15px;font-weight:600;color:var(--K);margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between}
-.mcl{font-size:18px;cursor:pointer;color:var(--G3);background:none;border:none;padding:2px 6px;line-height:1}
-.mcl:hover{color:var(--K)}
-
-/* CHIPS MOTIVO */
-.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.75rem}
-.chip{font-size:11px;padding:4px 10px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:transparent;color:var(--G3);transition:.15s}
-.chip:hover,.chip.sel{background:var(--VM2);color:var(--VM);border-color:var(--VM2)}
-
-/* INSIGHTS PERIODO */
-.pbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:1rem}
+.pbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .pb{font-size:11px;padding:4px 12px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:var(--W);color:var(--G3);transition:.15s}
 .pb.active{background:var(--L);color:var(--W);border-color:var(--L)}
 
+.slbl{font-size:10px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.1em;margin:.875rem 0 .5rem}
+.divider{height:1px;background:var(--G2);margin:1rem 0}
+.empty{text-align:center;padding:2rem 1rem;color:var(--G3);font-size:13px}
 .fb{font-size:12px;margin-top:6px;min-height:16px}
 .fb.ok{color:var(--VD)}.fb.er{color:var(--VM)}.fb.info{color:var(--G3)}
+
+.bdg-canal{font-size:10px;padding:2px 7px;border-radius:20px;background:var(--G);color:var(--G3);border:1px solid var(--G2);display:inline-block}
 
 @media(max-width:600px){
   .fg2,.fg3{grid-template-columns:1fr}
   .mg{grid-template-columns:repeat(2,1fr)}
-  .col{width:185px}
 }
 </style>
 </head>
@@ -201,17 +191,18 @@ textarea.fi{resize:vertical;min-height:60px}
 <!-- FUNIL -->
 <div id="pane-funil" class="pane active">
   <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:.875rem;flex-wrap:wrap">
-    <div class="funil-sel" id="funil-tabs" style="margin-bottom:0"></div>
-    <button class="btn sm laranja" onclick="openModal('modal-funil',null)">+ Funil</button>
+    <div class="funil-sel" id="funil-tabs"></div>
+    <button class="btn sm laranja" onclick="openFunilModal(null)">+ Funil</button>
   </div>
-  <div class="funil-wrap">
-    <div class="board" id="board"></div>
-  </div>
+  <div class="board-wrap"><div class="board" id="board"></div></div>
 </div>
 
 <!-- CONTATOS -->
 <div id="pane-contatos" class="pane">
-  <div class="bw"><span class="bi">⌕</span><input class="fi busca" id="busca" placeholder="Buscar por nome..." oninput="renderContatos()"></div>
+  <div class="bw">
+    <span class="bi">⌕</span>
+    <input class="fi busca-fi" id="busca" placeholder="Buscar por nome..." oninput="renderContatos()">
+  </div>
   <div class="filtros" id="filtros-c"></div>
   <div id="lista-c"></div>
 </div>
@@ -219,17 +210,17 @@ textarea.fi{resize:vertical;min-height:60px}
 <!-- INSIGHTS -->
 <div id="pane-insights" class="pane">
   <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:1rem">
-    <div class="pbar" style="margin-bottom:0">
-      <button class="pb" onclick="setPer(this,'7')">7 dias</button>
-      <button class="pb active" onclick="setPer(this,'30')">30 dias</button>
-      <button class="pb" onclick="setPer(this,'90')">90 dias</button>
+    <div class="pbar">
+      <button class="pb" onclick="setPer(this,'7')">7d</button>
+      <button class="pb active" onclick="setPer(this,'30')">30d</button>
+      <button class="pb" onclick="setPer(this,'90')">90d</button>
       <button class="pb" onclick="setPer(this,'0')">Tudo</button>
     </div>
     <select class="fi" style="width:auto;font-size:12px" id="ins-user" onchange="renderInsights()">
-      <option value="todos">Todos os usuários</option>
+      <option value="todos">Todos usuários</option>
     </select>
     <select class="fi" style="width:auto;font-size:12px" id="ins-funil" onchange="renderInsights()">
-      <option value="todos">Todos os funis</option>
+      <option value="todos">Todos funis</option>
     </select>
   </div>
   <div id="ins-content"></div>
@@ -239,22 +230,22 @@ textarea.fi{resize:vertical;min-height:60px}
 <div id="pane-config" class="pane">
   <div class="slbl">Funis e Etapas</div>
   <div id="cfg-funis"></div>
-  <button class="btn laranja sm" onclick="openModal('modal-funil',null)" style="margin-bottom:1.5rem">+ Novo funil</button>
+  <button class="btn laranja sm" onclick="openFunilModal(null)" style="margin-bottom:1.5rem">+ Novo funil</button>
   <div class="divider"></div>
   <div class="slbl">Usuários</div>
   <div id="cfg-users"></div>
-  <button class="btn sm" onclick="openModal('modal-user',null)">+ Novo usuário</button>
+  <button class="btn sm" onclick="openUserModal()">+ Novo usuário</button>
 </div>
 
-</div><!-- /cnt -->
+</div>
 
 <!-- MODAL CONTATO -->
-<div class="overlay" id="modal-contato" style="display:none">
+<div class="overlay" id="modal-c" style="display:none">
 <div class="modal">
-  <div class="modal-title"><span id="mc-title">Novo contato</span><button class="mcl" onclick="closeModal('modal-contato')">✕</button></div>
+  <div class="mtitle"><span id="mc-title">Novo contato</span><button class="mcl" onclick="closeM('modal-c')">✕</button></div>
   <div class="fg fg2">
     <div><label class="flbl">Nome *</label><input class="fi" id="f-nome" placeholder="Nome do cliente"></div>
-    <div><label class="flbl">Telefone</label><input class="fi" id="f-tel" placeholder="(84) 9 9999-9999"></div>
+    <div><label class="flbl">Telefone</label><input class="fi" id="f-tel" placeholder="(84) 9..."></div>
   </div>
   <div class="fg fg3">
     <div><label class="flbl">Funil</label><select class="fi" id="f-funil" onchange="updEtapas()"></select></div>
@@ -277,37 +268,37 @@ textarea.fi{resize:vertical;min-height:60px}
     <div><label class="flbl">Follow-up</label><input class="fi" type="date" id="f-followup"></div>
   </div>
   <div class="fg fg1">
-    <div><label class="flbl">Produto / interesse</label><input class="fi" id="f-produto" placeholder="Kit Nordeste Vivo..."></div>
+    <div><label class="flbl">Produto</label><input class="fi" id="f-produto" placeholder="Kit Nordeste Vivo..."></div>
   </div>
   <div class="fg fg1">
     <div><label class="flbl">Observação</label><textarea class="fi" id="f-obs"></textarea></div>
   </div>
   <button class="btn primary full" id="btn-sc" onclick="saveContato()">Salvar contato</button>
-  <div class="fb info" id="fb-c"></div>
+  <div class="fb" id="fb-c"></div>
 </div>
 </div>
 
 <!-- MODAL PERDA -->
 <div class="overlay" id="modal-perda" style="display:none">
 <div class="modal">
-  <div class="modal-title"><span>Motivo de perda</span><button class="mcl" onclick="closeModal('modal-perda')">✕</button></div>
-  <p style="font-size:12px;color:var(--G3);margin-bottom:.75rem">Selecione ou escreva o motivo:</p>
+  <div class="mtitle"><span>Motivo de perda</span><button class="mcl" onclick="closeM('modal-perda')">✕</button></div>
+  <p style="font-size:12px;color:var(--G3);margin-bottom:.75rem">Selecione o motivo:</p>
   <div class="chips">
-    <button class="chip" onclick="selMotivo(this,'Preço alto')">Preço alto</button>
-    <button class="chip" onclick="selMotivo(this,'Não respondeu')">Não respondeu</button>
-    <button class="chip" onclick="selMotivo(this,'Comprou em outro lugar')">Comprou em outro lugar</button>
-    <button class="chip" onclick="selMotivo(this,'Não tinha tamanho')">Não tinha tamanho</button>
-    <button class="chip" onclick="selMotivo(this,'Prazo muito longo')">Prazo muito longo</button>
-    <button class="chip" onclick="selMotivo(this,'Mudou de ideia')">Mudou de ideia</button>
-    <button class="chip" onclick="selMotivo(this,'Sem dinheiro agora')">Sem dinheiro agora</button>
-    <button class="chip" onclick="selMotivo(this,'Frete caro')">Frete caro</button>
+    <button class="chip" onclick="selM(this,'Preço alto')">Preço alto</button>
+    <button class="chip" onclick="selM(this,'Não respondeu')">Não respondeu</button>
+    <button class="chip" onclick="selM(this,'Comprou em outro lugar')">Outro lugar</button>
+    <button class="chip" onclick="selM(this,'Não tinha tamanho')">Sem tamanho</button>
+    <button class="chip" onclick="selM(this,'Prazo muito longo')">Prazo longo</button>
+    <button class="chip" onclick="selM(this,'Mudou de ideia')">Mudou de ideia</button>
+    <button class="chip" onclick="selM(this,'Sem dinheiro agora')">Sem dinheiro</button>
+    <button class="chip" onclick="selM(this,'Frete caro')">Frete caro</button>
   </div>
   <div class="fg fg1" style="margin-bottom:1rem">
     <div><label class="flbl">Outro motivo</label><input class="fi" id="f-motivo" placeholder="Descreva..."></div>
   </div>
   <div style="display:flex;gap:8px">
     <button class="btn danger full" onclick="confirmPerda()">Confirmar perda</button>
-    <button class="btn full" onclick="closeModal('modal-perda')">Cancelar</button>
+    <button class="btn full" onclick="cancelPerda()">Cancelar</button>
   </div>
 </div>
 </div>
@@ -315,16 +306,16 @@ textarea.fi{resize:vertical;min-height:60px}
 <!-- MODAL ATIVIDADE -->
 <div class="overlay" id="modal-atv" style="display:none">
 <div class="modal">
-  <div class="modal-title"><span id="atv-title">Agendar atividade</span><button class="mcl" onclick="closeModal('modal-atv')">✕</button></div>
+  <div class="mtitle"><span id="atv-nome">Atividade</span><button class="mcl" onclick="closeM('modal-atv')">✕</button></div>
   <div class="fg fg1" style="margin-bottom:.75rem">
     <div><label class="flbl">Data da atividade *</label><input class="fi" type="date" id="f-atv-data"></div>
   </div>
   <div class="fg fg1" style="margin-bottom:1rem">
-    <div><label class="flbl">Descrição</label><input class="fi" id="f-atv-desc" placeholder="Ex: Enviar proposta, ligar, visitar..."></div>
+    <div><label class="flbl">Descrição</label><input class="fi" id="f-atv-desc" placeholder="Ex: Ligar, enviar proposta..."></div>
   </div>
   <div style="display:flex;gap:8px">
-    <button class="btn primary full" onclick="saveAtv()">Salvar atividade</button>
-    <button class="btn full" onclick="limparAtv()">Remover atividade</button>
+    <button class="btn primary full" onclick="saveAtv()">Salvar</button>
+    <button class="btn full" onclick="clearAtv()">Remover atividade</button>
   </div>
 </div>
 </div>
@@ -332,21 +323,21 @@ textarea.fi{resize:vertical;min-height:60px}
 <!-- MODAL FUNIL -->
 <div class="overlay" id="modal-funil" style="display:none">
 <div class="modal">
-  <div class="modal-title"><span id="mf-title">Novo funil</span><button class="mcl" onclick="closeModal('modal-funil')">✕</button></div>
+  <div class="mtitle"><span id="mf-title">Novo funil</span><button class="mcl" onclick="closeM('modal-funil')">✕</button></div>
   <div class="fg fg1" style="margin-bottom:1rem">
     <div><label class="flbl">Nome do funil</label><input class="fi" id="f-funil-nome" placeholder="Ex: D2C, B2B..."></div>
   </div>
   <button class="btn primary full" onclick="saveFunil()">Salvar</button>
-  <div class="fb info" id="fb-f"></div>
+  <div class="fb" id="fb-f"></div>
 </div>
 </div>
 
 <!-- MODAL ETAPA -->
 <div class="overlay" id="modal-etapa" style="display:none">
 <div class="modal">
-  <div class="modal-title"><span id="me-title">Nova etapa</span><button class="mcl" onclick="closeModal('modal-etapa')">✕</button></div>
+  <div class="mtitle"><span id="me-title">Nova etapa</span><button class="mcl" onclick="closeM('modal-etapa')">✕</button></div>
   <div class="fg fg1" style="margin-bottom:1rem">
-    <div><label class="flbl">Nome da etapa</label><input class="fi" id="f-etapa-nome" placeholder="Ex: Proposta enviada..."></div>
+    <div><label class="flbl">Nome da etapa</label><input class="fi" id="f-etapa-nome" placeholder="Ex: Atendimento, Proposta..."></div>
   </div>
   <button class="btn primary full" onclick="saveEtapa()">Salvar</button>
 </div>
@@ -355,7 +346,7 @@ textarea.fi{resize:vertical;min-height:60px}
 <!-- MODAL USUARIO -->
 <div class="overlay" id="modal-user" style="display:none">
 <div class="modal">
-  <div class="modal-title"><span>Novo usuário</span><button class="mcl" onclick="closeModal('modal-user')">✕</button></div>
+  <div class="mtitle"><span>Novo usuário</span><button class="mcl" onclick="closeM('modal-user')">✕</button></div>
   <div class="fg fg1" style="margin-bottom:1rem">
     <div><label class="flbl">Nome</label><input class="fi" id="f-user-nome" placeholder="Ex: Lucas, Ana..."></div>
   </div>
@@ -364,577 +355,751 @@ textarea.fi{resize:vertical;min-height:60px}
 </div>
 
 <script>
-const API='https://script.google.com/macros/s/AKfycbxawuqkhN04J7TiX4qVyYzqRWRaExyGFAzdMs9CR6dc03Zfd19lkkvLYmmNarTFWbEFAA/exec';
-let contatos=[];
-let cfg={
-  funis:[
-    {id:'d2c',nome:'D2C',etapas:[{id:'d2c-novo',nome:'Novo contato'},{id:'d2c-atend',nome:'Atendimento'},{id:'d2c-pens',nome:'Pensando'},{id:'d2c-fech',nome:'Fechado'},{id:'d2c-perd',nome:'Perdido'}]},
-    {id:'b2b',nome:'B2B',etapas:[{id:'b2b-prosp',nome:'Prospecção'},{id:'b2b-prop',nome:'Proposta'},{id:'b2b-neg',nome:'Negociação'},{id:'b2b-fech',nome:'Fechado'},{id:'b2b-perd',nome:'Perdido'}]}
+const API = 'https://script.google.com/macros/s/AKfycbxawuqkhN04J7TiX4qVyYzqRWRaExyGFAzdMs9CR6dc03Zfd19lkkvLYmmNarTFWbEFAA/exec';
+
+// ── STATE ──────────────────────────────────────────────
+let contatos = [];
+let cfg = {
+  funis: [
+    {id:'d2c', nome:'D2C', etapas:[
+      {id:'d2c-novo',  nome:'Novo contato'},
+      {id:'d2c-atend', nome:'Atendimento'},
+      {id:'d2c-pens',  nome:'Pensando'},
+      {id:'d2c-fech',  nome:'Fechado'},
+      {id:'d2c-perd',  nome:'Perdido'}
+    ]},
+    {id:'b2b', nome:'B2B', etapas:[
+      {id:'b2b-prosp', nome:'Prospecção'},
+      {id:'b2b-prop',  nome:'Proposta'},
+      {id:'b2b-neg',   nome:'Negociação'},
+      {id:'b2b-fech',  nome:'Fechado'},
+      {id:'b2b-perd',  nome:'Perdido'}
+    ]}
   ],
-  usuarios:[{id:'lucas',nome:'Lucas'},{id:'ana',nome:'Ana'}]
+  usuarios: [{id:'lucas', nome:'Lucas'}, {id:'ana', nome:'Ana'}]
 };
-let funilAtivo='d2c';
-let filtroC='todos';
-let periodo='30';
-let userAtivo='todos';
-let editCid=null;
-let editFid=null;
-let editEfid=null;
-let editEid=null;
-let perdaCid=null;
-let atvCid=null;
-let motivoSel='';
-let dragId=null;
+let funilAtivo = 'd2c';
+let filtroC    = 'todos';
+let periodo    = '30';
+let userAtivo  = 'todos';
+let editCid    = null;   // contato em edição
+let editFid    = null;   // funil em edição
+let editEfid   = null;   // funil da etapa em edição
+let editEid    = null;   // etapa em edição
+let perdaCid   = null;   // contato aguardando motivo de perda
+let atvCid     = null;   // contato para atividade
+let motivoSel  = '';
+let dragId     = null;
 
-const CANAL={instagram:'Instagram',story:'Story',anuncio:'Anúncio',indicacao:'Indicação',atelie:'Ateliê',busca:'Google',outro:'Outro'};
+const CANAL_LABEL = {instagram:'Instagram',story:'Story',anuncio:'Anúncio',indicacao:'Indicação',atelie:'Ateliê',busca:'Google',outro:'Outro'};
 
-function ss(s,m){
-  const d=document.getElementById('sdot'),t=document.getElementById('stxt');
-  d.className='sdot'+(s==='ld'?' ld':s==='er'?' er':'');
-  t.textContent=m;
+// ── SYNC STATUS ────────────────────────────────────────
+function ss(s, m) {
+  document.getElementById('sdot').className = 'sdot' + (s==='ld'?' ld': s==='er'?' er':'');
+  document.getElementById('stxt').textContent = m;
 }
 
-function loadCfg(){const s=localStorage.getItem('psn_cfg2');if(s){try{cfg=JSON.parse(s);}catch(e){}}}
-function saveCfg(){localStorage.setItem('psn_cfg2',JSON.stringify(cfg));}
+// ── CONFIG PERSIST ─────────────────────────────────────
+function loadCfg() {
+  try { const s = localStorage.getItem('psn_cfg3'); if(s) cfg = JSON.parse(s); } catch(e){}
+}
+function saveCfg() { localStorage.setItem('psn_cfg3', JSON.stringify(cfg)); }
 
-async function api(p){
-  const r=await fetch(API,{method:'POST',body:JSON.stringify(p)});
-  return r.json();
+// ── API ────────────────────────────────────────────────
+async function apiPost(payload) {
+  const r = await fetch(API, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
+  const text = await r.text();
+  try { return JSON.parse(text); } catch(e) { return {}; }
 }
 
-async function doSync(){
+async function doSync() {
   ss('ld','Sincronizando...');
-  try{
-    const rows=await api({action:'getAll'});
-    if(!Array.isArray(rows)||rows.length<2){contatos=[];}
-    else{
-      contatos=rows.slice(1).filter(r=>r[0]).map(r=>({
-        id:String(r[0]),nome:String(r[1]||''),tel:String(r[2]||''),
-        et:String(r[3]||''),canal:String(r[4]||'outro'),
-        valor:parseFloat(r[5])||0,produto:String(r[6]||''),
-        obs:String(r[7]||''),data:String(r[8]||new Date().toISOString()),
-        compras:parseInt(r[9])||0,
-        funil:String(r[10]||'d2c'),
-        etapa:String(r[11]||'d2c-novo'),
-        usuario:String(r[12]||''),
-        followup:String(r[13]||''),
-        motivo_perda:String(r[14]||''),
-        atv_data:String(r[15]||''),
-        atv_desc:String(r[16]||'')
-      }));
+  try {
+    const rows = await apiPost({action:'getAll'});
+    if (!Array.isArray(rows) || rows.length < 2) {
+      contatos = [];
+    } else {
+      contatos = rows.slice(1)
+        .filter(r => r[0])
+        .map(r => ({
+          id:           String(r[0]  || ''),
+          nome:         String(r[1]  || ''),
+          tel:          String(r[2]  || ''),
+          et:           String(r[3]  || ''),
+          canal:        String(r[4]  || 'outro'),
+          valor:        parseFloat(r[5]) || 0,
+          produto:      String(r[6]  || ''),
+          obs:          String(r[7]  || ''),
+          data:         String(r[8]  || new Date().toISOString()),
+          compras:      parseInt(r[9])  || 0,
+          funil:        String(r[10] || 'd2c'),
+          etapa:        String(r[11] || 'd2c-novo'),
+          usuario:      String(r[12] || ''),
+          followup:     String(r[13] || ''),
+          motivo_perda: String(r[14] || ''),
+          atv_data:     String(r[15] || ''),
+          atv_desc:     String(r[16] || '')
+        }));
     }
-    ss('ok',contatos.length+' contato'+(contatos.length!==1?'s':''));
+    ss('ok', contatos.length + ' contato' + (contatos.length !== 1 ? 's' : ''));
     renderAll();
-  }catch(e){ss('er','Erro de conexão');}
+  } catch(e) {
+    ss('er', 'Erro de conexão');
+    console.error(e);
+  }
 }
 
-async function apiSave(c){
-  return api({action:'save',contato:{
-    id:c.id,nome:c.nome,tel:c.tel,et:c.et,canal:c.canal,
-    valor:c.valor,produto:c.produto,obs:c.obs,data:c.data,
-    compras:c.compras,funil:c.funil,etapa:c.etapa,
-    usuario:c.usuario,followup:c.followup,
-    motivo_perda:c.motivo_perda||'',
-    atv_data:c.atv_data||'',
-    atv_desc:c.atv_desc||''
-  }});
+function contatoPayload(c) {
+  return {
+    id: c.id, nome: c.nome, tel: c.tel, et: c.et,
+    canal: c.canal, valor: c.valor, produto: c.produto,
+    obs: c.obs, data: c.data, compras: c.compras,
+    funil: c.funil, etapa: c.etapa, usuario: c.usuario,
+    followup: c.followup, motivo_perda: c.motivo_perda || '',
+    atv_data: c.atv_data || '', atv_desc: c.atv_desc || ''
+  };
 }
 
-async function apiDel(id){return api({action:'delete',id});}
+async function apiSave(c)   { return apiPost({action:'save',   contato: contatoPayload(c)}); }
+async function apiDelete(id){ return apiPost({action:'delete', id: String(id)}); }
 
-// TABS
-function showTab(id){
-  const ids=['funil','contatos','insights','config'];
-  document.querySelectorAll('.tb').forEach((b,i)=>b.classList.toggle('active',ids[i]===id));
-  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
-  document.getElementById('pane-'+id).classList.add('active');
-  if(id==='funil')renderFunil();
-  if(id==='contatos')renderContatos();
-  if(id==='insights')renderInsights();
-  if(id==='config')renderConfig();
+// ── HELPERS ────────────────────────────────────────────
+function getFunil(id)       { return cfg.funis.find(f => f.id === id); }
+function getEtapa(fid, eid) { const f = getFunil(fid); return f ? f.etapas.find(e => e.id === eid) : null; }
+function fmtD(iso)          { try { return new Date(iso).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}); } catch(e) { return ''; } }
+
+function isGanho(fid, eid) {
+  const e = getEtapa(fid, eid);
+  return e && e.nome.toLowerCase().includes('fechado');
+}
+function isPerdido(fid, eid) {
+  const e = getEtapa(fid, eid);
+  return e && e.nome.toLowerCase().includes('perdido');
 }
 
-// HELPERS
-function getFunil(id){return cfg.funis.find(f=>f.id===id);}
-function getEtapa(fid,eid){const f=getFunil(fid);return f?f.etapas.find(e=>e.id===eid):null;}
-function fmtD(iso){try{return new Date(iso).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});}catch(e){return '';}}
-function isGanho(fid,eid){const e=getEtapa(fid,eid);return e&&e.nome.toLowerCase().includes('fechado');}
-function isPerdido(fid,eid){const e=getEtapa(fid,eid);return e&&e.nome.toLowerCase().includes('perdido');}
-
-// ATIVIDADE STATUS
-function atvStatus(c){
-  if(!c.atv_data) return 'sem'; // vermelho
-  const hoje=new Date(); hoje.setHours(0,0,0,0);
-  const d=new Date(c.atv_data+'T00:00:00');
-  if(d<hoje) return 'atrasada'; // amarelo
-  if(d.getTime()===hoje.getTime()) return 'hoje'; // verde
-  return 'agendada'; // cinza
+function atvStatus(c) {
+  if (!c.atv_data) return 'sem';
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const d    = new Date(c.atv_data + 'T00:00:00');
+  if (d < hoje)                     return 'atrasada';
+  if (d.getTime() === hoje.getTime()) return 'hoje';
+  return 'agendada';
 }
 
-function atvBtnHtml(c){
-  const s=atvStatus(c);
-  const labels={sem:'● Sem atividade',hoje:'● Hoje',atrasada:'● Atrasada',agendada:'● Agendada'};
-  const cls={sem:'atv-vermelho',hoje:'atv-verde',atrasada:'atv-amarelo',agendada:'atv-cinza'};
-  const desc=c.atv_desc?` — ${c.atv_desc.substring(0,20)}${c.atv_desc.length>20?'...':''}`:c.atv_data?` ${fmtD(c.atv_data)}`:'' ;
-  return `<button class="atv-btn ${cls[s]}" onclick="openAtv('${c.id}')" title="${c.atv_desc||'Clique para agendar atividade'}">${labels[s]}${desc}</button>`;
+function atvDotHtml(c) {
+  const s   = atvStatus(c);
+  const cls = {sem:'atv-vermelho', hoje:'atv-verde', atrasada:'atv-amarelo', agendada:'atv-cinza'};
+  const tip = {sem:'Sem atividade — clique para agendar', hoje:`Hoje: ${c.atv_desc||'atividade agendada'}`, atrasada:`Atrasada (${fmtD(c.atv_data)}): ${c.atv_desc||''}`, agendada:`${fmtD(c.atv_data)}: ${c.atv_desc||''}`};
+  return `<div class="atv-dot ${cls[s]}" title="${tip[s]}" onclick="openAtv('${c.id}')"></div>`;
 }
 
-// FUNIL
-function renderFunilTabs(){
-  const el=document.getElementById('funil-tabs');
-  el.innerHTML=cfg.funis.map(f=>`<button class="ft${funilAtivo===f.id?' active':''}" onclick="setFunil('${f.id}')">${f.nome}</button>`).join('');
+// ── TABS ───────────────────────────────────────────────
+function showTab(id) {
+  ['funil','contatos','insights','config'].forEach((t,i) => {
+    document.querySelectorAll('.tb')[i].classList.toggle('active', t===id);
+    document.getElementById('pane-'+t).classList.toggle('active', t===id);
+  });
+  if (id==='funil')    renderFunil();
+  if (id==='contatos') renderContatos();
+  if (id==='insights') renderInsights();
+  if (id==='config')   renderConfig();
 }
 
-function setFunil(id){funilAtivo=id;renderFunil();}
+// ── FUNIL BOARD ────────────────────────────────────────
+function renderFunilTabs() {
+  document.getElementById('funil-tabs').innerHTML =
+    cfg.funis.map(f =>
+      `<button class="ft${funilAtivo===f.id?' active':''}" onclick="setFunil('${f.id}')">${f.nome}</button>`
+    ).join('');
+}
 
-function renderFunil(){
+function setFunil(id) { funilAtivo = id; renderFunil(); }
+
+function renderFunil() {
   renderFunilTabs();
-  const funil=getFunil(funilAtivo);
-  const board=document.getElementById('board');
-  board.innerHTML='';
-  if(!funil){board.innerHTML='<div class="empty">Nenhum funil</div>';return;}
-  funil.etapas.forEach(etapa=>{
-    const cards=contatos.filter(c=>c.funil===funilAtivo&&c.etapa===etapa.id&&(userAtivo==='todos'||c.usuario===userAtivo));
-    const col=document.createElement('div');
-    col.className='col';
-    col.dataset.etapa=etapa.id;
-    col.innerHTML=`
-      <div class="col-hdr">
-        <span class="col-hdr-nome">${etapa.nome}</span>
-        <div style="display:flex;gap:4px;align-items:center">
-          <span class="col-cnt">${cards.length}</span>
-          <button class="col-edit" onclick="openModal('modal-etapa','${funil.id}','${etapa.id}')">✎</button>
-        </div>
+  const funil = getFunil(funilAtivo);
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+  if (!funil) { board.innerHTML = '<div class="empty">Nenhum funil</div>'; return; }
+
+  funil.etapas.forEach(etapa => {
+    // filtra contatos desta coluna
+    const cards = contatos.filter(c =>
+      c.funil === funilAtivo &&
+      c.etapa === etapa.id  &&
+      (userAtivo === 'todos' || c.usuario === userAtivo)
+    );
+
+    const col = document.createElement('div');
+    col.className = 'kcol';
+    col.dataset.etapa = etapa.id;
+
+    col.innerHTML = `
+      <div class="kcol-hdr">
+        <span class="kcol-nome">${etapa.nome}</span>
+        <span class="kcol-cnt">${cards.length}</span>
+        <button class="kcol-edit" onclick="openEtapaModal('${funil.id}','${etapa.id}')">✎</button>
       </div>
-      <div class="col-body" id="cb-${etapa.id}"
-        ondragover="ev.preventDefault();ev.currentTarget.closest('.col').classList.add('over')"
-        ondrop="onDrop(event,'${etapa.id}')">
-        ${cards.map(c=>kcardHtml(c)).join('')}
+      <div class="kcol-body" id="cb-${etapa.id}">
+        ${cards.map(c => kcardHtml(c)).join('')}
       </div>
-      <div class="col-footer">
+      <div class="kcol-footer">
         <button class="btn xs full" onclick="openContato(null,'${funil.id}','${etapa.id}')">+ Contato</button>
       </div>`;
-    col.querySelector('.col-body').addEventListener('dragover',e=>{e.preventDefault();col.classList.add('over');});
-    col.querySelector('.col-body').addEventListener('dragleave',e=>{if(!col.contains(e.relatedTarget))col.classList.remove('over');});
+
+    // drag events on col-body
+    const body = col.querySelector('.kcol-body');
+    body.addEventListener('dragover', e => { e.preventDefault(); col.classList.add('over'); });
+    body.addEventListener('dragleave', e => { if (!col.contains(e.relatedTarget)) col.classList.remove('over'); });
+    body.addEventListener('drop', e => {
+      e.preventDefault();
+      col.classList.remove('over');
+      if (dragId) dropCard(etapa.id);
+    });
+
     board.appendChild(col);
   });
-  // Add col btn
-  const a=document.createElement('div');
-  a.className='add-col';
-  a.onclick=()=>openModal('modal-etapa',funil.id,null);
-  a.innerHTML='<span style="font-size:22px;line-height:1">+</span><span>Nova etapa</span>';
-  board.appendChild(a);
-  // Rebind drag events
-  bindDrag();
-}
 
-function kcardHtml(c){
-  const usr=cfg.usuarios.find(u=>u.id===c.usuario);
-  const vl=c.valor?`R$${Math.round(c.valor)}`:'';
-  return `<div class="kc" draggable="true" data-id="${c.id}">
-    <div class="kc-nome">${c.nome}</div>
-    <div class="kc-meta">
-      ${vl?`<span>${vl}</span>`:''}
-      ${c.canal?`<span>${CANAL[c.canal]||c.canal}</span>`:''}
-      ${usr?`<span>👤 ${usr.nome}</span>`:''}
-    </div>
-    ${c.motivo_perda?`<div style="font-size:10px;color:var(--VM);margin-bottom:4px">⚠ ${c.motivo_perda}</div>`:''}
-    <div class="kc-btns">
-      ${atvBtnHtml(c)}
-      <button class="btn xs" onclick="openContato('${c.id}')">✎</button>
-      <button class="btn xs danger" onclick="delC('${c.id}')">✕</button>
-    </div>
-  </div>`;
-}
+  // add col button
+  const addBtn = document.createElement('div');
+  addBtn.className = 'add-col';
+  addBtn.onclick = () => openEtapaModal(funil.id, null);
+  addBtn.innerHTML = '<span style="font-size:22px">+</span><span>Nova etapa</span>';
+  board.appendChild(addBtn);
 
-function bindDrag(){
-  document.querySelectorAll('.kc').forEach(el=>{
-    el.addEventListener('dragstart',e=>{dragId=el.dataset.id;el.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
-    el.addEventListener('dragend',e=>{el.classList.remove('dragging');document.querySelectorAll('.col').forEach(c=>c.classList.remove('over'));dragId=null;});
-  });
-  document.querySelectorAll('.col-body').forEach(el=>{
-    el.addEventListener('drop',e=>{
-      e.preventDefault();
-      const col=e.currentTarget.closest('.col');
-      col.classList.remove('over');
-      const eid=col.dataset.etapa;
-      if(dragId) dropCard(eid);
+  // bind drag on cards
+  board.querySelectorAll('.kc').forEach(el => {
+    el.addEventListener('dragstart', e => {
+      dragId = el.dataset.id;
+      el.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    el.addEventListener('dragend', () => {
+      el.classList.remove('dragging');
+      document.querySelectorAll('.kcol').forEach(c => c.classList.remove('over'));
     });
   });
 }
 
-async function dropCard(etapaId){
-  if(!dragId)return;
-  const c=contatos.find(x=>x.id===dragId);
-  if(!c)return;
-  if(isPerdido(funilAtivo,etapaId)){
-    c.etapa=etapaId;c.et='perdido';
-    perdaCid=dragId;
-    document.getElementById('modal-perda').style.display='flex';
-    dragId=null;return;
+function kcardHtml(c) {
+  const usr = cfg.usuarios.find(u => u.id === c.usuario);
+  const vl  = c.valor ? `R$${Math.round(c.valor)}` : '';
+  return `<div class="kc" draggable="true" data-id="${c.id}">
+    <div class="kc-nome">${c.nome}</div>
+    <div class="kc-sub">
+      ${vl ? `<span>${vl}</span>` : ''}
+      ${c.canal ? `<span>${CANAL_LABEL[c.canal]||c.canal}</span>` : ''}
+      ${usr ? `<span>👤 ${usr.nome}</span>` : ''}
+    </div>
+    ${c.motivo_perda ? `<div style="font-size:10px;color:var(--VM);margin-bottom:4px">⚠ ${c.motivo_perda}</div>` : ''}
+    <div class="kc-actions">
+      <div class="kc-left">
+        <button class="btn xs" onclick="openContato('${c.id}')">✎</button>
+        <button class="btn xs danger" onclick="delC('${c.id}')">✕</button>
+      </div>
+      ${atvDotHtml(c)}
+    </div>
+  </div>`;
+}
+
+// ── DRAG & DROP ────────────────────────────────────────
+async function dropCard(etapaId) {
+  if (!dragId) return;
+  const c = contatos.find(x => x.id === dragId);
+  if (!c) return;
+
+  if (isPerdido(funilAtivo, etapaId)) {
+    c.etapa       = etapaId;
+    c.et          = 'perdido';
+    perdaCid      = dragId;
+    dragId        = null;
+    document.getElementById('modal-perda').style.display = 'flex';
+    return;
   }
-  c.etapa=etapaId;
-  if(isGanho(funilAtivo,etapaId))c.et='fechado';
-  else c.et='atendimento';
-  ss('ld','Salvando...');
-  try{await apiSave(c);await doSync();}catch(ex){ss('er','Erro');}
-  dragId=null;
+
+  c.etapa = etapaId;
+  c.et    = isGanho(funilAtivo, etapaId) ? 'fechado' : 'atendimento';
+  dragId  = null;
+  ss('ld', 'Movendo...');
+  try { await apiSave(c); await doSync(); }
+  catch(ex) { ss('er','Erro ao mover'); console.error(ex); }
 }
 
-// PERDA
-function selMotivo(btn,m){document.querySelectorAll('.chip').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');motivoSel=m;}
-async function confirmPerda(){
-  const outro=document.getElementById('f-motivo').value.trim();
-  const motivo=outro||motivoSel||'Não informado';
-  const c=contatos.find(x=>x.id===perdaCid);
-  if(!c){closeModal('modal-perda');return;}
-  c.motivo_perda=motivo;c.et='perdido';
-  ss('ld','Salvando...');
-  try{await apiSave(c);await doSync();}catch(ex){ss('er','Erro');}
-  closeModal('modal-perda');
-  motivoSel='';document.getElementById('f-motivo').value='';
-  document.querySelectorAll('.chip').forEach(b=>b.classList.remove('sel'));
-  perdaCid=null;
+// ── PERDA MODAL ────────────────────────────────────────
+function selM(btn, m) {
+  document.querySelectorAll('.chip').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  motivoSel = m;
 }
 
-// ATIVIDADE
-function openAtv(id){
-  atvCid=id;
-  const c=contatos.find(x=>x.id===id);
-  document.getElementById('atv-title').textContent=`Atividade — ${c?c.nome:''}`;
-  document.getElementById('f-atv-data').value=c?c.atv_data||'':'';
-  document.getElementById('f-atv-desc').value=c?c.atv_desc||'':'';
-  document.getElementById('modal-atv').style.display='flex';
-}
-async function saveAtv(){
-  const c=contatos.find(x=>x.id===atvCid);
-  if(!c)return;
-  c.atv_data=document.getElementById('f-atv-data').value;
-  c.atv_desc=document.getElementById('f-atv-desc').value.trim();
-  ss('ld','Salvando...');
-  try{await apiSave(c);await doSync();}catch(ex){ss('er','Erro');}
-  closeModal('modal-atv');atvCid=null;
-}
-async function limparAtv(){
-  const c=contatos.find(x=>x.id===atvCid);
-  if(!c)return;
-  c.atv_data='';c.atv_desc='';
-  ss('ld','Salvando...');
-  try{await apiSave(c);await doSync();}catch(ex){ss('er','Erro');}
-  closeModal('modal-atv');atvCid=null;
+async function confirmPerda() {
+  const outro  = document.getElementById('f-motivo').value.trim();
+  const motivo = outro || motivoSel || 'Não informado';
+  const c      = contatos.find(x => x.id === perdaCid);
+  if (!c) { closeM('modal-perda'); return; }
+  c.motivo_perda = motivo;
+  c.et           = 'perdido';
+  ss('ld', 'Salvando...');
+  try { await apiSave(c); await doSync(); }
+  catch(ex) { ss('er','Erro'); console.error(ex); }
+  closeM('modal-perda');
+  motivoSel = '';
+  document.getElementById('f-motivo').value = '';
+  document.querySelectorAll('.chip').forEach(b => b.classList.remove('sel'));
+  perdaCid = null;
 }
 
-// CONTATO MODAL
-function openContato(id=null,fid=null,eid=null){
-  editCid=id;
-  const c=id?contatos.find(x=>x.id===id):null;
-  document.getElementById('mc-title').textContent=id?'Editar contato':'Novo contato';
-  document.getElementById('btn-sc').textContent=id?'Salvar alterações':'Salvar contato';
-  // funil select
-  const fs=document.getElementById('f-funil');
-  fs.innerHTML=cfg.funis.map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');
-  fs.value=c?c.funil:(fid||funilAtivo);
+function cancelPerda() {
+  // reverter etapa — refaz render sem salvar
+  perdaCid = null;
+  closeM('modal-perda');
+  renderFunil();
+}
+
+// ── ATIVIDADE ──────────────────────────────────────────
+function openAtv(id) {
+  atvCid = id;
+  const c = contatos.find(x => x.id === id);
+  document.getElementById('atv-nome').textContent = c ? `Atividade — ${c.nome}` : 'Atividade';
+  document.getElementById('f-atv-data').value  = c ? (c.atv_data  || '') : '';
+  document.getElementById('f-atv-desc').value  = c ? (c.atv_desc  || '') : '';
+  document.getElementById('modal-atv').style.display = 'flex';
+}
+
+async function saveAtv() {
+  const c = contatos.find(x => x.id === atvCid);
+  if (!c) return;
+  c.atv_data = document.getElementById('f-atv-data').value;
+  c.atv_desc = document.getElementById('f-atv-desc').value.trim();
+  ss('ld','Salvando atividade...');
+  try { await apiSave(c); await doSync(); }
+  catch(ex) { ss('er','Erro'); console.error(ex); }
+  closeM('modal-atv');
+  atvCid = null;
+}
+
+async function clearAtv() {
+  const c = contatos.find(x => x.id === atvCid);
+  if (!c) return;
+  c.atv_data = '';
+  c.atv_desc = '';
+  ss('ld','Removendo atividade...');
+  try { await apiSave(c); await doSync(); }
+  catch(ex) { ss('er','Erro'); console.error(ex); }
+  closeM('modal-atv');
+  atvCid = null;
+}
+
+// ── CONTATO MODAL ──────────────────────────────────────
+function openContato(id = null, fid = null, eid = null) {
+  editCid = id;
+  const c = id ? contatos.find(x => x.id === id) : null;
+
+  document.getElementById('mc-title').textContent  = id ? 'Editar contato' : 'Novo contato';
+  document.getElementById('btn-sc').textContent    = id ? 'Salvar alterações' : 'Salvar contato';
+  document.getElementById('fb-c').textContent      = '';
+  document.getElementById('btn-sc').disabled       = false;
+
+  // preencher funis
+  const fs = document.getElementById('f-funil');
+  fs.innerHTML = cfg.funis.map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
+  fs.value = c ? c.funil : (fid || funilAtivo);
   updEtapas();
-  // user select
-  const us=document.getElementById('f-user');
-  us.innerHTML='<option value="">Nenhum</option>'+cfg.usuarios.map(u=>`<option value="${u.id}">${u.nome}</option>`).join('');
-  if(c){
-    document.getElementById('f-nome').value=c.nome;
-    document.getElementById('f-tel').value=c.tel||'';
-    document.getElementById('f-funil').value=c.funil;
+
+  // preencher usuários
+  const us = document.getElementById('f-user');
+  us.innerHTML = '<option value="">Nenhum</option>' +
+    cfg.usuarios.map(u => `<option value="${u.id}">${u.nome}</option>`).join('');
+
+  if (c) {
+    document.getElementById('f-nome').value    = c.nome;
+    document.getElementById('f-tel').value     = c.tel     || '';
+    document.getElementById('f-funil').value   = c.funil;
     updEtapas();
-    setTimeout(()=>{document.getElementById('f-etapa').value=c.etapa;},10);
-    document.getElementById('f-canal').value=c.canal||'instagram';
-    document.getElementById('f-valor').value=c.valor||'';
-    document.getElementById('f-followup').value=c.followup||'';
-    document.getElementById('f-produto').value=c.produto||'';
-    document.getElementById('f-obs').value=c.obs||'';
-    document.getElementById('f-user').value=c.usuario||'';
-  }else{
-    ['f-nome','f-tel','f-valor','f-followup','f-produto','f-obs'].forEach(x=>document.getElementById(x).value='');
-    document.getElementById('f-canal').value='instagram';
-    document.getElementById('f-user').value='';
-    if(eid)setTimeout(()=>{document.getElementById('f-etapa').value=eid;},30);
+    setTimeout(() => { document.getElementById('f-etapa').value = c.etapa; }, 20);
+    document.getElementById('f-canal').value   = c.canal   || 'instagram';
+    document.getElementById('f-valor').value   = c.valor   || '';
+    document.getElementById('f-followup').value= c.followup|| '';
+    document.getElementById('f-produto').value = c.produto || '';
+    document.getElementById('f-obs').value     = c.obs     || '';
+    document.getElementById('f-user').value    = c.usuario || '';
+  } else {
+    ['f-nome','f-tel','f-valor','f-followup','f-produto','f-obs'].forEach(x => document.getElementById(x).value = '');
+    document.getElementById('f-canal').value = 'instagram';
+    document.getElementById('f-user').value  = '';
+    if (eid) setTimeout(() => { document.getElementById('f-etapa').value = eid; }, 30);
   }
-  document.getElementById('fb-c').textContent='';
-  document.getElementById('modal-contato').style.display='flex';
+
+  document.getElementById('modal-c').style.display = 'flex';
 }
 
-function updEtapas(){
-  const fid=document.getElementById('f-funil').value;
-  const funil=getFunil(fid);
-  const es=document.getElementById('f-etapa');
-  es.innerHTML=funil?funil.etapas.map(e=>`<option value="${e.id}">${e.nome}</option>`).join(''):'';
+function updEtapas() {
+  const funil = getFunil(document.getElementById('f-funil').value);
+  document.getElementById('f-etapa').innerHTML =
+    funil ? funil.etapas.map(e => `<option value="${e.id}">${e.nome}</option>`).join('') : '';
 }
 
-async function saveContato(){
-  const nome=document.getElementById('f-nome').value.trim();
-  if(!nome){setFb('fb-c','Nome obrigatório','er');return;}
+async function saveContato() {
+  const nome = document.getElementById('f-nome').value.trim();
+  if (!nome) { setFb('fb-c','Nome obrigatório','er'); return; }
+
   setFb('fb-c','Salvando...','info');
-  document.getElementById('btn-sc').disabled=true;
-  const prev=editCid?contatos.find(x=>x.id===editCid)||{}:{};
-  const fid=document.getElementById('f-funil').value;
-  const eid=document.getElementById('f-etapa').value;
-  const c={
-    id:editCid||String(Date.now()),
-    nome,tel:document.getElementById('f-tel').value.trim(),
-    et:isGanho(fid,eid)?'fechado':isPerdido(fid,eid)?'perdido':'atendimento',
-    canal:document.getElementById('f-canal').value,
-    valor:parseFloat(document.getElementById('f-valor').value)||0,
-    produto:document.getElementById('f-produto').value.trim(),
-    obs:document.getElementById('f-obs').value.trim(),
-    data:prev.data||new Date().toISOString(),
-    compras:prev.compras||0,
-    funil:fid,etapa:eid,
-    usuario:document.getElementById('f-user').value,
-    followup:document.getElementById('f-followup').value,
-    motivo_perda:prev.motivo_perda||'',
-    atv_data:prev.atv_data||'',
-    atv_desc:prev.atv_desc||''
+  document.getElementById('btn-sc').disabled = true;
+
+  const prev = editCid ? (contatos.find(x => x.id === editCid) || {}) : {};
+  const fid  = document.getElementById('f-funil').value;
+  const eid  = document.getElementById('f-etapa').value;
+
+  const c = {
+    id:           editCid || String(Date.now()),
+    nome,
+    tel:          document.getElementById('f-tel').value.trim(),
+    et:           isGanho(fid,eid) ? 'fechado' : isPerdido(fid,eid) ? 'perdido' : 'atendimento',
+    canal:        document.getElementById('f-canal').value,
+    valor:        parseFloat(document.getElementById('f-valor').value) || 0,
+    produto:      document.getElementById('f-produto').value.trim(),
+    obs:          document.getElementById('f-obs').value.trim(),
+    data:         prev.data         || new Date().toISOString(),
+    compras:      prev.compras      || 0,
+    funil:        fid,
+    etapa:        eid,
+    usuario:      document.getElementById('f-user').value,
+    followup:     document.getElementById('f-followup').value,
+    motivo_perda: prev.motivo_perda || '',
+    atv_data:     prev.atv_data     || '',
+    atv_desc:     prev.atv_desc     || ''
   };
-  try{
+
+  try {
     await apiSave(c);
     setFb('fb-c','Salvo!','ok');
-    closeModal('modal-contato');
+    closeM('modal-c');
     await doSync();
-  }catch(ex){setFb('fb-c','Erro ao salvar','er');}
-  document.getElementById('btn-sc').disabled=false;
+  } catch(ex) {
+    setFb('fb-c','Erro ao salvar','er');
+    console.error(ex);
+  }
+  document.getElementById('btn-sc').disabled = false;
 }
 
-async function delC(id){
-  if(!confirm('Remover este contato?'))return;
+// DELETE — função global, chamada pelo onclick do card
+window.delC = async function(id) {
+  if (!confirm('Remover este contato?')) return;
   ss('ld','Removendo...');
-  try{await apiDel(id);await doSync();}catch(ex){ss('er','Erro ao remover');}
-}
+  try {
+    await apiDelete(id);
+    // remove localmente enquanto sync não volta
+    contatos = contatos.filter(c => c.id !== id);
+    renderFunil();
+    renderContatos();
+    await doSync();
+  } catch(ex) {
+    ss('er','Erro ao remover');
+    console.error(ex);
+  }
+};
 
-// CONTATOS LIST
-function renderContatos(){
-  const funil=getFunil(funilAtivo);
-  const fc=document.getElementById('filtros-c');
-  fc.innerHTML=`<button class="filtro${filtroC==='todos'?' active':''}" onclick="setFiltroC(this,'todos')">Todos</button>`;
-  if(funil)funil.etapas.forEach(e=>{fc.innerHTML+=`<button class="filtro${filtroC===e.id?' active':''}" onclick="setFiltroC(this,'${e.id}')">${e.nome}</button>`;});
-  const busca=(document.getElementById('busca')||{value:''}).value.toLowerCase();
-  const lista=contatos.filter(c=>{
-    const mf=filtroC==='todos'||c.etapa===filtroC;
-    const mb=!busca||c.nome.toLowerCase().includes(busca);
-    const mu=userAtivo==='todos'||c.usuario===userAtivo;
-    return mf&&mb&&mu;
+// ── CONTATOS LIST ──────────────────────────────────────
+function renderContatos() {
+  const funil = getFunil(funilAtivo);
+  const fc = document.getElementById('filtros-c');
+  fc.innerHTML = `<button class="filtro${filtroC==='todos'?' active':''}" onclick="setFiltroC(this,'todos')">Todos</button>`;
+  if (funil) funil.etapas.forEach(e => {
+    fc.innerHTML += `<button class="filtro${filtroC===e.id?' active':''}" onclick="setFiltroC(this,'${e.id}')">${e.nome}</button>`;
   });
-  const el=document.getElementById('lista-c');
-  if(!lista.length){el.innerHTML=`<div class="empty">${contatos.length?'Nenhum encontrado':'Nenhum contato ainda'}</div>`;return;}
-  el.innerHTML=lista.map(c=>{
-    const f=getFunil(c.funil);const e=f?f.etapas.find(x=>x.id===c.etapa):null;
-    const u=cfg.usuarios.find(x=>x.id===c.usuario);
+
+  const busca = (document.getElementById('busca')||{value:''}).value.toLowerCase();
+  const lista = contatos.filter(c =>
+    (filtroC==='todos' || c.etapa===filtroC) &&
+    (!busca || c.nome.toLowerCase().includes(busca)) &&
+    (userAtivo==='todos' || c.usuario===userAtivo)
+  );
+
+  const el = document.getElementById('lista-c');
+  if (!lista.length) {
+    el.innerHTML = `<div class="empty">${contatos.length ? 'Nenhum encontrado' : 'Nenhum contato ainda'}</div>`;
+    return;
+  }
+
+  el.innerHTML = lista.map(c => {
+    const f = getFunil(c.funil);
+    const e = f ? f.etapas.find(x => x.id === c.etapa) : null;
+    const u = cfg.usuarios.find(x => x.id === c.usuario);
+    const s = atvStatus(c);
+    const atvCls = {sem:'atv-vermelho',hoje:'atv-verde',atrasada:'atv-amarelo',agendada:'atv-cinza'};
     return `<div class="cc">
       <div class="cc-top">
         <div>
           <div class="cc-nome">${c.nome}</div>
           <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
-            ${f?`<span class="bdg bdg-canal">${f.nome}</span>`:''}
-            ${e?`<span class="bdg bdg-canal">${e.nome}</span>`:''}
-            <span class="bdg bdg-canal">${CANAL[c.canal]||c.canal}</span>
-            ${c.valor?`<span class="bdg bdg-canal">R$${Math.round(c.valor)}</span>`:''}
-            ${u?`<span class="bdg bdg-canal">👤 ${u.nome}</span>`:''}
+            ${f ? `<span class="bdg-canal">${f.nome}</span>` : ''}
+            ${e ? `<span class="bdg-canal">${e.nome}</span>` : ''}
+            <span class="bdg-canal">${CANAL_LABEL[c.canal]||c.canal}</span>
+            ${c.valor ? `<span class="bdg-canal">R$${Math.round(c.valor)}</span>` : ''}
+            ${u ? `<span class="bdg-canal">👤 ${u.nome}</span>` : ''}
           </div>
         </div>
-        <div style="display:flex;gap:4px">
-          ${atvBtnHtml(c)}
+        <div style="display:flex;gap:6px;align-items:center">
+          <div class="atv-dot ${atvCls[s]}" onclick="openAtv('${c.id}')" title="Atividade"></div>
           <button class="btn xs" onclick="openContato('${c.id}')">✎</button>
           <button class="btn xs danger" onclick="delC('${c.id}')">✕</button>
         </div>
       </div>
       <div class="cc-info">
-        ${c.tel?`📞 ${c.tel} &nbsp;`:''}${c.produto?`👕 ${c.produto} &nbsp;`:''}📅 ${fmtD(c.data)}
-        ${c.motivo_perda?`<div style="color:var(--VM);margin-top:2px">⚠ Perda: ${c.motivo_perda}</div>`:''}
-        ${c.obs?`<div style="font-style:italic;margin-top:2px">"${c.obs}"</div>`:''}
+        ${c.tel     ? `📞 ${c.tel} &nbsp;` : ''}
+        ${c.produto ? `👕 ${c.produto} &nbsp;` : ''}
+        📅 ${fmtD(c.data)}
+        ${c.motivo_perda ? `<div style="color:var(--VM);margin-top:2px">⚠ Perda: ${c.motivo_perda}</div>` : ''}
+        ${c.obs ? `<div style="font-style:italic;margin-top:2px">"${c.obs}"</div>` : ''}
       </div>
     </div>`;
   }).join('');
 }
 
-function setFiltroC(btn,f){document.querySelectorAll('#filtros-c .filtro').forEach(b=>b.classList.remove('active'));btn.classList.add('active');filtroC=f;renderContatos();}
-
-// INSIGHTS
-function setPer(btn,p){document.querySelectorAll('.pb').forEach(b=>b.classList.remove('active'));btn.classList.add('active');periodo=p;renderInsights();}
-
-function filtPeriodo(lista){
-  if(periodo==='0')return lista;
-  const d=new Date();d.setDate(d.getDate()-parseInt(periodo));
-  return lista.filter(c=>new Date(c.data)>=d);
+function setFiltroC(btn, f) {
+  document.querySelectorAll('#filtros-c .filtro').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filtroC = f;
+  renderContatos();
 }
 
-function renderInsights(){
-  // Atualizar selects
-  const su=document.getElementById('ins-user');
-  if(su)su.innerHTML='<option value="todos">Todos os usuários</option>'+cfg.usuarios.map(u=>`<option value="${u.id}">${u.nome}</option>`).join('');
-  const sf=document.getElementById('ins-funil');
-  if(sf)sf.innerHTML='<option value="todos">Todos os funis</option>'+cfg.funis.map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');
+// ── INSIGHTS ───────────────────────────────────────────
+function setPer(btn, p) {
+  document.querySelectorAll('.pb').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  periodo = p;
+  renderInsights();
+}
 
-  const insUser=(document.getElementById('ins-user')||{value:'todos'}).value;
-  const insFunil=(document.getElementById('ins-funil')||{value:'todos'}).value;
+function filtPer(lista) {
+  if (periodo === '0') return lista;
+  const d = new Date(); d.setDate(d.getDate() - parseInt(periodo));
+  return lista.filter(c => new Date(c.data) >= d);
+}
 
-  let lista=filtPeriodo(contatos);
-  if(insUser!=='todos')lista=lista.filter(c=>c.usuario===insUser);
-  if(insFunil!=='todos')lista=lista.filter(c=>c.funil===insFunil);
+function renderInsights() {
+  // atualizar selects
+  const su = document.getElementById('ins-user');
+  if (su) su.innerHTML = '<option value="todos">Todos usuários</option>' +
+    cfg.usuarios.map(u => `<option value="${u.id}">${u.nome}</option>`).join('');
+  const sf = document.getElementById('ins-funil');
+  if (sf) sf.innerHTML = '<option value="todos">Todos funis</option>' +
+    cfg.funis.map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
 
-  const total=lista.length;
-  const ganhos=lista.filter(c=>isGanho(c.funil,c.etapa));
-  const perdidos=lista.filter(c=>isPerdido(c.funil,c.etapa));
-  const receita=ganhos.reduce((a,b)=>a+(b.valor||0),0);
-  const txConv=total>0?Math.round((ganhos.length/total)*100):0;
-  const txPerda=total>0?Math.round((perdidos.length/total)*100):0;
-  const tkMedio=ganhos.length>0?Math.round(receita/ganhos.length):0;
-  const emAberto=lista.filter(c=>!isGanho(c.funil,c.etapa)&&!isPerdido(c.funil,c.etapa)).length;
+  const iUser  = (document.getElementById('ins-user')  || {value:'todos'}).value;
+  const iFunil = (document.getElementById('ins-funil') || {value:'todos'}).value;
 
-  // Motivos de perda
-  const mc={};perdidos.forEach(c=>{if(c.motivo_perda){mc[c.motivo_perda]=(mc[c.motivo_perda]||0)+1;}});
-  const topM=Object.entries(mc).sort((a,b)=>b[1]-a[1]);
-  const maxM=Math.max(1,...Object.values(mc));
+  let lista = filtPer(contatos);
+  if (iUser  !== 'todos') lista = lista.filter(c => c.usuario === iUser);
+  if (iFunil !== 'todos') lista = lista.filter(c => c.funil   === iFunil);
 
-  // Por canal
-  const cc={};lista.forEach(c=>{const k=c.canal||'outro';cc[k]=(cc[k]||0)+1;});
-  const maxC=Math.max(1,...Object.values(cc));
+  const total    = lista.length;
+  const ganhos   = lista.filter(c => isGanho(c.funil,   c.etapa));
+  const perdidos = lista.filter(c => isPerdido(c.funil, c.etapa));
+  const receita  = ganhos.reduce((a,b) => a + (b.valor||0), 0);
+  const txConv   = total > 0 ? Math.round((ganhos.length   / total) * 100) : 0;
+  const txPerda  = total > 0 ? Math.round((perdidos.length / total) * 100) : 0;
+  const tkMedio  = ganhos.length > 0 ? Math.round(receita / ganhos.length) : 0;
+  const emAberto = lista.filter(c => !isGanho(c.funil,c.etapa) && !isPerdido(c.funil,c.etapa)).length;
 
-  // Por funil
-  const fc2={};lista.forEach(c=>{const f=getFunil(c.funil);if(f)fc2[f.nome]=(fc2[f.nome]||0)+1;});
-  const maxF2=Math.max(1,...Object.values(fc2));
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const atvH = lista.filter(c => { if(!c.atv_data) return false; const d=new Date(c.atv_data+'T00:00:00'); return d.getTime()===hoje.getTime(); }).length;
+  const atvA = lista.filter(c => { if(!c.atv_data) return false; const d=new Date(c.atv_data+'T00:00:00'); return d<hoje; }).length;
 
-  // Atividades
-  const hoje=new Date();hoje.setHours(0,0,0,0);
-  const atvHoje=lista.filter(c=>{if(!c.atv_data)return false;const d=new Date(c.atv_data+'T00:00:00');return d.getTime()===hoje.getTime();}).length;
-  const atvAtras=lista.filter(c=>{if(!c.atv_data)return false;const d=new Date(c.atv_data+'T00:00:00');return d<hoje;}).length;
+  const mc = {}; perdidos.forEach(c => { if(c.motivo_perda) mc[c.motivo_perda] = (mc[c.motivo_perda]||0)+1; });
+  const topM  = Object.entries(mc).sort((a,b) => b[1]-a[1]);
+  const maxM  = Math.max(1,...Object.values(mc));
 
-  document.getElementById('ins-content').innerHTML=`
+  const cc = {}; lista.forEach(c => { const k=c.canal||'outro'; cc[k]=(cc[k]||0)+1; });
+  const maxC = Math.max(1,...Object.values(cc));
+
+  const fc2 = {}; lista.forEach(c => { const f=getFunil(c.funil); if(f) fc2[f.nome]=(fc2[f.nome]||0)+1; });
+  const maxF2 = Math.max(1,...Object.values(fc2));
+
+  document.getElementById('ins-content').innerHTML = `
     <div class="mg">
       <div class="mc"><div class="mc-n">${total}</div><div class="mc-l">Total</div></div>
       <div class="mc"><div class="mc-n">${ganhos.length}</div><div class="mc-l">Ganhos</div></div>
       <div class="mc"><div class="mc-n">${perdidos.length}</div><div class="mc-l">Perdidos</div></div>
       <div class="mc"><div class="mc-n">${emAberto}</div><div class="mc-l">Em aberto</div></div>
-      <div class="mc"><div class="mc-n">${txConv}%</div><div class="mc-l">Tx. conversão</div><div class="mc-s ${txConv>=15?'v':txConv>=8?'a':'r'}">${txConv>=15?'Boa':txConv>=8?'Regular':'Baixa'}</div></div>
-      <div class="mc"><div class="mc-n">${txPerda}%</div><div class="mc-l">Tx. perda</div><div class="mc-s ${txPerda<=30?'v':'r'}">${txPerda<=30?'Ok':'Alta'}</div></div>
+      <div class="mc"><div class="mc-n">${txConv}%</div><div class="mc-l">Tx. conversão</div>
+        <div class="mc-s ${txConv>=15?'v':txConv>=8?'a':'r'}">${txConv>=15?'Boa':txConv>=8?'Regular':'Baixa'}</div></div>
+      <div class="mc"><div class="mc-n">${txPerda}%</div><div class="mc-l">Tx. perda</div>
+        <div class="mc-s ${txPerda<=30?'v':'r'}">${txPerda<=30?'Ok':'Alta'}</div></div>
       <div class="mc"><div class="mc-n">R$${Math.round(receita).toLocaleString('pt-BR')}</div><div class="mc-l">Receita</div></div>
       <div class="mc"><div class="mc-n">R$${tkMedio.toLocaleString('pt-BR')}</div><div class="mc-l">Ticket médio</div></div>
-      <div class="mc"><div class="mc-n">${atvHoje}</div><div class="mc-l">Ativ. hoje</div><div class="mc-s v">Fazer hoje</div></div>
-      <div class="mc"><div class="mc-n">${atvAtras}</div><div class="mc-l">Ativ. atrasadas</div><div class="mc-s ${atvAtras>0?'r':'v'}">${atvAtras>0?'Atenção':'Ok'}</div></div>
+      <div class="mc"><div class="mc-n">${atvH}</div><div class="mc-l">Ativ. hoje</div><div class="mc-s v">Fazer hoje</div></div>
+      <div class="mc"><div class="mc-n">${atvA}</div><div class="mc-l">Atrasadas</div><div class="mc-s ${atvA>0?'r':'v'}">${atvA>0?'Atenção':'Ok'}</div></div>
     </div>
-
     <div class="divider"></div>
     <div class="slbl">Motivos de perda</div>
-    ${topM.length?topM.slice(0,8).map(([m,n])=>`<div class="bb"><div class="bb-row"><span>${m}</span><span>${n}</span></div><div class="bar"><div class="bar-f" style="width:${Math.round((n/maxM)*100)}%;background:#E24B4A"></div></div></div>`).join('')+''+
-    (topM[0]?`<div style="background:var(--VM2);border-radius:6px;padding:.625rem 1rem;font-size:12px;color:var(--VM);margin-top:.5rem">⚠ Principal motivo: <strong>${topM[0][0]}</strong> (${topM[0][1]}x)</div>`:'')
-    :'<div class="empty">Nenhuma perda no período</div>'}
-
+    ${topM.length
+      ? topM.slice(0,8).map(([m,n]) => `<div class="bb"><div class="bb-row"><span>${m}</span><span>${n}</span></div><div class="bar"><div class="bar-f" style="width:${Math.round((n/maxM)*100)}%;background:#E24B4A"></div></div></div>`).join('')
+        + (topM[0] ? `<div style="background:var(--VM2);border-radius:6px;padding:.625rem 1rem;font-size:12px;color:var(--VM);margin-top:.5rem">⚠ Principal motivo: <strong>${topM[0][0]}</strong> (${topM[0][1]}x)</div>` : '')
+      : '<div class="empty">Nenhuma perda no período</div>'}
     <div class="divider"></div>
     <div class="slbl">Por canal</div>
-    ${Object.entries(cc).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<div class="bb"><div class="bb-row"><span>${CANAL[k]||k}</span><span>${n}</span></div><div class="bar"><div class="bar-f" style="width:${Math.round((n/maxC)*100)}%;background:var(--A)"></div></div></div>`).join('')||'<div class="empty">Sem dados</div>'}
-
+    ${Object.entries(cc).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<div class="bb"><div class="bb-row"><span>${CANAL_LABEL[k]||k}</span><span>${n}</span></div><div class="bar"><div class="bar-f" style="width:${Math.round((n/maxC)*100)}%;background:var(--A)"></div></div></div>`).join('')||'<div class="empty">Sem dados</div>'}
     <div class="divider"></div>
     <div class="slbl">Por funil</div>
     ${Object.entries(fc2).map(([nome,n])=>`<div class="bb"><div class="bb-row"><span>${nome}</span><span>${n}</span></div><div class="bar"><div class="bar-f" style="width:${Math.round((n/maxF2)*100)}%;background:var(--L)"></div></div></div>`).join('')||'<div class="empty">Sem dados</div>'}
   `;
 }
 
-// CONFIG
-function renderConfig(){
-  document.getElementById('cfg-funis').innerHTML=cfg.funis.map(f=>`
+// ── CONFIG ─────────────────────────────────────────────
+function renderConfig() {
+  document.getElementById('cfg-funis').innerHTML = cfg.funis.map(f => `
     <div class="fcard">
-      <div class="ftitle"><span>${f.nome}</span>
+      <div class="ftitle">
+        <span>${f.nome}</span>
         <div style="display:flex;gap:6px">
-          <button class="btn sm" onclick="openModal('modal-funil','${f.id}')">Renomear</button>
+          <button class="btn sm" onclick="openFunilModal('${f.id}')">Renomear</button>
           <button class="btn sm danger" onclick="delFunil('${f.id}')">Apagar</button>
         </div>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:6px">
-        ${f.etapas.map(e=>`<div style="display:flex;align-items:center;gap:4px;background:var(--G);border-radius:6px;padding:4px 8px">
-          <span style="font-size:12px">${e.nome}</span>
-          <button class="btn xs" onclick="openModal('modal-etapa','${f.id}','${e.id}')">✎</button>
-          <button class="btn xs danger" onclick="delEtapa('${f.id}','${e.id}')">✕</button>
-        </div>`).join('')}
-        <button class="btn xs" onclick="openModal('modal-etapa','${f.id}',null)">+ Etapa</button>
+        ${f.etapas.map(e => `
+          <div style="display:flex;align-items:center;gap:4px;background:var(--G);border-radius:6px;padding:4px 8px">
+            <span style="font-size:12px">${e.nome}</span>
+            <button class="btn xs" onclick="openEtapaModal('${f.id}','${e.id}')">✎</button>
+            <button class="btn xs danger" onclick="delEtapa('${f.id}','${e.id}')">✕</button>
+          </div>`).join('')}
+        <button class="btn xs" onclick="openEtapaModal('${f.id}',null)">+ Etapa</button>
       </div>
-    </div>
-  `).join('');
-  document.getElementById('cfg-users').innerHTML=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.75rem">
-    ${cfg.usuarios.map(u=>`<div style="display:flex;align-items:center;gap:6px;background:var(--G);border-radius:20px;padding:5px 12px">
-      <span style="font-size:12px">👤 ${u.nome}</span>
-      <button class="btn xs danger" onclick="delUser('${u.id}')">✕</button>
-    </div>`).join('')}
-  </div>`;
+    </div>`).join('');
+
+  document.getElementById('cfg-users').innerHTML = `
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.75rem">
+      ${cfg.usuarios.map(u => `
+        <div style="display:flex;align-items:center;gap:6px;background:var(--G);border-radius:20px;padding:5px 12px">
+          <span style="font-size:12px">👤 ${u.nome}</span>
+          <button class="btn xs danger" onclick="delUser('${u.id}')">✕</button>
+        </div>`).join('')}
+    </div>`;
 }
 
-// FUNIL MODAL
-function openModal(modal,fid=null,eid=null){
-  editFid=fid;editEfid=fid;editEid=eid;
-  if(modal==='modal-funil'){
-    const f=fid?getFunil(fid):null;
-    document.getElementById('mf-title').textContent=fid?'Renomear funil':'Novo funil';
-    document.getElementById('f-funil-nome').value=f?f.nome:'';
-    document.getElementById('fb-f').textContent='';
+// ── FUNIL / ETAPA / USER MODALS ────────────────────────
+function openFunilModal(fid = null) {
+  editFid = fid;
+  const f = fid ? getFunil(fid) : null;
+  document.getElementById('mf-title').textContent  = fid ? 'Renomear funil' : 'Novo funil';
+  document.getElementById('f-funil-nome').value     = f ? f.nome : '';
+  document.getElementById('fb-f').textContent       = '';
+  document.getElementById('modal-funil').style.display = 'flex';
+}
+
+function saveFunil() {
+  const nome = document.getElementById('f-funil-nome').value.trim();
+  if (!nome) { document.getElementById('fb-f').textContent = 'Nome obrigatório'; return; }
+  if (editFid) {
+    const f = getFunil(editFid); if (f) f.nome = nome;
+  } else {
+    const id = 'f' + Date.now();
+    cfg.funis.push({id, nome, etapas:[
+      {id:'e'+Date.now(),     nome:'Novo contato'},
+      {id:'e'+(Date.now()+1), nome:'Fechado'},
+      {id:'e'+(Date.now()+2), nome:'Perdido'}
+    ]});
+    funilAtivo = id;
   }
-  if(modal==='modal-etapa'){
-    const e=fid&&eid?getEtapa(fid,eid):null;
-    document.getElementById('me-title').textContent=eid?'Editar etapa':'Nova etapa';
-    document.getElementById('f-etapa-nome').value=e?e.nome:'';
+  saveCfg();
+  closeM('modal-funil');
+  renderAll();
+}
+
+function openEtapaModal(fid, eid = null) {
+  editEfid = fid;
+  editEid  = eid;
+  const e  = eid ? getEtapa(fid, eid) : null;
+  document.getElementById('me-title').textContent  = eid ? 'Editar etapa' : 'Nova etapa';
+  document.getElementById('f-etapa-nome').value    = e ? e.nome : '';
+  document.getElementById('modal-etapa').style.display = 'flex';
+}
+
+function saveEtapa() {
+  const nome  = document.getElementById('f-etapa-nome').value.trim();
+  if (!nome) return;
+  const funil = getFunil(editEfid);
+  if (!funil) return;
+  if (editEid) {
+    const e = funil.etapas.find(x => x.id === editEid); if (e) e.nome = nome;
+  } else {
+    funil.etapas.push({id:'e'+Date.now(), nome});
   }
-  document.getElementById(modal).style.display='flex';
+  saveCfg();
+  closeM('modal-etapa');
+  renderFunil();
 }
 
-function saveFunil(){
-  const nome=document.getElementById('f-funil-nome').value.trim();
-  if(!nome){document.getElementById('fb-f').textContent='Nome obrigatório';return;}
-  if(editFid){const f=getFunil(editFid);if(f)f.nome=nome;}
-  else{const id='f'+Date.now();cfg.funis.push({id,nome,etapas:[{id:'e'+Date.now(),nome:'Novo contato'},{id:'e'+(Date.now()+1),nome:'Fechado'},{id:'e'+(Date.now()+2),nome:'Perdido'}]});funilAtivo=id;}
-  saveCfg();closeModal('modal-funil');renderAll();
+function openUserModal() {
+  document.getElementById('f-user-nome').value = '';
+  document.getElementById('modal-user').style.display = 'flex';
 }
 
-function saveEtapa(){
-  const nome=document.getElementById('f-etapa-nome').value.trim();
-  if(!nome)return;
-  const funil=getFunil(editEfid);if(!funil)return;
-  if(editEid){const e=funil.etapas.find(x=>x.id===editEid);if(e)e.nome=nome;}
-  else funil.etapas.push({id:'e'+Date.now(),nome});
-  saveCfg();closeModal('modal-etapa');renderFunil();
+function saveUser() {
+  const nome = document.getElementById('f-user-nome').value.trim();
+  if (!nome) return;
+  cfg.usuarios.push({id:'u'+Date.now(), nome});
+  saveCfg();
+  closeM('modal-user');
+  renderConfig();
+  renderUbtns();
 }
 
-function saveUser(){
-  const nome=document.getElementById('f-user-nome').value.trim();
-  if(!nome)return;
-  cfg.usuarios.push({id:'u'+Date.now(),nome});
-  saveCfg();closeModal('modal-user');renderConfig();renderUbtns();
+function delFunil(id) {
+  if (!confirm('Apagar funil? Contatos associados ficarão sem funil.')) return;
+  cfg.funis = cfg.funis.filter(f => f.id !== id);
+  if (funilAtivo === id && cfg.funis.length) funilAtivo = cfg.funis[0].id;
+  saveCfg(); renderAll();
 }
 
-function delFunil(id){if(!confirm('Apagar funil?'))return;cfg.funis=cfg.funis.filter(f=>f.id!==id);if(funilAtivo===id&&cfg.funis.length)funilAtivo=cfg.funis[0].id;saveCfg();renderAll();}
-function delEtapa(fid,eid){if(!confirm('Apagar etapa?'))return;const f=getFunil(fid);if(f)f.etapas=f.etapas.filter(e=>e.id!==eid);saveCfg();renderAll();}
-function delUser(id){if(!confirm('Remover usuário?'))return;cfg.usuarios=cfg.usuarios.filter(u=>u.id!==id);saveCfg();renderConfig();renderUbtns();}
-
-// HEADER USER BTNS
-function renderUbtns(){
-  const el=document.getElementById('ubtns');
-  el.innerHTML=`<button class="hdr-ubtn${userAtivo==='todos'?' on':''}" onclick="setUser('todos')">Todos</button>`
-    +cfg.usuarios.map(u=>`<button class="hdr-ubtn${userAtivo===u.id?' on':''}" onclick="setUser('${u.id}')">${u.nome}</button>`).join('');
-  // Update insight user select
-  const su=document.getElementById('ins-user');
-  if(su)su.innerHTML='<option value="todos">Todos os usuários</option>'+cfg.usuarios.map(u=>`<option value="${u.id}">${u.nome}</option>`).join('');
-  const sf=document.getElementById('ins-funil');
-  if(sf)sf.innerHTML='<option value="todos">Todos os funis</option>'+cfg.funis.map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');
+function delEtapa(fid, eid) {
+  if (!confirm('Apagar etapa?')) return;
+  const f = getFunil(fid); if (f) f.etapas = f.etapas.filter(e => e.id !== eid);
+  saveCfg(); renderAll();
 }
 
-function setUser(id){userAtivo=id;renderUbtns();renderAll();}
+function delUser(id) {
+  if (!confirm('Remover usuário?')) return;
+  cfg.usuarios = cfg.usuarios.filter(u => u.id !== id);
+  saveCfg(); renderConfig(); renderUbtns();
+}
 
-// MODAL
-function closeModal(id){document.getElementById(id).style.display='none';}
-document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.overlay').forEach(o=>o.style.display='none');});
+// ── HEADER USER BTNS ───────────────────────────────────
+function renderUbtns() {
+  document.getElementById('ubtns').innerHTML =
+    `<button class="hdr-ubtn${userAtivo==='todos'?' on':''}" onclick="setUser('todos')">Todos</button>` +
+    cfg.usuarios.map(u =>
+      `<button class="hdr-ubtn${userAtivo===u.id?' on':''}" onclick="setUser('${u.id}')">${u.nome}</button>`
+    ).join('');
+}
 
-// HELPERS
-function setFb(id,msg,type){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='fb '+type;}}
+function setUser(id) { userAtivo = id; renderUbtns(); renderAll(); }
 
-function renderAll(){
+// ── MODAL HELPERS ──────────────────────────────────────
+function closeM(id) { document.getElementById(id).style.display = 'none'; }
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape')
+    document.querySelectorAll('.overlay').forEach(o => o.style.display = 'none');
+});
+
+function setFb(id, msg, type) {
+  const el = document.getElementById(id);
+  if (el) { el.textContent = msg; el.className = 'fb ' + type; }
+}
+
+// ── RENDER ALL ─────────────────────────────────────────
+function renderAll() {
   renderFunil();
   renderContatos();
   renderUbtns();
 }
 
-// INIT
+// ── INIT ───────────────────────────────────────────────
 loadCfg();
 renderUbtns();
 doSync();
