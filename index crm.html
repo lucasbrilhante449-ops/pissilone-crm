@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pissilone CRM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,700;0,900;1,900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --L:#D17543;--L2:#A85528;--L3:#FDF0E8;
+  --A:#64A6AC;--A2:#3D7A80;--A3:#E8F4F5;
+  --Y:#F2E618;--Y2:#C4BA00;--Y3:#FEFCE0;
+  --K:#1A1208;--K2:#3D2E1A;
+  --W:#FDFAF5;--G:#F0EDE6;--G2:#DDD8D0;--G3:#8A7A6A;
+  --VERDE:#27500A;--VERDE-BG:#EAF3DE;
+  --ROXO:#3C3489;--ROXO-BG:#EEEDFE;
+  --VERMELHO:#791F1F;--VERMELHO-BG:#FCEBEB;
+  --AMBER:#633806;--AMBER-BG:#FAEEDA;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--G);color:var(--K);font-family:'Barlow',sans-serif;min-height:100vh}
+
+/* HEADER */
+.header{background:var(--K);padding:.875rem 1.25rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.header-logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:1.4rem;color:var(--W);letter-spacing:-.01em}
+.header-logo span{color:var(--L)}
+.header-right{display:flex;align-items:center;gap:8px}
+.sync-indicator{display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(255,255,255,.4)}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:#4CAF50;flex-shrink:0}
+.sync-dot.loading{background:var(--Y);animation:pulse 1s infinite}
+.sync-dot.error{background:#E24B4A}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.btn-sync{font-size:11px;padding:4px 10px;cursor:pointer;border-radius:4px;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.5)}
+.btn-sync:hover{background:rgba(255,255,255,.08);color:var(--W)}
+
+/* TABS */
+.tabs-wrap{background:var(--K);padding:0 1.25rem;border-top:1px solid rgba(255,255,255,.08)}
+.tabs{display:flex;gap:0;overflow-x:auto}
+.tab-btn{font-size:12px;font-weight:500;padding:10px 16px;cursor:pointer;border:none;background:none;color:rgba(255,255,255,.4);border-bottom:2px solid transparent;white-space:nowrap;transition:.15s}
+.tab-btn.active{color:var(--L);border-bottom-color:var(--L)}
+.tab-btn:hover:not(.active){color:rgba(255,255,255,.7)}
+
+/* CONTENT */
+.content{padding:1rem;max-width:900px;margin:0 auto}
+
+/* PANES */
+.pane{display:none}.pane.active{display:block}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;white-space:nowrap}
+.b-novo{background:var(--A3);color:var(--A2)}
+.b-pissifa{background:var(--VERDE-BG);color:var(--VERDE)}
+.b-atendimento{background:var(--AMBER-BG);color:var(--AMBER)}
+.b-pensando{background:var(--ROXO-BG);color:var(--ROXO)}
+.b-fechado{background:var(--VERDE-BG);color:var(--VERDE)}
+.b-perdido{background:var(--VERMELHO-BG);color:var(--VERMELHO)}
+.b-canal{font-size:10px;padding:2px 8px;border-radius:20px;background:var(--G);color:var(--G3);border:1px solid var(--G2)}
+
+/* CARDS MÉTRICA */
+.metricas-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:1.25rem}
+.mc{background:var(--W);border-radius:8px;padding:.875rem;text-align:center;border:1px solid var(--G2)}
+.mc-n{font-size:24px;font-weight:500;color:var(--K);line-height:1}
+.mc-l{font-size:11px;color:var(--G3);margin-top:3px;line-height:1.3}
+.mc-s{font-size:11px;font-weight:500;margin-top:3px}
+.mc-s.v{color:var(--VERDE)}.mc-s.a{color:var(--AMBER)}.mc-s.r{color:var(--VERMELHO)}
+
+/* BARRA */
+.barra-bloco{margin-bottom:.75rem}
+.barra-row{display:flex;justify-content:space-between;font-size:12px;color:var(--G3);margin-bottom:3px}
+.barra-row span:last-child{font-weight:500;color:var(--K)}
+.barra{height:8px;background:var(--G2);border-radius:4px;overflow:hidden}
+.barra-fill{height:100%;border-radius:4px;transition:width .4s}
+
+/* CARD CONTATO */
+.card{background:var(--W);border:1px solid var(--G2);border-radius:10px;padding:.875rem 1rem;margin-bottom:8px}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
+.card-nome{font-size:14px;font-weight:500;color:var(--K)}
+.card-badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
+.card-info{font-size:12px;color:var(--G3);line-height:1.6;margin-bottom:8px}
+.card-acoes{display:flex;gap:4px;flex-shrink:0}
+.ca-btn{font-size:11px;padding:3px 8px;cursor:pointer;border-radius:4px;border:1px solid var(--G2);background:transparent;color:var(--G3);transition:.15s}
+.ca-btn:hover{background:var(--G);color:var(--K)}
+.ca-btn.danger:hover{background:var(--VERMELHO-BG);color:var(--VERMELHO);border-color:var(--VERMELHO-BG)}
+.mover-label{font-size:10px;color:var(--G3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em}
+.mover-btns{display:flex;gap:4px;flex-wrap:wrap}
+.mv-btn{font-size:11px;padding:2px 8px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:transparent;color:var(--G3);transition:.15s}
+.mv-btn:hover{background:var(--G);color:var(--K)}
+
+/* KANBAN */
+.kanban{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:.75rem}
+.kcol{background:var(--W);border:1px solid var(--G2);border-radius:8px;padding:.75rem}
+.kcol-h{font-size:10px;font-weight:600;color:var(--G3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;display:flex;justify-content:space-between}
+.kcol-count{background:var(--G);border-radius:20px;padding:1px 7px;font-size:10px;color:var(--K)}
+.kcard{background:var(--G);border-radius:6px;padding:.5rem .625rem;margin-bottom:4px;cursor:pointer;transition:.15s}
+.kcard:hover{background:var(--G2)}
+.kcard-nome{font-size:12px;font-weight:500;color:var(--K);margin-bottom:1px}
+.kcard-info{font-size:10px;color:var(--G3)}
+
+/* FORM */
+.form-section{background:var(--W);border:1px solid var(--G2);border-radius:10px;padding:1.25rem;margin-bottom:1rem}
+.form-title{font-size:13px;font-weight:500;color:var(--K);margin-bottom:1rem;padding-bottom:.625rem;border-bottom:1px solid var(--G2)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.form-grid.triple{grid-template-columns:1fr 1fr 1fr}
+.form-grid.full{grid-template-columns:1fr}
+.form-label{font-size:12px;color:var(--G3);display:block;margin-bottom:3px}
+.form-input{width:100%;padding:8px 10px;font-size:13px;border:1px solid var(--G2);border-radius:6px;background:var(--W);color:var(--K);font-family:'Barlow',sans-serif;outline:none;transition:.15s}
+.form-input:focus{border-color:var(--L)}
+textarea.form-input{resize:vertical;min-height:60px}
+.btn{font-size:13px;padding:9px 18px;cursor:pointer;border-radius:6px;border:1px solid var(--G2);background:transparent;color:var(--K);font-family:'Barlow',sans-serif;transition:.15s;font-weight:500}
+.btn:hover{background:var(--G)}
+.btn.primary{background:var(--K);color:var(--W);border-color:var(--K)}
+.btn.primary:hover{background:var(--K2)}
+.btn.full{width:100%}
+.btn.small{font-size:12px;padding:6px 12px}
+.edit-banner{background:var(--AMBER-BG);border-radius:6px;padding:.625rem 1rem;font-size:12px;color:var(--AMBER);display:none;align-items:center;gap:8px;margin-bottom:1rem}
+.feedback{font-size:12px;margin-top:6px;min-height:16px}
+.feedback.ok{color:var(--VERDE)}.feedback.err{color:var(--VERMELHO)}.feedback.info{color:var(--G3)}
+
+/* FILTROS */
+.filtros{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.875rem}
+.filtro{font-size:11px;padding:4px 12px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:transparent;color:var(--G3);transition:.15s}
+.filtro.active,.filtro:hover{background:var(--K);color:var(--W);border-color:var(--K)}
+
+/* BUSCA */
+.busca-wrap{position:relative;margin-bottom:.875rem}
+.busca-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--G3);font-size:14px;pointer-events:none}
+.busca-input{padding-left:32px}
+
+/* SEÇÃO LABEL */
+.slabel{font-size:11px;font-weight:500;color:var(--G3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem;margin-top:1.25rem}
+.slabel:first-child{margin-top:0}
+
+/* EMPTY */
+.empty{text-align:center;padding:2rem 1rem;color:var(--G3);font-size:13px}
+
+/* ULTIMO BLOCO */
+.ultimo-item{display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--G2)}
+.ultimo-item:last-child{border-bottom:none}
+
+@media(max-width:480px){
+  .form-grid{grid-template-columns:1fr}
+  .form-grid.triple{grid-template-columns:1fr 1fr}
+  .metricas-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-logo">✳ PISSI<span>LONE</span> ✳</div>
+  <div class="header-right">
+    <div class="sync-indicator">
+      <div class="sync-dot loading" id="sync-dot"></div>
+      <span id="sync-label">Conectando...</span>
+    </div>
+    <button class="btn-sync" onclick="carregarDados()">↻ Sync</button>
+  </div>
+</header>
+
+<div class="tabs-wrap">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('painel')">Painel</button>
+    <button class="tab-btn" onclick="showTab('contatos')">Contatos</button>
+    <button class="tab-btn" onclick="showTab('kanban')">Etapas</button>
+    <button class="tab-btn" onclick="showTab('novo')">+ Novo</button>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- PAINEL -->
+  <div id="pane-painel" class="pane active">
+    <div class="slabel">Resumo geral</div>
+    <div class="metricas-grid" id="metricas"></div>
+    <div class="slabel">Funil de conversão</div>
+    <div id="funil"></div>
+    <div class="slabel">Por canal</div>
+    <div id="canais"></div>
+    <div class="slabel">Últimos contatos</div>
+    <div id="ultimos"></div>
+  </div>
+
+  <!-- CONTATOS -->
+  <div id="pane-contatos" class="pane">
+    <div class="busca-wrap">
+      <span class="busca-icon">⌕</span>
+      <input class="form-input busca-input" type="text" id="busca" placeholder="Buscar por nome..." oninput="renderContatos()">
+    </div>
+    <div class="filtros" id="filtros">
+      <button class="filtro active" onclick="setFiltro(this,'todos')">Todos</button>
+      <button class="filtro" onclick="setFiltro(this,'novo')">Novo</button>
+      <button class="filtro" onclick="setFiltro(this,'pissifa')">Pissifã</button>
+      <button class="filtro" onclick="setFiltro(this,'atendimento')">Atendimento</button>
+      <button class="filtro" onclick="setFiltro(this,'pensando')">Pensando</button>
+      <button class="filtro" onclick="setFiltro(this,'fechado')">Fechado</button>
+      <button class="filtro" onclick="setFiltro(this,'perdido')">Perdido</button>
+    </div>
+    <div id="lista-contatos"></div>
+  </div>
+
+  <!-- KANBAN -->
+  <div id="pane-kanban" class="pane">
+    <div class="kanban" id="kanban"></div>
+  </div>
+
+  <!-- NOVO / EDITAR -->
+  <div id="pane-novo" class="pane">
+    <div class="edit-banner" id="edit-banner">
+      <span>Editando: <strong id="edit-nome"></strong></span>
+      <button class="btn small" onclick="cancelarEdit()" style="margin-left:auto">Cancelar</button>
+    </div>
+    <div class="form-section">
+      <div class="form-title" id="form-title">Novo contato</div>
+      <div class="form-grid">
+        <div><label class="form-label">Nome *</label><input class="form-input" type="text" id="f-nome" placeholder="Nome do cliente"></div>
+        <div><label class="form-label">Telefone</label><input class="form-input" type="text" id="f-tel" placeholder="(84) 9 9999-9999"></div>
+      </div>
+      <div class="form-grid triple">
+        <div>
+          <label class="form-label">Etiqueta *</label>
+          <select class="form-input" id="f-et">
+            <option value="novo">Novo contato</option>
+            <option value="pissifa">Pissifã</option>
+            <option value="atendimento">Em atendimento</option>
+            <option value="pensando">Pensando</option>
+            <option value="fechado">Pedido fechado</option>
+            <option value="perdido">Perdido</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Canal de origem</label>
+          <select class="form-input" id="f-canal">
+            <option value="story">Story</option>
+            <option value="anuncio">Anúncio</option>
+            <option value="indicacao">Indicação</option>
+            <option value="atelie">Ateliê</option>
+            <option value="busca">Google</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+        <div><label class="form-label">Valor estimado (R$)</label><input class="form-input" type="number" id="f-valor" placeholder="120"></div>
+      </div>
+      <div class="form-grid full">
+        <div><label class="form-label">Produto / interesse</label><input class="form-input" type="text" id="f-produto" placeholder="Kit Nordeste Vivo, camiseta São João..."></div>
+      </div>
+      <div class="form-grid full">
+        <div><label class="form-label">Observação</label><textarea class="form-input" id="f-obs" placeholder="Quer presentear a mãe, perguntou tamanho M..."></textarea></div>
+      </div>
+      <button class="btn primary full" id="btn-salvar" onclick="salvarContato()">Salvar contato</button>
+      <div class="feedback info" id="feedback"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxawuqkhN04J7TiX4qVyYzqRWRaExyGFAzdMs9CR6dc03Zfd19lkkvLYmmNarTFWbEFAA/exec';
+
+let dados = [];
+let filtroAtual = 'todos';
+let editandoId = null;
+
+const ET = {novo:'Novo contato',pissifa:'Pissifã',atendimento:'Em atendimento',pensando:'Pensando',fechado:'Pedido fechado',perdido:'Perdido'};
+const CANAL = {story:'Story',anuncio:'Anúncio',indicacao:'Indicação',atelie:'Ateliê',busca:'Google',outro:'Outro'};
+
+function syncStatus(s, msg){
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-label');
+  dot.className = 'sync-dot' + (s==='loading'?' loading':s==='error'?' error':'');
+  lbl.textContent = msg;
+}
+
+async function api(payload){
+  const r = await fetch(SHEET_URL, {method:'POST', body:JSON.stringify(payload)});
+  return r.json();
+}
+
+async function carregarDados(){
+  syncStatus('loading','Sincronizando...');
+  try {
+    const rows = await api({action:'getAll'});
+    if(!Array.isArray(rows)||rows.length<2){ dados=[]; }
+    else {
+      dados = rows.slice(1).filter(r=>r[0]).map(r=>({
+        id:String(r[0]), nome:String(r[1]||''), tel:String(r[2]||''),
+        et:String(r[3]||'novo'), canal:String(r[4]||'outro'),
+        valor:parseFloat(r[5])||0, produto:String(r[6]||''),
+        obs:String(r[7]||''), data:String(r[8]||new Date().toISOString()),
+        compras:parseInt(r[9])||0
+      }));
+    }
+    syncStatus('ok', dados.length + ' contato' + (dados.length!==1?'s':''));
+    renderAll();
+  } catch(e){
+    syncStatus('error','Erro de conexão');
+  }
+}
+
+async function salvarContato(){
+  const nome = document.getElementById('f-nome').value.trim();
+  if(!nome){ setFeedback('Nome é obrigatório','err'); return; }
+  setFeedback('Salvando...','info');
+  document.getElementById('btn-salvar').disabled = true;
+  const prev = editandoId ? dados.find(x=>x.id===editandoId)||{} : {};
+  const c = {
+    id: editandoId || String(Date.now()),
+    nome, tel:document.getElementById('f-tel').value.trim(),
+    et:document.getElementById('f-et').value,
+    canal:document.getElementById('f-canal').value,
+    valor:parseFloat(document.getElementById('f-valor').value)||0,
+    produto:document.getElementById('f-produto').value.trim(),
+    obs:document.getElementById('f-obs').value.trim(),
+    data: prev.data || new Date().toISOString(),
+    compras: prev.compras || 0
+  };
+  try {
+    await api({action:'save', contato:c});
+    setFeedback('Salvo!','ok');
+    limparForm();
+    await carregarDados();
+    showTab('contatos');
+  } catch(e){ setFeedback('Erro ao salvar. Tente novamente.','err'); }
+  document.getElementById('btn-salvar').disabled = false;
+}
+
+async function deletar(id){
+  if(!confirm('Remover este contato?')) return;
+  syncStatus('loading','Removendo...');
+  try { await api({action:'delete',id}); await carregarDados(); }
+  catch(e){ syncStatus('error','Erro ao remover'); }
+}
+
+async function mudarEt(id, et){
+  const c = dados.find(x=>x.id===id);
+  if(!c) return;
+  c.et = et;
+  syncStatus('loading','Atualizando...');
+  try { await api({action:'save',contato:c}); await carregarDados(); }
+  catch(e){ syncStatus('error','Erro ao atualizar'); }
+}
+
+function editarContato(id){
+  const c = dados.find(x=>x.id===id);
+  if(!c) return;
+  editandoId = id;
+  showTab('novo');
+  document.getElementById('f-nome').value = c.nome;
+  document.getElementById('f-tel').value = c.tel||'';
+  document.getElementById('f-et').value = c.et;
+  document.getElementById('f-canal').value = c.canal||'story';
+  document.getElementById('f-valor').value = c.valor||'';
+  document.getElementById('f-produto').value = c.produto||'';
+  document.getElementById('f-obs').value = c.obs||'';
+  document.getElementById('form-title').textContent = 'Editar contato';
+  document.getElementById('btn-salvar').textContent = 'Salvar alterações';
+  const b = document.getElementById('edit-banner');
+  b.style.display = 'flex';
+  document.getElementById('edit-nome').textContent = c.nome;
+}
+
+function cancelarEdit(){
+  editandoId = null;
+  limparForm();
+  document.getElementById('form-title').textContent = 'Novo contato';
+  document.getElementById('btn-salvar').textContent = 'Salvar contato';
+  document.getElementById('edit-banner').style.display = 'none';
+}
+
+function limparForm(){
+  ['f-nome','f-tel','f-valor','f-produto','f-obs'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-et').value='novo';
+  document.getElementById('f-canal').value='story';
+  setFeedback('','');
+}
+
+function setFeedback(msg,type){ const el=document.getElementById('feedback'); el.textContent=msg; el.className='feedback '+type; }
+
+function badge(et){ return `<span class="badge b-${et}">${ET[et]||et}</span>`; }
+function fmtData(iso){ try{return new Date(iso).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});}catch(e){return '';} }
+
+function setFiltro(btn,et){
+  document.querySelectorAll('.filtro').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); filtroAtual=et; renderContatos();
+}
+
+function showTab(id){
+  const ids=['painel','contatos','kanban','novo'];
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',ids[i]===id));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pane-'+id).classList.add('active');
+  if(id==='painel') renderPainel();
+  if(id==='contatos') renderContatos();
+  if(id==='kanban') renderKanban();
+}
+
+function renderContatos(){
+  const busca = (document.getElementById('busca')||{value:''}).value.toLowerCase();
+  const lista = dados.filter(c=>(filtroAtual==='todos'||c.et===filtroAtual)&&(!busca||c.nome.toLowerCase().includes(busca)));
+  const el = document.getElementById('lista-contatos');
+  if(!lista.length){ el.innerHTML=`<div class="empty">${dados.length?'Nenhum contato nessa etapa':'Nenhum contato ainda. Use + Novo para começar.'}</div>`; return; }
+  el.innerHTML = lista.map(c=>`
+    <div class="card">
+      <div class="card-top">
+        <div>
+          <div class="card-nome">${c.nome}</div>
+          <div class="card-badges">${badge(c.et)}<span class="b-canal">${CANAL[c.canal]||c.canal}</span>${c.valor?`<span class="b-canal">R$ ${Math.round(c.valor)}</span>`:''}</div>
+        </div>
+        <div class="card-acoes">
+          <button class="ca-btn" onclick="editarContato('${c.id}')">Editar</button>
+          <button class="ca-btn danger" onclick="deletar('${c.id}')">✕</button>
+        </div>
+      </div>
+      <div class="card-info">
+        ${c.tel?`📞 ${c.tel} &nbsp;`:''}${c.produto?`👕 ${c.produto} &nbsp;`:''}📅 ${fmtData(c.data)}
+        ${c.obs?`<div style="margin-top:4px;font-style:italic">"${c.obs}"</div>`:''}
+      </div>
+      <div class="mover-label">Mover para:</div>
+      <div class="mover-btns">${Object.keys(ET).filter(e=>e!==c.et).map(e=>`<button class="mv-btn" onclick="mudarEt('${c.id}','${e}')">${ET[e]}</button>`).join('')}</div>
+    </div>
+  `).join('');
+}
+
+function renderKanban(){
+  const el = document.getElementById('kanban');
+  el.innerHTML = Object.keys(ET).map(et=>{
+    const lista = dados.filter(c=>c.et===et);
+    return `<div class="kcol">
+      <div class="kcol-h"><span>${ET[et]}</span><span class="kcol-count">${lista.length}</span></div>
+      ${lista.length?lista.map(c=>`<div class="kcard" onclick="editarContato('${c.id}')"><div class="kcard-nome">${c.nome}</div><div class="kcard-info">${CANAL[c.canal]||''}${c.valor?` · R$${Math.round(c.valor)}`:''}</div></div>`).join(''):'<div style="font-size:11px;color:var(--G3);text-align:center;padding:.5rem">Vazio</div>'}
+    </div>`;
+  }).join('');
+}
+
+function renderPainel(){
+  const total=dados.length, novos=dados.filter(c=>c.et==='novo').length,
+    pissifas=dados.filter(c=>c.et==='pissifa').length,
+    atend=dados.filter(c=>c.et==='atendimento').length,
+    pensando=dados.filter(c=>c.et==='pensando').length,
+    fechados=dados.filter(c=>c.et==='fechado').length,
+    perdidos=dados.filter(c=>c.et==='perdido').length,
+    txConv=total>0?Math.round((fechados/total)*100):0,
+    txPerda=total>0?Math.round((perdidos/total)*100):0,
+    receita=dados.filter(c=>c.et==='fechado').reduce((a,b)=>a+(b.valor||0),0);
+
+  document.getElementById('metricas').innerHTML = [
+    [total,'Total',''],
+    [novos,'Novos',''],
+    [pissifas,'Pissifãs',''],
+    [fechados,'Fechados',''],
+    [txConv+'%','Conversão',txConv>=15?'v':txConv>=8?'a':'r'],
+    [txPerda+'%','Perda',txPerda<=30?'v':'r'],
+    ['R$'+Math.round(receita).toLocaleString('pt-BR'),'Receita',''],
+    [atend+pensando,'Em aberto','a'],
+  ].map(([n,l,s])=>`<div class="mc"><div class="mc-n">${n}</div><div class="mc-l">${l}</div>${s?`<div class="mc-s ${s}">${s==='v'?'Boa':'s'==='a'?'Atenção':'Baixa'}</div>`:''}</div>`).join('');
+
+  const funil=[
+    {l:'Total',v:total,c:'#64A6AC'},{l:'Atendimento',v:atend,c:'#D17543'},
+    {l:'Pensando',v:pensando,c:'#7B5EA7'},{l:'Fechado',v:fechados,c:'#4CAF50'},
+    {l:'Perdido',v:perdidos,c:'#E24B4A'}
+  ];
+  const mxF=Math.max(1,...funil.map(f=>f.v));
+  document.getElementById('funil').innerHTML=funil.map(f=>`<div class="barra-bloco"><div class="barra-row"><span>${f.l}</span><span>${f.v}</span></div><div class="barra"><div class="barra-fill" style="width:${Math.round((f.v/mxF)*100)}%;background:${f.c}"></div></div></div>`).join('');
+
+  const cc={};
+  dados.forEach(c=>{const k=c.canal||'outro';cc[k]=(cc[k]||0)+1;});
+  const mxC=Math.max(1,...Object.values(cc));
+  document.getElementById('canais').innerHTML=Object.entries(cc).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<div class="barra-bloco"><div class="barra-row"><span>${CANAL[k]||k}</span><span>${n}</span></div><div class="barra"><div class="barra-fill" style="width:${Math.round((n/mxC)*100)}%;background:#64A6AC"></div></div></div>`).join('')||'<div class="empty">Sem dados ainda</div>';
+
+  document.getElementById('ultimos').innerHTML=dados.slice(0,5).map(c=>`<div class="ultimo-item"><div>${c.nome} <span style="margin-left:6px">${badge(c.et)}</span></div><span style="font-size:11px;color:var(--G3)">${fmtData(c.data)}</span></div>`).join('')||'<div class="empty">Nenhum contato ainda</div>';
+}
+
+function renderAll(){ renderPainel(); renderContatos(); renderKanban(); }
+carregarDados();
+</script>
+</body>
+</html>
