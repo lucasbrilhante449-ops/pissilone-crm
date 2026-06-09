@@ -3,475 +3,979 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pissilone CRM</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
+<title>PSN CRM</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,700;0,900;1,900&display=swap" rel="stylesheet">
 <style>
 :root{
-  --L:#D17543;--L2:#A85528;--L3:#FDF0E8;
+  --L:#D17543;--L2:#A85528;--L3:#FDF0E8;--L4:#F5C4A8;
   --A:#64A6AC;--A2:#3D7A80;--A3:#E8F4F5;
   --Y:#F2E618;--Y2:#C4BA00;--Y3:#FEFCE0;
-  --K:#1A1208;--K2:#3D2E1A;
+  --K:#1A1208;--K2:#3D2E1A;--K3:#6B4226;
   --W:#FDFAF5;--G:#F0EDE6;--G2:#DDD8D0;--G3:#8A7A6A;
-  --VERDE:#27500A;--VERDE-BG:#EAF3DE;
-  --ROXO:#3C3489;--ROXO-BG:#EEEDFE;
-  --VERMELHO:#791F1F;--VERMELHO-BG:#FCEBEB;
-  --AMBER:#633806;--AMBER-BG:#FAEEDA;
+  --VD:#27500A;--VD2:#EAF3DE;
+  --RX:#3C3489;--RX2:#EEEDFE;
+  --VM:#791F1F;--VM2:#FCEBEB;
+  --AM:#633806;--AM2:#FAEEDA;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--G);color:var(--K);font-family:'Barlow',sans-serif;min-height:100vh}
+body{background:var(--G);color:var(--K);font-family:'Barlow',sans-serif;min-height:100vh;font-size:14px}
 
 /* HEADER */
-.header{background:var(--K);padding:.875rem 1.25rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.header-logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:1.4rem;color:var(--W);letter-spacing:-.01em}
-.header-logo span{color:var(--L)}
-.header-right{display:flex;align-items:center;gap:8px}
-.sync-indicator{display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(255,255,255,.4)}
-.sync-dot{width:6px;height:6px;border-radius:50%;background:#4CAF50;flex-shrink:0}
-.sync-dot.loading{background:var(--Y);animation:pulse 1s infinite}
-.sync-dot.error{background:#E24B4A}
+.hdr{background:var(--K);padding:.75rem 1.25rem;display:flex;align-items:center;gap:1rem;position:sticky;top:0;z-index:200}
+.hdr-logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:1.3rem;color:var(--W);letter-spacing:-.01em;white-space:nowrap}
+.hdr-logo span{color:var(--L)}
+.hdr-right{display:flex;align-items:center;gap:8px;margin-left:auto}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#4CAF50;flex-shrink:0}
+.sync-dot.ld{background:var(--Y);animation:pulse 1s infinite}
+.sync-dot.er{background:#E24B4A}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.btn-sync{font-size:11px;padding:4px 10px;cursor:pointer;border-radius:4px;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.5)}
-.btn-sync:hover{background:rgba(255,255,255,.08);color:var(--W)}
+.sync-txt{font-size:11px;color:rgba(255,255,255,.4)}
+.hdr-user{font-size:12px;padding:4px 12px;cursor:pointer;border-radius:20px;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.6);transition:.15s}
+.hdr-user:hover,.hdr-user.active{background:rgba(255,255,255,.1);color:var(--W)}
+.hdr-sync{font-size:11px;padding:4px 10px;cursor:pointer;border-radius:4px;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.4)}
+.hdr-sync:hover{color:var(--W);background:rgba(255,255,255,.08)}
 
 /* TABS */
-.tabs-wrap{background:var(--K);padding:0 1.25rem;border-top:1px solid rgba(255,255,255,.08)}
+.tabs-bar{background:var(--K);border-top:1px solid rgba(255,255,255,.06);padding:0 1.25rem}
 .tabs{display:flex;gap:0;overflow-x:auto}
-.tab-btn{font-size:12px;font-weight:500;padding:10px 16px;cursor:pointer;border:none;background:none;color:rgba(255,255,255,.4);border-bottom:2px solid transparent;white-space:nowrap;transition:.15s}
-.tab-btn.active{color:var(--L);border-bottom-color:var(--L)}
-.tab-btn:hover:not(.active){color:rgba(255,255,255,.7)}
+.tb{font-size:12px;font-weight:500;padding:9px 16px;cursor:pointer;border:none;background:none;color:rgba(255,255,255,.35);border-bottom:2px solid transparent;white-space:nowrap;transition:.15s;font-family:'Barlow',sans-serif}
+.tb.active{color:var(--L);border-bottom-color:var(--L)}
+.tb:hover:not(.active){color:rgba(255,255,255,.7)}
 
 /* CONTENT */
-.content{padding:1rem;max-width:900px;margin:0 auto}
-
-/* PANES */
+.cnt{padding:1rem;max-width:1100px;margin:0 auto}
 .pane{display:none}.pane.active{display:block}
 
-/* BADGES */
-.badge{display:inline-flex;align-items:center;font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;white-space:nowrap}
-.b-novo{background:var(--A3);color:var(--A2)}
-.b-pissifa{background:var(--VERDE-BG);color:var(--VERDE)}
-.b-atendimento{background:var(--AMBER-BG);color:var(--AMBER)}
-.b-pensando{background:var(--ROXO-BG);color:var(--ROXO)}
-.b-fechado{background:var(--VERDE-BG);color:var(--VERDE)}
-.b-perdido{background:var(--VERMELHO-BG);color:var(--VERMELHO)}
-.b-canal{font-size:10px;padding:2px 8px;border-radius:20px;background:var(--G);color:var(--G3);border:1px solid var(--G2)}
-
-/* CARDS MÉTRICA */
-.metricas-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:1.25rem}
-.mc{background:var(--W);border-radius:8px;padding:.875rem;text-align:center;border:1px solid var(--G2)}
-.mc-n{font-size:24px;font-weight:500;color:var(--K);line-height:1}
-.mc-l{font-size:11px;color:var(--G3);margin-top:3px;line-height:1.3}
-.mc-s{font-size:11px;font-weight:500;margin-top:3px}
-.mc-s.v{color:var(--VERDE)}.mc-s.a{color:var(--AMBER)}.mc-s.r{color:var(--VERMELHO)}
-
-/* BARRA */
-.barra-bloco{margin-bottom:.75rem}
-.barra-row{display:flex;justify-content:space-between;font-size:12px;color:var(--G3);margin-bottom:3px}
-.barra-row span:last-child{font-weight:500;color:var(--K)}
-.barra{height:8px;background:var(--G2);border-radius:4px;overflow:hidden}
-.barra-fill{height:100%;border-radius:4px;transition:width .4s}
-
-/* CARD CONTATO */
-.card{background:var(--W);border:1px solid var(--G2);border-radius:10px;padding:.875rem 1rem;margin-bottom:8px}
-.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
-.card-nome{font-size:14px;font-weight:500;color:var(--K)}
-.card-badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
-.card-info{font-size:12px;color:var(--G3);line-height:1.6;margin-bottom:8px}
-.card-acoes{display:flex;gap:4px;flex-shrink:0}
-.ca-btn{font-size:11px;padding:3px 8px;cursor:pointer;border-radius:4px;border:1px solid var(--G2);background:transparent;color:var(--G3);transition:.15s}
-.ca-btn:hover{background:var(--G);color:var(--K)}
-.ca-btn.danger:hover{background:var(--VERMELHO-BG);color:var(--VERMELHO);border-color:var(--VERMELHO-BG)}
-.mover-label{font-size:10px;color:var(--G3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em}
-.mover-btns{display:flex;gap:4px;flex-wrap:wrap}
-.mv-btn{font-size:11px;padding:2px 8px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:transparent;color:var(--G3);transition:.15s}
-.mv-btn:hover{background:var(--G);color:var(--K)}
-
-/* KANBAN */
-.kanban{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:.75rem}
-.kcol{background:var(--W);border:1px solid var(--G2);border-radius:8px;padding:.75rem}
-.kcol-h{font-size:10px;font-weight:600;color:var(--G3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;display:flex;justify-content:space-between}
-.kcol-count{background:var(--G);border-radius:20px;padding:1px 7px;font-size:10px;color:var(--K)}
-.kcard{background:var(--G);border-radius:6px;padding:.5rem .625rem;margin-bottom:4px;cursor:pointer;transition:.15s}
-.kcard:hover{background:var(--G2)}
-.kcard-nome{font-size:12px;font-weight:500;color:var(--K);margin-bottom:1px}
-.kcard-info{font-size:10px;color:var(--G3)}
-
-/* FORM */
-.form-section{background:var(--W);border:1px solid var(--G2);border-radius:10px;padding:1.25rem;margin-bottom:1rem}
-.form-title{font-size:13px;font-weight:500;color:var(--K);margin-bottom:1rem;padding-bottom:.625rem;border-bottom:1px solid var(--G2)}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
-.form-grid.triple{grid-template-columns:1fr 1fr 1fr}
-.form-grid.full{grid-template-columns:1fr}
-.form-label{font-size:12px;color:var(--G3);display:block;margin-bottom:3px}
-.form-input{width:100%;padding:8px 10px;font-size:13px;border:1px solid var(--G2);border-radius:6px;background:var(--W);color:var(--K);font-family:'Barlow',sans-serif;outline:none;transition:.15s}
-.form-input:focus{border-color:var(--L)}
-textarea.form-input{resize:vertical;min-height:60px}
-.btn{font-size:13px;padding:9px 18px;cursor:pointer;border-radius:6px;border:1px solid var(--G2);background:transparent;color:var(--K);font-family:'Barlow',sans-serif;transition:.15s;font-weight:500}
+/* BUTTONS */
+.btn{font-size:12px;padding:7px 14px;cursor:pointer;border-radius:6px;border:1px solid var(--G2);background:var(--W);color:var(--K);font-family:'Barlow',sans-serif;transition:.15s;font-weight:500;display:inline-flex;align-items:center;gap:5px}
 .btn:hover{background:var(--G)}
 .btn.primary{background:var(--K);color:var(--W);border-color:var(--K)}
 .btn.primary:hover{background:var(--K2)}
-.btn.full{width:100%}
-.btn.small{font-size:12px;padding:6px 12px}
-.edit-banner{background:var(--AMBER-BG);border-radius:6px;padding:.625rem 1rem;font-size:12px;color:var(--AMBER);display:none;align-items:center;gap:8px;margin-bottom:1rem}
-.feedback{font-size:12px;margin-top:6px;min-height:16px}
-.feedback.ok{color:var(--VERDE)}.feedback.err{color:var(--VERMELHO)}.feedback.info{color:var(--G3)}
+.btn.danger{border-color:var(--VM2);color:var(--VM)}
+.btn.danger:hover{background:var(--VM2)}
+.btn.sm{font-size:11px;padding:4px 10px}
+.btn.xs{font-size:10px;padding:3px 8px}
+.btn.full{width:100%;justify-content:center}
+.btn.laranja{background:var(--L);color:var(--W);border-color:var(--L)}
+.btn.laranja:hover{background:var(--L2)}
+
+/* FORMS */
+.flabel{font-size:11px;color:var(--G3);display:block;margin-bottom:3px;font-weight:500;text-transform:uppercase;letter-spacing:.05em}
+.finput{width:100%;padding:7px 10px;font-size:13px;border:1px solid var(--G2);border-radius:6px;background:var(--W);color:var(--K);font-family:'Barlow',sans-serif;outline:none;transition:.15s}
+.finput:focus{border-color:var(--L)}
+textarea.finput{resize:vertical;min-height:60px}
+.fg{display:grid;gap:10px;margin-bottom:10px}
+.fg2{grid-template-columns:1fr 1fr}
+.fg3{grid-template-columns:1fr 1fr 1fr}
+.fg1{grid-template-columns:1fr}
+.fcard{background:var(--W);border:1px solid var(--G2);border-radius:10px;padding:1.25rem;margin-bottom:1rem}
+.ftitle{font-size:13px;font-weight:600;color:var(--K);margin-bottom:1rem;padding-bottom:.625rem;border-bottom:1px solid var(--G2);display:flex;align-items:center;justify-content:space-between}
+
+/* BADGES */
+.bdg{display:inline-flex;align-items:center;font-size:11px;font-weight:500;padding:2px 9px;border-radius:20px;white-space:nowrap}
+.bdg-novo{background:var(--A3);color:var(--A2)}
+.bdg-pissifa{background:var(--VD2);color:var(--VD)}
+.bdg-atendimento{background:var(--AM2);color:var(--AM)}
+.bdg-pensando{background:var(--RX2);color:var(--RX)}
+.bdg-fechado{background:var(--VD2);color:var(--VD)}
+.bdg-perdido{background:var(--VM2);color:var(--VM)}
+.bdg-canal{font-size:10px;padding:2px 7px;border-radius:20px;background:var(--G);color:var(--G3);border:1px solid var(--G2)}
+
+/* SEÇÃO */
+.slbl{font-size:10px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem;margin-top:1.25rem}
+.slbl:first-child{margin-top:0}
+.divider{height:1px;background:var(--G2);margin:1.25rem 0}
+
+/* EMPTY */
+.empty{text-align:center;padding:2.5rem 1rem;color:var(--G3);font-size:13px}
+
+/* METRICS CARDS */
+.mg{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:1.25rem}
+.mc{background:var(--W);border:1px solid var(--G2);border-radius:8px;padding:.875rem;text-align:center}
+.mc-n{font-size:22px;font-weight:500;color:var(--K);line-height:1}
+.mc-l{font-size:11px;color:var(--G3);margin-top:3px;line-height:1.3}
+.mc-s{font-size:11px;font-weight:500;margin-top:2px}
+.mc-s.v{color:var(--VD)}.mc-s.a{color:var(--AM)}.mc-s.r{color:var(--VM)}
+
+/* BARRA */
+.bb{margin-bottom:.75rem}
+.bb-row{display:flex;justify-content:space-between;font-size:12px;color:var(--G3);margin-bottom:3px}
+.bb-row span:last-child{font-weight:500;color:var(--K)}
+.bar{height:8px;background:var(--G2);border-radius:4px;overflow:hidden}
+.bar-f{height:100%;border-radius:4px;transition:width .4s}
+
+/* FUNIL KANBAN */
+.funil-wrap{overflow-x:auto;padding-bottom:.5rem}
+.funil-board{display:flex;gap:10px;min-width:max-content;align-items:flex-start}
+.funil-col{width:220px;flex-shrink:0;background:var(--W);border:1px solid var(--G2);border-radius:10px;display:flex;flex-direction:column}
+.funil-col.drag-over{border-color:var(--L);background:var(--L3)}
+.col-hdr{padding:.75rem 1rem;border-bottom:1px solid var(--G2);display:flex;align-items:center;justify-content:space-between;cursor:default}
+.col-hdr-nome{font-size:12px;font-weight:600;color:var(--K)}
+.col-hdr-count{background:var(--G);border-radius:20px;padding:1px 8px;font-size:11px;color:var(--G3)}
+.col-hdr-edit{font-size:11px;padding:2px 6px;cursor:pointer;border-radius:4px;border:1px solid var(--G2);background:transparent;color:var(--G3)}
+.col-hdr-edit:hover{background:var(--G);color:var(--K)}
+.col-body{padding:.5rem;min-height:120px;flex:1}
+.col-add{padding:.5rem;border-top:1px solid var(--G2)}
+
+/* KANBAN CARD */
+.kcard{background:var(--W);border:1px solid var(--G2);border-radius:8px;padding:.625rem .75rem;margin-bottom:6px;cursor:grab;transition:.15s;user-select:none}
+.kcard:hover{border-color:var(--L);box-shadow:0 2px 8px rgba(209,117,67,.15)}
+.kcard.dragging{opacity:.5;cursor:grabbing}
+.kcard-nome{font-size:13px;font-weight:500;color:var(--K);margin-bottom:3px}
+.kcard-meta{font-size:11px;color:var(--G3);display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}
+.kcard-actions{display:flex;gap:4px;margin-top:4px}
+
+/* ADD COL */
+.add-col-btn{width:180px;flex-shrink:0;background:transparent;border:2px dashed var(--G2);border-radius:10px;padding:1.5rem 1rem;text-align:center;cursor:pointer;color:var(--G3);font-size:12px;transition:.15s;display:flex;flex-direction:column;align-items:center;gap:6px}
+.add-col-btn:hover{border-color:var(--L);color:var(--L);background:var(--L3)}
+
+/* FUNIL SELECTOR */
+.funil-tabs{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
+.ft{font-size:12px;padding:5px 14px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:var(--W);color:var(--G3);transition:.15s;font-weight:500}
+.ft.active{background:var(--K);color:var(--W);border-color:var(--K)}
+.ft:hover:not(.active){background:var(--G)}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:flex;align-items:center;justify-content:center;padding:1rem}
+.modal{background:var(--W);border-radius:12px;padding:1.5rem;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:15px;font-weight:600;color:var(--K);margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between}
+.modal-close{font-size:18px;cursor:pointer;color:var(--G3);background:none;border:none;line-height:1;padding:2px 6px}
+.modal-close:hover{color:var(--K)}
+
+/* PERDA MOTIVOS */
+.motivos-sugestoes{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.75rem}
+.motivo-chip{font-size:11px;padding:4px 10px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:transparent;color:var(--G3);transition:.15s}
+.motivo-chip:hover,.motivo-chip.sel{background:var(--VM2);color:var(--VM);border-color:var(--VM2)}
 
 /* FILTROS */
 .filtros{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.875rem}
-.filtro{font-size:11px;padding:4px 12px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:transparent;color:var(--G3);transition:.15s}
+.filtro{font-size:11px;padding:4px 12px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:var(--W);color:var(--G3);transition:.15s}
 .filtro.active,.filtro:hover{background:var(--K);color:var(--W);border-color:var(--K)}
+
+/* CONTATO CARD */
+.ccard{background:var(--W);border:1px solid var(--G2);border-radius:10px;padding:.875rem 1rem;margin-bottom:8px}
+.ccard-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
+.ccard-nome{font-size:14px;font-weight:500;color:var(--K)}
+.ccard-info{font-size:12px;color:var(--G3);line-height:1.6;margin-bottom:6px}
+.mover-wrap{margin-top:8px}
+.mover-lbl{font-size:10px;color:var(--G3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.mover-btns{display:flex;gap:4px;flex-wrap:wrap}
+.mv{font-size:11px;padding:2px 9px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:transparent;color:var(--G3);transition:.15s}
+.mv:hover{background:var(--K);color:var(--W);border-color:var(--K)}
+
+/* INSIGHTS */
+.insight-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:1.5rem}
+.ig-card{background:var(--W);border:1px solid var(--G2);border-radius:10px;padding:1.25rem;text-align:center}
+.ig-n{font-size:28px;font-weight:500;color:var(--K);line-height:1}
+.ig-l{font-size:12px;color:var(--G3);margin-top:4px}
+.ig-s{font-size:12px;font-weight:500;margin-top:3px}
+
+/* PERIODO FILTROS */
+.periodo-wrap{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:1rem}
+.periodo-btn{font-size:11px;padding:4px 12px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:var(--W);color:var(--G3);transition:.15s}
+.periodo-btn.active{background:var(--L);color:var(--W);border-color:var(--L)}
+
+/* FEEDBACK */
+.fb{font-size:12px;margin-top:6px;min-height:16px}
+.fb.ok{color:var(--VD)}.fb.er{color:var(--VM)}.fb.info{color:var(--G3)}
 
 /* BUSCA */
 .busca-wrap{position:relative;margin-bottom:.875rem}
-.busca-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--G3);font-size:14px;pointer-events:none}
-.busca-input{padding-left:32px}
+.busca-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--G3);pointer-events:none}
+.busca-in{padding-left:32px}
 
-/* SEÇÃO LABEL */
-.slabel{font-size:11px;font-weight:500;color:var(--G3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem;margin-top:1.25rem}
-.slabel:first-child{margin-top:0}
-
-/* EMPTY */
-.empty{text-align:center;padding:2rem 1rem;color:var(--G3);font-size:13px}
-
-/* ULTIMO BLOCO */
-.ultimo-item{display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--G2)}
-.ultimo-item:last-child{border-bottom:none}
-
-@media(max-width:480px){
-  .form-grid{grid-template-columns:1fr}
-  .form-grid.triple{grid-template-columns:1fr 1fr}
-  .metricas-grid{grid-template-columns:repeat(2,1fr)}
+@media(max-width:600px){
+  .fg2,.fg3{grid-template-columns:1fr}
+  .mg{grid-template-columns:repeat(2,1fr)}
+  .funil-col{width:180px}
 }
 </style>
 </head>
 <body>
 
-<header class="header">
-  <div class="header-logo">✳ PISSI<span>LONE</span> ✳</div>
-  <div class="header-right">
-    <div class="sync-indicator">
-      <div class="sync-dot loading" id="sync-dot"></div>
-      <span id="sync-label">Conectando...</span>
+<header class="hdr">
+  <div class="hdr-logo">✳ PSN <span>CRM</span> ✳</div>
+  <div class="hdr-right">
+    <div id="user-btns" style="display:flex;gap:4px"></div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <div class="sync-dot ld" id="sdot"></div>
+      <span class="sync-txt" id="stxt">Conectando...</span>
     </div>
-    <button class="btn-sync" onclick="carregarDados()">↻ Sync</button>
+    <button class="hdr-sync" onclick="sync()">↻</button>
   </div>
 </header>
 
-<div class="tabs-wrap">
+<div class="tabs-bar">
   <div class="tabs">
-    <button class="tab-btn active" onclick="showTab('painel')">Painel</button>
-    <button class="tab-btn" onclick="showTab('contatos')">Contatos</button>
-    <button class="tab-btn" onclick="showTab('kanban')">Etapas</button>
-    <button class="tab-btn" onclick="showTab('novo')">+ Novo</button>
+    <button class="tb active" onclick="showTab('funil')">Funil</button>
+    <button class="tb" onclick="showTab('contatos')">Contatos</button>
+    <button class="tb" onclick="showTab('insights')">Insights</button>
+    <button class="tb" onclick="showTab('config')">Configurar</button>
   </div>
 </div>
 
-<div class="content">
+<div class="cnt">
 
-  <!-- PAINEL -->
-  <div id="pane-painel" class="pane active">
-    <div class="slabel">Resumo geral</div>
-    <div class="metricas-grid" id="metricas"></div>
-    <div class="slabel">Funil de conversão</div>
-    <div id="funil"></div>
-    <div class="slabel">Por canal</div>
-    <div id="canais"></div>
-    <div class="slabel">Últimos contatos</div>
-    <div id="ultimos"></div>
+<!-- FUNIL -->
+<div id="pane-funil" class="pane active">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:.75rem">
+    <div class="funil-tabs" id="funil-tabs" style="margin-bottom:0"></div>
+    <button class="btn sm laranja" onclick="abrirModalNovoFunil()">+ Funil</button>
   </div>
-
-  <!-- CONTATOS -->
-  <div id="pane-contatos" class="pane">
-    <div class="busca-wrap">
-      <span class="busca-icon">⌕</span>
-      <input class="form-input busca-input" type="text" id="busca" placeholder="Buscar por nome..." oninput="renderContatos()">
-    </div>
-    <div class="filtros" id="filtros">
-      <button class="filtro active" onclick="setFiltro(this,'todos')">Todos</button>
-      <button class="filtro" onclick="setFiltro(this,'novo')">Novo</button>
-      <button class="filtro" onclick="setFiltro(this,'pissifa')">Pissifã</button>
-      <button class="filtro" onclick="setFiltro(this,'atendimento')">Atendimento</button>
-      <button class="filtro" onclick="setFiltro(this,'pensando')">Pensando</button>
-      <button class="filtro" onclick="setFiltro(this,'fechado')">Fechado</button>
-      <button class="filtro" onclick="setFiltro(this,'perdido')">Perdido</button>
-    </div>
-    <div id="lista-contatos"></div>
+  <div class="funil-wrap">
+    <div class="funil-board" id="funil-board"></div>
   </div>
+</div>
 
-  <!-- KANBAN -->
-  <div id="pane-kanban" class="pane">
-    <div class="kanban" id="kanban"></div>
+<!-- CONTATOS -->
+<div id="pane-contatos" class="pane">
+  <div class="busca-wrap">
+    <span class="busca-icon">⌕</span>
+    <input class="finput busca-in" type="text" id="busca" placeholder="Buscar por nome..." oninput="renderContatos()">
   </div>
+  <div class="filtros" id="filtros-contatos">
+    <button class="filtro active" onclick="setFiltroC(this,'todos')">Todos</button>
+  </div>
+  <div id="lista-contatos"></div>
+</div>
 
-  <!-- NOVO / EDITAR -->
-  <div id="pane-novo" class="pane">
-    <div class="edit-banner" id="edit-banner">
-      <span>Editando: <strong id="edit-nome"></strong></span>
-      <button class="btn small" onclick="cancelarEdit()" style="margin-left:auto">Cancelar</button>
+<!-- INSIGHTS -->
+<div id="pane-insights" class="pane">
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:1rem">
+    <div class="periodo-wrap" style="margin-bottom:0">
+      <button class="periodo-btn active" onclick="setPeriodo(this,'7')">7 dias</button>
+      <button class="periodo-btn" onclick="setPeriodo(this,'30')">30 dias</button>
+      <button class="periodo-btn" onclick="setPeriodo(this,'90')">90 dias</button>
+      <button class="periodo-btn" onclick="setPeriodo(this,'0')">Tudo</button>
     </div>
-    <div class="form-section">
-      <div class="form-title" id="form-title">Novo contato</div>
-      <div class="form-grid">
-        <div><label class="form-label">Nome *</label><input class="form-input" type="text" id="f-nome" placeholder="Nome do cliente"></div>
-        <div><label class="form-label">Telefone</label><input class="form-input" type="text" id="f-tel" placeholder="(84) 9 9999-9999"></div>
-      </div>
-      <div class="form-grid triple">
-        <div>
-          <label class="form-label">Etiqueta *</label>
-          <select class="form-input" id="f-et">
-            <option value="novo">Novo contato</option>
-            <option value="pissifa">Pissifã</option>
-            <option value="atendimento">Em atendimento</option>
-            <option value="pensando">Pensando</option>
-            <option value="fechado">Pedido fechado</option>
-            <option value="perdido">Perdido</option>
-          </select>
-        </div>
-        <div>
-          <label class="form-label">Canal de origem</label>
-          <select class="form-input" id="f-canal">
-            <option value="story">Story</option>
-            <option value="anuncio">Anúncio</option>
-            <option value="indicacao">Indicação</option>
-            <option value="atelie">Ateliê</option>
-            <option value="busca">Google</option>
-            <option value="outro">Outro</option>
-          </select>
-        </div>
-        <div><label class="form-label">Valor estimado (R$)</label><input class="form-input" type="number" id="f-valor" placeholder="120"></div>
-      </div>
-      <div class="form-grid full">
-        <div><label class="form-label">Produto / interesse</label><input class="form-input" type="text" id="f-produto" placeholder="Kit Nordeste Vivo, camiseta São João..."></div>
-      </div>
-      <div class="form-grid full">
-        <div><label class="form-label">Observação</label><textarea class="form-input" id="f-obs" placeholder="Quer presentear a mãe, perguntou tamanho M..."></textarea></div>
-      </div>
-      <button class="btn primary full" id="btn-salvar" onclick="salvarContato()">Salvar contato</button>
-      <div class="feedback info" id="feedback"></div>
+    <select class="finput" style="width:auto;font-size:12px" id="filtro-usuario" onchange="renderInsights()">
+      <option value="todos">Todos os usuários</option>
+    </select>
+  </div>
+  <div id="insights-content"></div>
+</div>
+
+<!-- CONFIG -->
+<div id="pane-config" class="pane">
+  <div class="slbl">Funis</div>
+  <div id="config-funis"></div>
+  <button class="btn laranja" onclick="abrirModalNovoFunil()" style="margin-bottom:1.5rem">+ Novo funil</button>
+
+  <div class="divider"></div>
+  <div class="slbl">Usuários</div>
+  <div id="config-usuarios"></div>
+  <button class="btn" onclick="abrirModalNovoUsuario()">+ Novo usuário</button>
+</div>
+
+</div>
+
+<!-- MODAL NOVO CONTATO / EDITAR -->
+<div class="overlay" id="modal-contato" style="display:none">
+<div class="modal">
+  <div class="modal-title">
+    <span id="modal-contato-title">Novo contato</span>
+    <button class="modal-close" onclick="fecharModal('modal-contato')">✕</button>
+  </div>
+  <div class="fg fg2">
+    <div><label class="flabel">Nome *</label><input class="finput" id="f-nome" placeholder="Nome do cliente"></div>
+    <div><label class="flabel">Telefone</label><input class="finput" id="f-tel" placeholder="(84) 9 9999-9999"></div>
+  </div>
+  <div class="fg fg3">
+    <div>
+      <label class="flabel">Funil</label>
+      <select class="finput" id="f-funil" onchange="atualizarEtapasFunil()"></select>
+    </div>
+    <div>
+      <label class="flabel">Etapa</label>
+      <select class="finput" id="f-etapa"></select>
+    </div>
+    <div>
+      <label class="flabel">Responsável</label>
+      <select class="finput" id="f-user"></select>
     </div>
   </div>
+  <div class="fg fg3">
+    <div>
+      <label class="flabel">Canal de origem</label>
+      <select class="finput" id="f-canal">
+        <option value="story">Story</option>
+        <option value="anuncio">Anúncio</option>
+        <option value="indicacao">Indicação</option>
+        <option value="atelie">Ateliê</option>
+        <option value="busca">Google</option>
+        <option value="outro">Outro</option>
+      </select>
+    </div>
+    <div><label class="flabel">Valor (R$)</label><input class="finput" type="number" id="f-valor" placeholder="120"></div>
+    <div><label class="flabel">Próx. contato</label><input class="finput" type="date" id="f-followup"></div>
+  </div>
+  <div class="fg fg1">
+    <div><label class="flabel">Produto / interesse</label><input class="finput" id="f-produto" placeholder="Kit Nordeste Vivo..."></div>
+  </div>
+  <div class="fg fg1">
+    <div><label class="flabel">Observação</label><textarea class="finput" id="f-obs" placeholder="Quer presentear a mãe..."></textarea></div>
+  </div>
+  <button class="btn primary full" id="btn-salvar-contato" onclick="salvarContato()">Salvar contato</button>
+  <div class="fb info" id="fb-contato"></div>
+</div>
+</div>
 
+<!-- MODAL PERDA -->
+<div class="overlay" id="modal-perda" style="display:none">
+<div class="modal">
+  <div class="modal-title">
+    <span>Registrar motivo de perda</span>
+    <button class="modal-close" onclick="fecharModal('modal-perda')">✕</button>
+  </div>
+  <p style="font-size:12px;color:var(--G3);margin-bottom:1rem">Selecione ou escreva o motivo para ajudar nos insights:</p>
+  <div class="motivos-sugestoes" id="motivos-chips">
+    <button class="motivo-chip" onclick="selecionarMotivo(this,'Preço alto')">Preço alto</button>
+    <button class="motivo-chip" onclick="selecionarMotivo(this,'Não respondeu')">Não respondeu</button>
+    <button class="motivo-chip" onclick="selecionarMotivo(this,'Comprou em outro lugar')">Comprou em outro lugar</button>
+    <button class="motivo-chip" onclick="selecionarMotivo(this,'Não tinha tamanho')">Não tinha tamanho</button>
+    <button class="motivo-chip" onclick="selecionarMotivo(this,'Prazo muito longo')">Prazo muito longo</button>
+    <button class="motivo-chip" onclick="selecionarMotivo(this,'Mudou de ideia')">Mudou de ideia</button>
+    <button class="motivo-chip" onclick="selecionarMotivo(this,'Sem dinheiro no momento')">Sem dinheiro agora</button>
+    <button class="motivo-chip" onclick="selecionarMotivo(this,'Achou caro o frete')">Frete caro</button>
+  </div>
+  <div class="fg fg1" style="margin-bottom:1rem">
+    <div><label class="flabel">Outro motivo (opcional)</label><input class="finput" id="f-motivo-outro" placeholder="Descreva o motivo..."></div>
+  </div>
+  <div style="display:flex;gap:8px">
+    <button class="btn danger full" onclick="confirmarPerda()">Confirmar perda</button>
+    <button class="btn full" onclick="fecharModal('modal-perda')">Cancelar</button>
+  </div>
+</div>
+</div>
+
+<!-- MODAL NOVO FUNIL -->
+<div class="overlay" id="modal-funil" style="display:none">
+<div class="modal">
+  <div class="modal-title">
+    <span id="modal-funil-title">Novo funil</span>
+    <button class="modal-close" onclick="fecharModal('modal-funil')">✕</button>
+  </div>
+  <div class="fg fg1" style="margin-bottom:1rem">
+    <div><label class="flabel">Nome do funil</label><input class="finput" id="f-funil-nome" placeholder="Ex: D2C, B2B, Parcerias..."></div>
+  </div>
+  <button class="btn primary full" onclick="salvarFunil()">Salvar funil</button>
+  <div class="fb info" id="fb-funil"></div>
+</div>
+</div>
+
+<!-- MODAL NOVA ETAPA -->
+<div class="overlay" id="modal-etapa" style="display:none">
+<div class="modal">
+  <div class="modal-title">
+    <span id="modal-etapa-title">Nova etapa</span>
+    <button class="modal-close" onclick="fecharModal('modal-etapa')">✕</button>
+  </div>
+  <div class="fg fg1" style="margin-bottom:1rem">
+    <div><label class="flabel">Nome da etapa</label><input class="finput" id="f-etapa-nome" placeholder="Ex: Primeiro contato, Proposta enviada..."></div>
+  </div>
+  <button class="btn primary full" onclick="salvarEtapa()">Salvar etapa</button>
+  <div class="fb info" id="fb-etapa"></div>
+</div>
+</div>
+
+<!-- MODAL NOVO USUÁRIO -->
+<div class="overlay" id="modal-usuario" style="display:none">
+<div class="modal">
+  <div class="modal-title">
+    <span>Novo usuário</span>
+    <button class="modal-close" onclick="fecharModal('modal-usuario')">✕</button>
+  </div>
+  <div class="fg fg1" style="margin-bottom:1rem">
+    <div><label class="flabel">Nome</label><input class="finput" id="f-usuario-nome" placeholder="Ex: Lucas, Ana..."></div>
+  </div>
+  <button class="btn primary full" onclick="salvarUsuario()">Salvar</button>
+</div>
 </div>
 
 <script>
-const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxawuqkhN04J7TiX4qVyYzqRWRaExyGFAzdMs9CR6dc03Zfd19lkkvLYmmNarTFWbEFAA/exec';
+const API = 'https://script.google.com/macros/s/AKfycbxawuqkhN04J7TiX4qVyYzqRWRaExyGFAzdMs9CR6dc03Zfd19lkkvLYmmNarTFWbEFAA/exec';
 
-let dados = [];
-let filtroAtual = 'todos';
-let editandoId = null;
+// STATE
+let contatos = [];
+let config = {
+  funis: [
+    {id:'d2c', nome:'D2C', etapas:[{id:'novo',nome:'Novo contato'},{id:'atendimento',nome:'Atendimento'},{id:'pensando',nome:'Pensando'},{id:'fechado',nome:'Fechado'},{id:'perdido',nome:'Perdido'}]},
+    {id:'b2b', nome:'B2B', etapas:[{id:'b2b-novo',nome:'Prospecção'},{id:'b2b-proposta',nome:'Proposta'},{id:'b2b-negociacao',nome:'Negociação'},{id:'b2b-fechado',nome:'Fechado'},{id:'b2b-perdido',nome:'Perdido'}]}
+  ],
+  usuarios: [{id:'lucas',nome:'Lucas'},{id:'ana',nome:'Ana'}]
+};
+let funilAtivo = 'd2c';
+let filtroContatos = 'todos';
+let periodoInsights = '30';
+let filtroUsuarioInsights = 'todos';
+let editandoContatoId = null;
+let editandoFunilId = null;
+let editandoEtapaFunilId = null;
+let editandoEtapaId = null;
+let perdaContatoId = null;
+let motivoSelecionado = '';
+let dragId = null;
+let userAtivo = 'todos';
 
-const ET = {novo:'Novo contato',pissifa:'Pissifã',atendimento:'Em atendimento',pensando:'Pensando',fechado:'Pedido fechado',perdido:'Perdido'};
-const CANAL = {story:'Story',anuncio:'Anúncio',indicacao:'Indicação',atelie:'Ateliê',busca:'Google',outro:'Outro'};
+const CANAL_LABEL = {story:'Story',anuncio:'Anúncio',indicacao:'Indicação',atelie:'Ateliê',busca:'Google',outro:'Outro'};
 
-function syncStatus(s, msg){
-  const dot = document.getElementById('sync-dot');
-  const lbl = document.getElementById('sync-label');
-  dot.className = 'sync-dot' + (s==='loading'?' loading':s==='error'?' error':'');
-  lbl.textContent = msg;
-}
+// SYNC STATUS
+function ss(s,msg){ const d=document.getElementById('sdot'),t=document.getElementById('stxt'); d.className='sync-dot'+(s==='ld'?' ld':s==='er'?' er':''); t.textContent=msg; }
 
-async function api(payload){
-  const r = await fetch(SHEET_URL, {method:'POST', body:JSON.stringify(payload)});
+// API
+async function apiCall(payload){
+  const r = await fetch(API,{method:'POST',body:JSON.stringify(payload)});
   return r.json();
 }
 
-async function carregarDados(){
-  syncStatus('loading','Sincronizando...');
-  try {
-    const rows = await api({action:'getAll'});
-    if(!Array.isArray(rows)||rows.length<2){ dados=[]; }
-    else {
-      dados = rows.slice(1).filter(r=>r[0]).map(r=>({
-        id:String(r[0]), nome:String(r[1]||''), tel:String(r[2]||''),
-        et:String(r[3]||'novo'), canal:String(r[4]||'outro'),
-        valor:parseFloat(r[5])||0, produto:String(r[6]||''),
-        obs:String(r[7]||''), data:String(r[8]||new Date().toISOString()),
-        compras:parseInt(r[9])||0
+// LOAD CONFIG FROM LOCALSTORAGE
+function loadConfig(){
+  const s = localStorage.getItem('psn_config');
+  if(s){ try{ config = JSON.parse(s); }catch(e){} }
+}
+function saveConfig(){ localStorage.setItem('psn_config',JSON.stringify(config)); }
+
+async function sync(){
+  ss('ld','Sincronizando...');
+  try{
+    const rows = await apiCall({action:'getAll'});
+    if(!Array.isArray(rows)||rows.length<2){ contatos=[]; }
+    else{
+      contatos = rows.slice(1).filter(r=>r[0]).map(r=>({
+        id:String(r[0]),nome:String(r[1]||''),tel:String(r[2]||''),
+        et:String(r[3]||'novo'),canal:String(r[4]||'outro'),
+        valor:parseFloat(r[5])||0,produto:String(r[6]||''),
+        obs:String(r[7]||''),data:String(r[8]||new Date().toISOString()),
+        compras:parseInt(r[9])||0,
+        funil:String(r[10]||'d2c'),
+        etapa:String(r[11]||'novo'),
+        usuario:String(r[12]||''),
+        followup:String(r[13]||''),
+        motivo_perda:String(r[14]||'')
       }));
     }
-    syncStatus('ok', dados.length + ' contato' + (dados.length!==1?'s':''));
+    ss('ok',contatos.length+' contato'+(contatos.length!==1?'s':''));
     renderAll();
-  } catch(e){
-    syncStatus('error','Erro de conexão');
+  }catch(e){ ss('er','Erro de conexão'); }
+}
+
+async function saveContato(c){
+  return apiCall({action:'save',contato:{
+    id:c.id,nome:c.nome,tel:c.tel,et:c.et,canal:c.canal,
+    valor:c.valor,produto:c.produto,obs:c.obs,data:c.data,
+    compras:c.compras,funil:c.funil,etapa:c.etapa,
+    usuario:c.usuario,followup:c.followup,motivo_perda:c.motivo_perda||''
+  }});
+}
+
+async function delContato(id){
+  return apiCall({action:'delete',id});
+}
+
+// TABS
+function showTab(id){
+  const ids=['funil','contatos','insights','config'];
+  document.querySelectorAll('.tb').forEach((b,i)=>b.classList.toggle('active',ids[i]===id));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pane-'+id).classList.add('active');
+  if(id==='funil') renderFunil();
+  if(id==='contatos') renderContatos();
+  if(id==='insights') renderInsights();
+  if(id==='config') renderConfig();
+}
+
+// FUNIL
+function getFunil(id){ return config.funis.find(f=>f.id===id); }
+function getEtapa(funilId,etapaId){ const f=getFunil(funilId); return f?f.etapas.find(e=>e.id===etapaId):null; }
+
+function renderFunilTabs(){
+  const el = document.getElementById('funil-tabs');
+  el.innerHTML = config.funis.map(f=>`<button class="ft${funilAtivo===f.id?' active':''}" onclick="setFunilAtivo('${f.id}')">${f.nome}</button>`).join('');
+}
+
+function setFunilAtivo(id){ funilAtivo=id; renderFunil(); }
+
+function renderFunil(){
+  renderFunilTabs();
+  const funil = getFunil(funilAtivo);
+  if(!funil){ document.getElementById('funil-board').innerHTML='<div class="empty">Nenhum funil criado</div>'; return; }
+  const board = document.getElementById('funil-board');
+  board.innerHTML = '';
+  funil.etapas.forEach(etapa=>{
+    const cards = contatos.filter(c=>c.funil===funilAtivo && c.etapa===etapa.id && (userAtivo==='todos'||c.usuario===userAtivo));
+    const col = document.createElement('div');
+    col.className = 'funil-col';
+    col.dataset.etapa = etapa.id;
+    col.innerHTML = `
+      <div class="col-hdr">
+        <span class="col-hdr-nome">${etapa.nome}</span>
+        <div style="display:flex;gap:4px;align-items:center">
+          <span class="col-hdr-count">${cards.length}</span>
+          <button class="col-hdr-edit" onclick="abrirModalEditarEtapa('${funil.id}','${etapa.id}')">✎</button>
+        </div>
+      </div>
+      <div class="col-body" id="col-${etapa.id}" ondragover="onDragOver(event)" ondrop="onDrop(event,'${etapa.id}')">
+        ${cards.map(c=>renderKcard(c)).join('')}
+      </div>
+      <div class="col-add">
+        <button class="btn xs full" onclick="abrirModalContato(null,'${funil.id}','${etapa.id}')">+ Contato</button>
+      </div>
+    `;
+    board.appendChild(col);
+  });
+  // Botão adicionar coluna
+  const addCol = document.createElement('div');
+  addCol.className = 'add-col-btn';
+  addCol.onclick = ()=>abrirModalNovaEtapa(funil.id);
+  addCol.innerHTML = `<span style="font-size:20px">+</span><span>Nova etapa</span>`;
+  board.appendChild(addCol);
+}
+
+function renderKcard(c){
+  const vl = c.valor?`R$ ${Math.round(c.valor)}`:'';
+  const usr = c.usuario ? config.usuarios.find(u=>u.id===c.usuario) : null;
+  const fl = c.followup ? `<span style="color:${new Date(c.followup)<new Date()?'var(--VM)':'var(--AM)'}">📅 ${new Date(c.followup).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}</span>` : '';
+  return `<div class="kcard" draggable="true" id="kc-${c.id}" ondragstart="onDragStart(event,'${c.id}')" ondragend="onDragEnd(event)">
+    <div class="kcard-nome">${c.nome}</div>
+    <div class="kcard-meta">
+      ${vl?`<span>${vl}</span>`:''}
+      ${c.canal?`<span>${CANAL_LABEL[c.canal]||c.canal}</span>`:''}
+      ${usr?`<span>👤 ${usr.nome}</span>`:''}
+      ${fl}
+    </div>
+    ${c.motivo_perda?`<div style="font-size:10px;color:var(--VM);margin-top:2px">⚠ ${c.motivo_perda}</div>`:''}
+    <div class="kcard-actions">
+      <button class="btn xs" onclick="abrirModalContato('${c.id}')">Editar</button>
+      <button class="btn xs danger" onclick="confirmarDelete('${c.id}')">✕</button>
+    </div>
+  </div>`;
+}
+
+// DRAG & DROP
+function onDragStart(e,id){ dragId=id; e.currentTarget.classList.add('dragging'); }
+function onDragEnd(e){ e.currentTarget.classList.remove('dragging'); document.querySelectorAll('.funil-col').forEach(c=>c.classList.remove('drag-over')); }
+function onDragOver(e){ e.preventDefault(); e.currentTarget.closest('.funil-col').classList.add('drag-over'); }
+async function onDrop(e,etapaId){
+  e.preventDefault();
+  document.querySelectorAll('.funil-col').forEach(c=>c.classList.remove('drag-over'));
+  if(!dragId) return;
+  const c = contatos.find(x=>x.id===dragId);
+  if(!c) return;
+  // Se arrastar para "perdido", abrir modal de motivo
+  const etapa = getEtapa(funilAtivo,etapaId);
+  if(etapa && etapa.nome.toLowerCase().includes('perdido')){
+    perdaContatoId = dragId;
+    c.etapa = etapaId;
+    document.getElementById('modal-perda').style.display='flex';
+    dragId = null;
+    return;
   }
+  c.etapa = etapaId;
+  if(etapa && etapa.nome.toLowerCase().includes('fechado')) c.et='fechado';
+  ss('ld','Salvando...');
+  try{ await saveContato(c); await sync(); }catch(ex){ ss('er','Erro ao mover'); }
+  dragId = null;
+}
+
+// MODAL CONTATO
+function abrirModalContato(id=null, funilId=null, etapaId=null){
+  editandoContatoId = id;
+  const c = id ? contatos.find(x=>x.id===id) : null;
+  document.getElementById('modal-contato-title').textContent = id?'Editar contato':'Novo contato';
+  document.getElementById('btn-salvar-contato').textContent = id?'Salvar alterações':'Salvar contato';
+  // preencher funis
+  const fSelect = document.getElementById('f-funil');
+  fSelect.innerHTML = config.funis.map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');
+  fSelect.value = c?c.funil:(funilId||funilAtivo);
+  atualizarEtapasFunil();
+  // preencher usuarios
+  const uSelect = document.getElementById('f-user');
+  uSelect.innerHTML = '<option value="">Nenhum</option>'+config.usuarios.map(u=>`<option value="${u.id}">${u.nome}</option>`).join('');
+  if(c){
+    document.getElementById('f-nome').value=c.nome;
+    document.getElementById('f-tel').value=c.tel||'';
+    document.getElementById('f-funil').value=c.funil;
+    atualizarEtapasFunil();
+    document.getElementById('f-etapa').value=c.etapa;
+    document.getElementById('f-canal').value=c.canal||'story';
+    document.getElementById('f-valor').value=c.valor||'';
+    document.getElementById('f-followup').value=c.followup||'';
+    document.getElementById('f-produto').value=c.produto||'';
+    document.getElementById('f-obs').value=c.obs||'';
+    document.getElementById('f-user').value=c.usuario||'';
+  } else {
+    ['f-nome','f-tel','f-valor','f-followup','f-produto','f-obs'].forEach(x=>document.getElementById(x).value='');
+    document.getElementById('f-canal').value='story';
+    document.getElementById('f-user').value='';
+    if(etapaId){ setTimeout(()=>{ document.getElementById('f-etapa').value=etapaId; },50); }
+  }
+  document.getElementById('fb-contato').textContent='';
+  document.getElementById('modal-contato').style.display='flex';
+}
+
+function atualizarEtapasFunil(){
+  const fid = document.getElementById('f-funil').value;
+  const funil = getFunil(fid);
+  const eSelect = document.getElementById('f-etapa');
+  eSelect.innerHTML = funil ? funil.etapas.map(e=>`<option value="${e.id}">${e.nome}</option>`).join('') : '';
 }
 
 async function salvarContato(){
   const nome = document.getElementById('f-nome').value.trim();
-  if(!nome){ setFeedback('Nome é obrigatório','err'); return; }
-  setFeedback('Salvando...','info');
-  document.getElementById('btn-salvar').disabled = true;
-  const prev = editandoId ? dados.find(x=>x.id===editandoId)||{} : {};
+  if(!nome){ document.getElementById('fb-contato').className='fb er'; document.getElementById('fb-contato').textContent='Nome obrigatório'; return; }
+  document.getElementById('fb-contato').className='fb info'; document.getElementById('fb-contato').textContent='Salvando...';
+  document.getElementById('btn-salvar-contato').disabled=true;
+  const prev = editandoContatoId?contatos.find(x=>x.id===editandoContatoId)||{}:{};
+  const fid = document.getElementById('f-funil').value;
+  const eid = document.getElementById('f-etapa').value;
+  const etapa = getEtapa(fid,eid);
+  const isF = etapa&&etapa.nome.toLowerCase().includes('fechado');
+  const isP = etapa&&etapa.nome.toLowerCase().includes('perdido');
   const c = {
-    id: editandoId || String(Date.now()),
+    id:editandoContatoId||String(Date.now()),
     nome, tel:document.getElementById('f-tel').value.trim(),
-    et:document.getElementById('f-et').value,
+    et:isF?'fechado':isP?'perdido':'atendimento',
     canal:document.getElementById('f-canal').value,
     valor:parseFloat(document.getElementById('f-valor').value)||0,
     produto:document.getElementById('f-produto').value.trim(),
     obs:document.getElementById('f-obs').value.trim(),
-    data: prev.data || new Date().toISOString(),
-    compras: prev.compras || 0
+    data:prev.data||new Date().toISOString(),
+    compras:prev.compras||0,
+    funil:fid,etapa:eid,
+    usuario:document.getElementById('f-user').value,
+    followup:document.getElementById('f-followup').value,
+    motivo_perda:prev.motivo_perda||''
   };
-  try {
-    await api({action:'save', contato:c});
-    setFeedback('Salvo!','ok');
-    limparForm();
-    await carregarDados();
-    showTab('contatos');
-  } catch(e){ setFeedback('Erro ao salvar. Tente novamente.','err'); }
-  document.getElementById('btn-salvar').disabled = false;
+  try{
+    await saveContato(c);
+    document.getElementById('fb-contato').className='fb ok'; document.getElementById('fb-contato').textContent='Salvo!';
+    fecharModal('modal-contato');
+    await sync();
+  }catch(ex){ document.getElementById('fb-contato').className='fb er'; document.getElementById('fb-contato').textContent='Erro ao salvar'; }
+  document.getElementById('btn-salvar-contato').disabled=false;
 }
 
-async function deletar(id){
+// MODAL PERDA
+function selecionarMotivo(btn,motivo){
+  document.querySelectorAll('.motivo-chip').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  motivoSelecionado = motivo;
+}
+
+async function confirmarPerda(){
+  const outro = document.getElementById('f-motivo-outro').value.trim();
+  const motivo = outro || motivoSelecionado || 'Não informado';
+  const c = contatos.find(x=>x.id===perdaContatoId);
+  if(!c){ fecharModal('modal-perda'); return; }
+  c.motivo_perda = motivo;
+  c.et = 'perdido';
+  ss('ld','Salvando...');
+  try{ await saveContato(c); await sync(); }catch(ex){ ss('er','Erro'); }
+  fecharModal('modal-perda');
+  motivoSelecionado='';
+  document.getElementById('f-motivo-outro').value='';
+  document.querySelectorAll('.motivo-chip').forEach(b=>b.classList.remove('sel'));
+  perdaContatoId=null;
+}
+
+// DELETE
+async function confirmarDelete(id){
   if(!confirm('Remover este contato?')) return;
-  syncStatus('loading','Removendo...');
-  try { await api({action:'delete',id}); await carregarDados(); }
-  catch(e){ syncStatus('error','Erro ao remover'); }
+  ss('ld','Removendo...');
+  try{ await delContato(id); await sync(); }catch(ex){ ss('er','Erro'); }
 }
 
-async function mudarEt(id, et){
-  const c = dados.find(x=>x.id===id);
-  if(!c) return;
-  c.et = et;
-  syncStatus('loading','Atualizando...');
-  try { await api({action:'save',contato:c}); await carregarDados(); }
-  catch(e){ syncStatus('error','Erro ao atualizar'); }
+// FUNIS
+function abrirModalNovoFunil(id=null){
+  editandoFunilId=id;
+  const f = id?getFunil(id):null;
+  document.getElementById('modal-funil-title').textContent=id?'Editar funil':'Novo funil';
+  document.getElementById('f-funil-nome').value=f?f.nome:'';
+  document.getElementById('fb-funil').textContent='';
+  document.getElementById('modal-funil').style.display='flex';
 }
 
-function editarContato(id){
-  const c = dados.find(x=>x.id===id);
-  if(!c) return;
-  editandoId = id;
-  showTab('novo');
-  document.getElementById('f-nome').value = c.nome;
-  document.getElementById('f-tel').value = c.tel||'';
-  document.getElementById('f-et').value = c.et;
-  document.getElementById('f-canal').value = c.canal||'story';
-  document.getElementById('f-valor').value = c.valor||'';
-  document.getElementById('f-produto').value = c.produto||'';
-  document.getElementById('f-obs').value = c.obs||'';
-  document.getElementById('form-title').textContent = 'Editar contato';
-  document.getElementById('btn-salvar').textContent = 'Salvar alterações';
-  const b = document.getElementById('edit-banner');
-  b.style.display = 'flex';
-  document.getElementById('edit-nome').textContent = c.nome;
+function salvarFunil(){
+  const nome = document.getElementById('f-funil-nome').value.trim();
+  if(!nome){ document.getElementById('fb-funil').textContent='Nome obrigatório'; return; }
+  if(editandoFunilId){
+    const f=getFunil(editandoFunilId); if(f) f.nome=nome;
+  } else {
+    const id='f'+Date.now();
+    config.funis.push({id,nome,etapas:[{id:'e'+Date.now(),nome:'Novo contato'},{id:'e'+(Date.now()+1),nome:'Em andamento'},{id:'e'+(Date.now()+2),nome:'Fechado'},{id:'e'+(Date.now()+3),nome:'Perdido'}]});
+    funilAtivo=id;
+  }
+  saveConfig();
+  fecharModal('modal-funil');
+  renderAll();
 }
 
-function cancelarEdit(){
-  editandoId = null;
-  limparForm();
-  document.getElementById('form-title').textContent = 'Novo contato';
-  document.getElementById('btn-salvar').textContent = 'Salvar contato';
-  document.getElementById('edit-banner').style.display = 'none';
+// ETAPAS
+function abrirModalNovaEtapa(funilId){
+  editandoEtapaFunilId=funilId; editandoEtapaId=null;
+  document.getElementById('modal-etapa-title').textContent='Nova etapa';
+  document.getElementById('f-etapa-nome').value='';
+  document.getElementById('fb-etapa').textContent='';
+  document.getElementById('modal-etapa').style.display='flex';
 }
 
-function limparForm(){
-  ['f-nome','f-tel','f-valor','f-produto','f-obs'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('f-et').value='novo';
-  document.getElementById('f-canal').value='story';
-  setFeedback('','');
+function abrirModalEditarEtapa(funilId,etapaId){
+  editandoEtapaFunilId=funilId; editandoEtapaId=etapaId;
+  const e=getEtapa(funilId,etapaId);
+  document.getElementById('modal-etapa-title').textContent='Editar etapa';
+  document.getElementById('f-etapa-nome').value=e?e.nome:'';
+  document.getElementById('fb-etapa').textContent='';
+  document.getElementById('modal-etapa').style.display='flex';
 }
 
-function setFeedback(msg,type){ const el=document.getElementById('feedback'); el.textContent=msg; el.className='feedback '+type; }
-
-function badge(et){ return `<span class="badge b-${et}">${ET[et]||et}</span>`; }
-function fmtData(iso){ try{return new Date(iso).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});}catch(e){return '';} }
-
-function setFiltro(btn,et){
-  document.querySelectorAll('.filtro').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active'); filtroAtual=et; renderContatos();
+function salvarEtapa(){
+  const nome=document.getElementById('f-etapa-nome').value.trim();
+  if(!nome){ document.getElementById('fb-etapa').textContent='Nome obrigatório'; return; }
+  const funil=getFunil(editandoEtapaFunilId);
+  if(!funil){ fecharModal('modal-etapa'); return; }
+  if(editandoEtapaId){
+    const e=funil.etapas.find(x=>x.id===editandoEtapaId); if(e) e.nome=nome;
+  } else {
+    funil.etapas.push({id:'e'+Date.now(),nome});
+  }
+  saveConfig();
+  fecharModal('modal-etapa');
+  renderFunil();
 }
 
-function showTab(id){
-  const ids=['painel','contatos','kanban','novo'];
-  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',ids[i]===id));
-  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
-  document.getElementById('pane-'+id).classList.add('active');
-  if(id==='painel') renderPainel();
-  if(id==='contatos') renderContatos();
-  if(id==='kanban') renderKanban();
+// USUARIOS
+function abrirModalNovoUsuario(){ document.getElementById('f-usuario-nome').value=''; document.getElementById('modal-usuario').style.display='flex'; }
+
+function salvarUsuario(){
+  const nome=document.getElementById('f-usuario-nome').value.trim();
+  if(!nome) return;
+  config.usuarios.push({id:'u'+Date.now(),nome});
+  saveConfig();
+  fecharModal('modal-usuario');
+  renderConfig();
+  renderUserBtns();
 }
+
+// CONTATOS LIST
+function setFiltroC(btn,f){ document.querySelectorAll('#filtros-contatos .filtro').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); filtroContatos=f; renderContatos(); }
 
 function renderContatos(){
-  const busca = (document.getElementById('busca')||{value:''}).value.toLowerCase();
-  const lista = dados.filter(c=>(filtroAtual==='todos'||c.et===filtroAtual)&&(!busca||c.nome.toLowerCase().includes(busca)));
-  const el = document.getElementById('lista-contatos');
-  if(!lista.length){ el.innerHTML=`<div class="empty">${dados.length?'Nenhum contato nessa etapa':'Nenhum contato ainda. Use + Novo para começar.'}</div>`; return; }
-  el.innerHTML = lista.map(c=>`
-    <div class="card">
-      <div class="card-top">
+  const busca=(document.getElementById('busca')||{value:''}).value.toLowerCase();
+  const funil=getFunil(funilAtivo);
+  // Rebuild filtros
+  const fc=document.getElementById('filtros-contatos');
+  fc.innerHTML='<button class="filtro'+(filtroContatos==='todos'?' active':'')+'" onclick="setFiltroC(this,\'todos\')">Todos</button>';
+  if(funil) funil.etapas.forEach(e=>{ fc.innerHTML+=`<button class="filtro${filtroContatos===e.id?' active':''}" onclick="setFiltroC(this,'${e.id}')">${e.nome}</button>`; });
+  const lista=contatos.filter(c=>{
+    const mf=filtroContatos==='todos'||c.etapa===filtroContatos;
+    const mb=!busca||c.nome.toLowerCase().includes(busca);
+    const mu=userAtivo==='todos'||c.usuario===userAtivo;
+    return mf&&mb&&mu;
+  });
+  const el=document.getElementById('lista-contatos');
+  if(!lista.length){ el.innerHTML=`<div class="empty">${contatos.length?'Nenhum contato encontrado':'Nenhum contato ainda. Use o funil para adicionar.'}</div>`; return; }
+  el.innerHTML=lista.map(c=>{
+    const funil=getFunil(c.funil);
+    const etapa=funil?funil.etapas.find(e=>e.id===c.etapa):null;
+    const usr=config.usuarios.find(u=>u.id===c.usuario);
+    return `<div class="ccard">
+      <div class="ccard-top">
         <div>
-          <div class="card-nome">${c.nome}</div>
-          <div class="card-badges">${badge(c.et)}<span class="b-canal">${CANAL[c.canal]||c.canal}</span>${c.valor?`<span class="b-canal">R$ ${Math.round(c.valor)}</span>`:''}</div>
+          <div class="ccard-nome">${c.nome}</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px">
+            ${funil?`<span class="bdg-canal">${funil.nome}</span>`:''}
+            ${etapa?`<span class="bdg-canal">${etapa.nome}</span>`:''}
+            <span class="bdg-canal">${CANAL_LABEL[c.canal]||c.canal}</span>
+            ${c.valor?`<span class="bdg-canal">R$ ${Math.round(c.valor)}</span>`:''}
+            ${usr?`<span class="bdg-canal">👤 ${usr.nome}</span>`:''}
+          </div>
         </div>
-        <div class="card-acoes">
-          <button class="ca-btn" onclick="editarContato('${c.id}')">Editar</button>
-          <button class="ca-btn danger" onclick="deletar('${c.id}')">✕</button>
+        <div style="display:flex;gap:4px">
+          <button class="btn xs" onclick="abrirModalContato('${c.id}')">Editar</button>
+          <button class="btn xs danger" onclick="confirmarDelete('${c.id}')">✕</button>
         </div>
       </div>
-      <div class="card-info">
-        ${c.tel?`📞 ${c.tel} &nbsp;`:''}${c.produto?`👕 ${c.produto} &nbsp;`:''}📅 ${fmtData(c.data)}
-        ${c.obs?`<div style="margin-top:4px;font-style:italic">"${c.obs}"</div>`:''}
+      <div class="ccard-info">
+        ${c.tel?`📞 ${c.tel} &nbsp;`:''}
+        ${c.produto?`👕 ${c.produto} &nbsp;`:''}
+        📅 ${fmtData(c.data)}
+        ${c.followup?`&nbsp; 🔔 ${fmtData(c.followup)}`:''}
+        ${c.motivo_perda?`<div style="color:var(--VM);margin-top:2px">⚠ Perda: ${c.motivo_perda}</div>`:''}
+        ${c.obs?`<div style="font-style:italic;margin-top:2px">"${c.obs}"</div>`:''}
       </div>
-      <div class="mover-label">Mover para:</div>
-      <div class="mover-btns">${Object.keys(ET).filter(e=>e!==c.et).map(e=>`<button class="mv-btn" onclick="mudarEt('${c.id}','${e}')">${ET[e]}</button>`).join('')}</div>
-    </div>
-  `).join('');
-}
-
-function renderKanban(){
-  const el = document.getElementById('kanban');
-  el.innerHTML = Object.keys(ET).map(et=>{
-    const lista = dados.filter(c=>c.et===et);
-    return `<div class="kcol">
-      <div class="kcol-h"><span>${ET[et]}</span><span class="kcol-count">${lista.length}</span></div>
-      ${lista.length?lista.map(c=>`<div class="kcard" onclick="editarContato('${c.id}')"><div class="kcard-nome">${c.nome}</div><div class="kcard-info">${CANAL[c.canal]||''}${c.valor?` · R$${Math.round(c.valor)}`:''}</div></div>`).join(''):'<div style="font-size:11px;color:var(--G3);text-align:center;padding:.5rem">Vazio</div>'}
     </div>`;
   }).join('');
 }
 
-function renderPainel(){
-  const total=dados.length, novos=dados.filter(c=>c.et==='novo').length,
-    pissifas=dados.filter(c=>c.et==='pissifa').length,
-    atend=dados.filter(c=>c.et==='atendimento').length,
-    pensando=dados.filter(c=>c.et==='pensando').length,
-    fechados=dados.filter(c=>c.et==='fechado').length,
-    perdidos=dados.filter(c=>c.et==='perdido').length,
-    txConv=total>0?Math.round((fechados/total)*100):0,
-    txPerda=total>0?Math.round((perdidos/total)*100):0,
-    receita=dados.filter(c=>c.et==='fechado').reduce((a,b)=>a+(b.valor||0),0);
+// INSIGHTS
+function setPeriodo(btn,p){ document.querySelectorAll('.periodo-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); periodoInsights=p; renderInsights(); }
 
-  document.getElementById('metricas').innerHTML = [
-    [total,'Total',''],
-    [novos,'Novos',''],
-    [pissifas,'Pissifãs',''],
-    [fechados,'Fechados',''],
-    [txConv+'%','Conversão',txConv>=15?'v':txConv>=8?'a':'r'],
-    [txPerda+'%','Perda',txPerda<=30?'v':'r'],
-    ['R$'+Math.round(receita).toLocaleString('pt-BR'),'Receita',''],
-    [atend+pensando,'Em aberto','a'],
-  ].map(([n,l,s])=>`<div class="mc"><div class="mc-n">${n}</div><div class="mc-l">${l}</div>${s?`<div class="mc-s ${s}">${s==='v'?'Boa':'s'==='a'?'Atenção':'Baixa'}</div>`:''}</div>`).join('');
-
-  const funil=[
-    {l:'Total',v:total,c:'#64A6AC'},{l:'Atendimento',v:atend,c:'#D17543'},
-    {l:'Pensando',v:pensando,c:'#7B5EA7'},{l:'Fechado',v:fechados,c:'#4CAF50'},
-    {l:'Perdido',v:perdidos,c:'#E24B4A'}
-  ];
-  const mxF=Math.max(1,...funil.map(f=>f.v));
-  document.getElementById('funil').innerHTML=funil.map(f=>`<div class="barra-bloco"><div class="barra-row"><span>${f.l}</span><span>${f.v}</span></div><div class="barra"><div class="barra-fill" style="width:${Math.round((f.v/mxF)*100)}%;background:${f.c}"></div></div></div>`).join('');
-
-  const cc={};
-  dados.forEach(c=>{const k=c.canal||'outro';cc[k]=(cc[k]||0)+1;});
-  const mxC=Math.max(1,...Object.values(cc));
-  document.getElementById('canais').innerHTML=Object.entries(cc).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<div class="barra-bloco"><div class="barra-row"><span>${CANAL[k]||k}</span><span>${n}</span></div><div class="barra"><div class="barra-fill" style="width:${Math.round((n/mxC)*100)}%;background:#64A6AC"></div></div></div>`).join('')||'<div class="empty">Sem dados ainda</div>';
-
-  document.getElementById('ultimos').innerHTML=dados.slice(0,5).map(c=>`<div class="ultimo-item"><div>${c.nome} <span style="margin-left:6px">${badge(c.et)}</span></div><span style="font-size:11px;color:var(--G3)">${fmtData(c.data)}</span></div>`).join('')||'<div class="empty">Nenhum contato ainda</div>';
+function filtrarPorPeriodo(lista){
+  if(periodoInsights==='0') return lista;
+  const d=new Date(); d.setDate(d.getDate()-parseInt(periodoInsights));
+  return lista.filter(c=>new Date(c.data)>=d);
 }
 
-function renderAll(){ renderPainel(); renderContatos(); renderKanban(); }
-carregarDados();
+function renderInsights(){
+  filtroUsuarioInsights=document.getElementById('filtro-usuario')||{value:'todos'};
+  filtroUsuarioInsights=document.getElementById('filtro-usuario').value;
+  let lista=filtrarPorPeriodo(contatos);
+  if(filtroUsuarioInsights!=='todos') lista=lista.filter(c=>c.usuario===filtroUsuarioInsights);
+  const total=lista.length;
+  const fechados=lista.filter(c=>c.etapa&&getEtapa(c.funil,c.etapa)&&getEtapa(c.funil,c.etapa).nome.toLowerCase().includes('fechado'));
+  const perdidos=lista.filter(c=>c.etapa&&getEtapa(c.funil,c.etapa)&&getEtapa(c.funil,c.etapa).nome.toLowerCase().includes('perdido'));
+  const receita=fechados.reduce((a,b)=>a+(b.valor||0),0);
+  const txConv=total>0?Math.round((fechados.length/total)*100):0;
+  const txPerda=total>0?Math.round((perdidos.length/total)*100):0;
+  const tkMedio=fechados.length>0?Math.round(receita/fechados.length):0;
+
+  // Motivos de perda
+  const motivosCount={};
+  perdidos.forEach(c=>{ if(c.motivo_perda){ motivosCount[c.motivo_perda]=(motivosCount[c.motivo_perda]||0)+1; } });
+  const topMotivo=Object.entries(motivosCount).sort((a,b)=>b[1]-a[1]);
+
+  // Por canal
+  const canaisCount={};
+  lista.forEach(c=>{ const k=c.canal||'outro'; canaisCount[k]=(canaisCount[k]||0)+1; });
+
+  // Por funil
+  const funisCount={};
+  lista.forEach(c=>{ const f=getFunil(c.funil); if(f){ funisCount[f.nome]=(funisCount[f.nome]||0)+1; } });
+
+  const maxM=Math.max(1,...Object.values(motivosCount));
+  const maxC=Math.max(1,...Object.values(canaisCount));
+
+  document.getElementById('insights-content').innerHTML=`
+    <div class="insight-grid">
+      <div class="ig-card"><div class="ig-n">${total}</div><div class="ig-l">Total contatos</div></div>
+      <div class="ig-card"><div class="ig-n">${fechados.length}</div><div class="ig-l">Fechados</div></div>
+      <div class="ig-card"><div class="ig-n">${perdidos.length}</div><div class="ig-l">Perdidos</div></div>
+      <div class="ig-card"><div class="ig-n">${txConv}%</div><div class="ig-l">Taxa de conversão</div><div class="ig-s" style="color:${txConv>=15?'var(--VD)':txConv>=8?'var(--AM)':'var(--VM)'}">${txConv>=15?'Boa':txConv>=8?'Regular':'Baixa'}</div></div>
+      <div class="ig-card"><div class="ig-n">${txPerda}%</div><div class="ig-l">Taxa de perda</div><div class="ig-s" style="color:${txPerda<=30?'var(--VD)':'var(--VM)'}">${txPerda<=30?'Ok':'Alta'}</div></div>
+      <div class="ig-card"><div class="ig-n">R$${Math.round(receita).toLocaleString('pt-BR')}</div><div class="ig-l">Receita fechada</div></div>
+      <div class="ig-card"><div class="ig-n">R$${tkMedio.toLocaleString('pt-BR')}</div><div class="ig-l">Ticket médio</div></div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="slbl">Principais motivos de perda</div>
+    ${topMotivo.length?`
+      ${topMotivo.slice(0,6).map(([m,n])=>`
+        <div class="bb">
+          <div class="bb-row"><span>${m}</span><span>${n}</span></div>
+          <div class="bar"><div class="bar-f" style="width:${Math.round((n/maxM)*100)}%;background:#E24B4A"></div></div>
+        </div>
+      `).join('')}
+      ${topMotivo[0]?`<div style="background:var(--VM2);border-radius:6px;padding:.75rem 1rem;font-size:12px;color:var(--VM);margin-top:.5rem">⚠ Principal motivo de perda: <strong>${topMotivo[0][0]}</strong> (${topMotivo[0][1]} vez${topMotivo[0][1]>1?'es':''})</div>`:''}
+    `:`<div class="empty">Nenhuma perda registrada no período</div>`}
+
+    <div class="divider"></div>
+    <div class="slbl">Por canal de origem</div>
+    ${Object.entries(canaisCount).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`
+      <div class="bb">
+        <div class="bb-row"><span>${CANAL_LABEL[k]||k}</span><span>${n}</span></div>
+        <div class="bar"><div class="bar-f" style="width:${Math.round((n/maxC)*100)}%;background:var(--A)"></div></div>
+      </div>
+    `).join('')||'<div class="empty">Sem dados</div>'}
+
+    <div class="divider"></div>
+    <div class="slbl">Por funil</div>
+    ${Object.entries(funisCount).map(([nome,n])=>`
+      <div class="bb">
+        <div class="bb-row"><span>${nome}</span><span>${n}</span></div>
+        <div class="bar"><div class="bar-f" style="width:${Math.round((n/Math.max(1,...Object.values(funisCount))))*100}%;background:var(--L)"></div></div>
+      </div>
+    `).join('')||'<div class="empty">Sem dados</div>'}
+  `;
+}
+
+// CONFIG
+function renderConfig(){
+  const fc=document.getElementById('config-funis');
+  fc.innerHTML=config.funis.map(f=>`
+    <div class="fcard" style="margin-bottom:.75rem">
+      <div class="ftitle">
+        <span>${f.nome}</span>
+        <div style="display:flex;gap:6px">
+          <button class="btn sm" onclick="abrirModalNovoFunil('${f.id}')">Renomear</button>
+          <button class="btn sm danger" onclick="deletarFunil('${f.id}')">Apagar</button>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--G3);margin-bottom:.75rem">${f.etapas.length} etapas</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${f.etapas.map(e=>`
+          <div style="display:flex;align-items:center;gap:4px;background:var(--G);border-radius:6px;padding:4px 8px">
+            <span style="font-size:12px;color:var(--K)">${e.nome}</span>
+            <button class="btn xs" onclick="abrirModalEditarEtapa('${f.id}','${e.id}')" style="padding:1px 5px">✎</button>
+            <button class="btn xs danger" onclick="deletarEtapa('${f.id}','${e.id}')" style="padding:1px 5px">✕</button>
+          </div>
+        `).join('')}
+        <button class="btn xs" onclick="abrirModalNovaEtapa('${f.id}')">+ Etapa</button>
+      </div>
+    </div>
+  `).join('');
+
+  const uc=document.getElementById('config-usuarios');
+  uc.innerHTML=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.75rem">
+    ${config.usuarios.map(u=>`
+      <div style="display:flex;align-items:center;gap:6px;background:var(--G);border-radius:20px;padding:5px 12px">
+        <span style="font-size:12px;color:var(--K)">👤 ${u.nome}</span>
+        <button class="btn xs danger" onclick="deletarUsuario('${u.id}')" style="padding:1px 5px;border-radius:50%">✕</button>
+      </div>
+    `).join('')}
+  </div>`;
+}
+
+function deletarFunil(id){
+  if(!confirm('Apagar este funil? Os contatos associados ficarão sem funil.')) return;
+  config.funis=config.funis.filter(f=>f.id!==id);
+  if(funilAtivo===id && config.funis.length) funilAtivo=config.funis[0].id;
+  saveConfig(); renderAll();
+}
+
+function deletarEtapa(funilId,etapaId){
+  if(!confirm('Apagar esta etapa?')) return;
+  const f=getFunil(funilId); if(!f) return;
+  f.etapas=f.etapas.filter(e=>e.id!==etapaId);
+  saveConfig(); renderAll();
+}
+
+function deletarUsuario(id){
+  if(!confirm('Remover este usuário?')) return;
+  config.usuarios=config.usuarios.filter(u=>u.id!==id);
+  saveConfig(); renderConfig(); renderUserBtns();
+}
+
+// USER BTNS (header)
+function renderUserBtns(){
+  const el=document.getElementById('user-btns');
+  el.innerHTML=`<button class="hdr-user${userAtivo==='todos'?' active':''}" onclick="setUserAtivo('todos')">Todos</button>`
+    +config.usuarios.map(u=>`<button class="hdr-user${userAtivo===u.id?' active':''}" onclick="setUserAtivo('${u.id}')">${u.nome}</button>`).join('');
+  // Atualizar select insights
+  const sel=document.getElementById('filtro-usuario');
+  if(sel){
+    sel.innerHTML='<option value="todos">Todos os usuários</option>'+config.usuarios.map(u=>`<option value="${u.id}">${u.nome}</option>`).join('');
+  }
+}
+
+function setUserAtivo(id){ userAtivo=id; renderUserBtns(); renderAll(); }
+
+// MODAL
+function fecharModal(id){ document.getElementById(id).style.display='none'; }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.querySelectorAll('.overlay').forEach(o=>o.style.display='none'); });
+
+// UTILS
+function fmtData(iso){ try{return new Date(iso).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});}catch(e){return '';} }
+
+function renderAll(){
+  renderFunil();
+  renderContatos();
+  renderUserBtns();
+}
+
+// INIT
+loadConfig();
+renderUserBtns();
+sync();
 </script>
 </body>
 </html>
