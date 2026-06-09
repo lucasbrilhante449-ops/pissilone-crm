@@ -7,10 +7,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,700;0,900;1,900&display=swap" rel="stylesheet">
 <style>
 :root{
-  --L:#D17543;--L2:#A85528;--L3:#FDF0E8;--L4:#F5C4A8;
+  --L:#D17543;--L2:#A85528;--L3:#FDF0E8;
   --A:#64A6AC;--A2:#3D7A80;--A3:#E8F4F5;
-  --Y:#F2E618;--Y2:#C4BA00;--Y3:#FEFCE0;
-  --K:#1A1208;--K2:#3D2E1A;--K3:#6B4226;
+  --K:#1A1208;--K2:#3D2E1A;
   --W:#FDFAF5;--G:#F0EDE6;--G2:#DDD8D0;--G3:#8A7A6A;
   --VD:#27500A;--VD2:#EAF3DE;
   --RX:#3C3489;--RX2:#EEEDFE;
@@ -20,50 +19,47 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--G);color:var(--K);font-family:'Barlow',sans-serif;min-height:100vh;font-size:14px}
 
-/* HEADER */
-.hdr{background:var(--K);padding:.75rem 1.25rem;display:flex;align-items:center;gap:1rem;position:sticky;top:0;z-index:200}
+.hdr{background:var(--K);padding:.75rem 1.25rem;display:flex;align-items:center;gap:.75rem;position:sticky;top:0;z-index:200;flex-wrap:wrap}
 .hdr-logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:1.3rem;color:var(--W);letter-spacing:-.01em;white-space:nowrap}
 .hdr-logo span{color:var(--L)}
-.hdr-right{display:flex;align-items:center;gap:8px;margin-left:auto}
-.sync-dot{width:7px;height:7px;border-radius:50%;background:#4CAF50;flex-shrink:0}
-.sync-dot.ld{background:var(--Y);animation:pulse 1s infinite}
-.sync-dot.er{background:#E24B4A}
+.hdr-right{display:flex;align-items:center;gap:6px;margin-left:auto;flex-wrap:wrap}
+.sdot{width:7px;height:7px;border-radius:50%;background:#4CAF50;flex-shrink:0}
+.sdot.ld{background:#F2E618;animation:pulse 1s infinite}
+.sdot.er{background:#E24B4A}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.sync-txt{font-size:11px;color:rgba(255,255,255,.4)}
-.hdr-user{font-size:12px;padding:4px 12px;cursor:pointer;border-radius:20px;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.6);transition:.15s}
-.hdr-user:hover,.hdr-user.active{background:rgba(255,255,255,.1);color:var(--W)}
-.hdr-sync{font-size:11px;padding:4px 10px;cursor:pointer;border-radius:4px;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.4)}
-.hdr-sync:hover{color:var(--W);background:rgba(255,255,255,.08)}
+.stxt{font-size:11px;color:rgba(255,255,255,.4)}
+.hdr-ubtn{font-size:11px;padding:4px 12px;cursor:pointer;border-radius:20px;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.5);transition:.15s;font-family:'Barlow',sans-serif}
+.hdr-ubtn:hover,.hdr-ubtn.on{background:rgba(255,255,255,.12);color:var(--W)}
+.hdr-sync{font-size:11px;padding:4px 8px;cursor:pointer;border-radius:4px;border:1px solid rgba(255,255,255,.12);background:transparent;color:rgba(255,255,255,.35);font-size:14px}
+.hdr-sync:hover{color:var(--W)}
 
-/* TABS */
 .tabs-bar{background:var(--K);border-top:1px solid rgba(255,255,255,.06);padding:0 1.25rem}
 .tabs{display:flex;gap:0;overflow-x:auto}
 .tb{font-size:12px;font-weight:500;padding:9px 16px;cursor:pointer;border:none;background:none;color:rgba(255,255,255,.35);border-bottom:2px solid transparent;white-space:nowrap;transition:.15s;font-family:'Barlow',sans-serif}
 .tb.active{color:var(--L);border-bottom-color:var(--L)}
 .tb:hover:not(.active){color:rgba(255,255,255,.7)}
 
-/* CONTENT */
-.cnt{padding:1rem;max-width:1100px;margin:0 auto}
+.cnt{padding:1rem;max-width:1200px;margin:0 auto}
 .pane{display:none}.pane.active{display:block}
 
 /* BUTTONS */
-.btn{font-size:12px;padding:7px 14px;cursor:pointer;border-radius:6px;border:1px solid var(--G2);background:var(--W);color:var(--K);font-family:'Barlow',sans-serif;transition:.15s;font-weight:500;display:inline-flex;align-items:center;gap:5px}
+.btn{font-size:12px;padding:6px 13px;cursor:pointer;border-radius:6px;border:1px solid var(--G2);background:var(--W);color:var(--K);font-family:'Barlow',sans-serif;transition:.15s;font-weight:500;display:inline-flex;align-items:center;gap:4px}
 .btn:hover{background:var(--G)}
 .btn.primary{background:var(--K);color:var(--W);border-color:var(--K)}
 .btn.primary:hover{background:var(--K2)}
 .btn.danger{border-color:var(--VM2);color:var(--VM)}
 .btn.danger:hover{background:var(--VM2)}
 .btn.sm{font-size:11px;padding:4px 10px}
-.btn.xs{font-size:10px;padding:3px 8px}
+.btn.xs{font-size:10px;padding:2px 8px}
 .btn.full{width:100%;justify-content:center}
 .btn.laranja{background:var(--L);color:var(--W);border-color:var(--L)}
 .btn.laranja:hover{background:var(--L2)}
 
 /* FORMS */
-.flabel{font-size:11px;color:var(--G3);display:block;margin-bottom:3px;font-weight:500;text-transform:uppercase;letter-spacing:.05em}
-.finput{width:100%;padding:7px 10px;font-size:13px;border:1px solid var(--G2);border-radius:6px;background:var(--W);color:var(--K);font-family:'Barlow',sans-serif;outline:none;transition:.15s}
-.finput:focus{border-color:var(--L)}
-textarea.finput{resize:vertical;min-height:60px}
+.flbl{font-size:11px;color:var(--G3);display:block;margin-bottom:3px;font-weight:500;text-transform:uppercase;letter-spacing:.05em}
+.fi{width:100%;padding:7px 10px;font-size:13px;border:1px solid var(--G2);border-radius:6px;background:var(--W);color:var(--K);font-family:'Barlow',sans-serif;outline:none;transition:.15s}
+.fi:focus{border-color:var(--L)}
+textarea.fi{resize:vertical;min-height:60px}
 .fg{display:grid;gap:10px;margin-bottom:10px}
 .fg2{grid-template-columns:1fr 1fr}
 .fg3{grid-template-columns:1fr 1fr 1fr}
@@ -72,122 +68,108 @@ textarea.finput{resize:vertical;min-height:60px}
 .ftitle{font-size:13px;font-weight:600;color:var(--K);margin-bottom:1rem;padding-bottom:.625rem;border-bottom:1px solid var(--G2);display:flex;align-items:center;justify-content:space-between}
 
 /* BADGES */
-.bdg{display:inline-flex;align-items:center;font-size:11px;font-weight:500;padding:2px 9px;border-radius:20px;white-space:nowrap}
-.bdg-novo{background:var(--A3);color:var(--A2)}
-.bdg-pissifa{background:var(--VD2);color:var(--VD)}
-.bdg-atendimento{background:var(--AM2);color:var(--AM)}
-.bdg-pensando{background:var(--RX2);color:var(--RX)}
-.bdg-fechado{background:var(--VD2);color:var(--VD)}
-.bdg-perdido{background:var(--VM2);color:var(--VM)}
-.bdg-canal{font-size:10px;padding:2px 7px;border-radius:20px;background:var(--G);color:var(--G3);border:1px solid var(--G2)}
+.bdg{display:inline-flex;align-items:center;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.bdg-canal{background:var(--G);color:var(--G3);border:1px solid var(--G2)}
 
-/* SEÇÃO */
-.slbl{font-size:10px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem;margin-top:1.25rem}
-.slbl:first-child{margin-top:0}
-.divider{height:1px;background:var(--G2);margin:1.25rem 0}
+/* DIVIDER / LABEL */
+.slbl{font-size:10px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.1em;margin:.875rem 0 .5rem}
+.divider{height:1px;background:var(--G2);margin:1rem 0}
+.empty{text-align:center;padding:2rem 1rem;color:var(--G3);font-size:13px}
 
-/* EMPTY */
-.empty{text-align:center;padding:2.5rem 1rem;color:var(--G3);font-size:13px}
-
-/* METRICS CARDS */
-.mg{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:1.25rem}
+/* METRICS */
+.mg{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:1rem}
 .mc{background:var(--W);border:1px solid var(--G2);border-radius:8px;padding:.875rem;text-align:center}
 .mc-n{font-size:22px;font-weight:500;color:var(--K);line-height:1}
-.mc-l{font-size:11px;color:var(--G3);margin-top:3px;line-height:1.3}
+.mc-l{font-size:11px;color:var(--G3);margin-top:3px}
 .mc-s{font-size:11px;font-weight:500;margin-top:2px}
 .mc-s.v{color:var(--VD)}.mc-s.a{color:var(--AM)}.mc-s.r{color:var(--VM)}
 
 /* BARRA */
-.bb{margin-bottom:.75rem}
+.bb{margin-bottom:.625rem}
 .bb-row{display:flex;justify-content:space-between;font-size:12px;color:var(--G3);margin-bottom:3px}
 .bb-row span:last-child{font-weight:500;color:var(--K)}
-.bar{height:8px;background:var(--G2);border-radius:4px;overflow:hidden}
+.bar{height:7px;background:var(--G2);border-radius:4px;overflow:hidden}
 .bar-f{height:100%;border-radius:4px;transition:width .4s}
 
-/* FUNIL KANBAN */
-.funil-wrap{overflow-x:auto;padding-bottom:.5rem}
-.funil-board{display:flex;gap:10px;min-width:max-content;align-items:flex-start}
-.funil-col{width:220px;flex-shrink:0;background:var(--W);border:1px solid var(--G2);border-radius:10px;display:flex;flex-direction:column}
-.funil-col.drag-over{border-color:var(--L);background:var(--L3)}
-.col-hdr{padding:.75rem 1rem;border-bottom:1px solid var(--G2);display:flex;align-items:center;justify-content:space-between;cursor:default}
-.col-hdr-nome{font-size:12px;font-weight:600;color:var(--K)}
-.col-hdr-count{background:var(--G);border-radius:20px;padding:1px 8px;font-size:11px;color:var(--G3)}
-.col-hdr-edit{font-size:11px;padding:2px 6px;cursor:pointer;border-radius:4px;border:1px solid var(--G2);background:transparent;color:var(--G3)}
-.col-hdr-edit:hover{background:var(--G);color:var(--K)}
-.col-body{padding:.5rem;min-height:120px;flex:1}
-.col-add{padding:.5rem;border-top:1px solid var(--G2)}
-
-/* KANBAN CARD */
-.kcard{background:var(--W);border:1px solid var(--G2);border-radius:8px;padding:.625rem .75rem;margin-bottom:6px;cursor:grab;transition:.15s;user-select:none}
-.kcard:hover{border-color:var(--L);box-shadow:0 2px 8px rgba(209,117,67,.15)}
-.kcard.dragging{opacity:.5;cursor:grabbing}
-.kcard-nome{font-size:13px;font-weight:500;color:var(--K);margin-bottom:3px}
-.kcard-meta{font-size:11px;color:var(--G3);display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}
-.kcard-actions{display:flex;gap:4px;margin-top:4px}
-
-/* ADD COL */
-.add-col-btn{width:180px;flex-shrink:0;background:transparent;border:2px dashed var(--G2);border-radius:10px;padding:1.5rem 1rem;text-align:center;cursor:pointer;color:var(--G3);font-size:12px;transition:.15s;display:flex;flex-direction:column;align-items:center;gap:6px}
-.add-col-btn:hover{border-color:var(--L);color:var(--L);background:var(--L3)}
-
-/* FUNIL SELECTOR */
-.funil-tabs{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
+/* KANBAN */
+.funil-sel{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
 .ft{font-size:12px;padding:5px 14px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:var(--W);color:var(--G3);transition:.15s;font-weight:500}
 .ft.active{background:var(--K);color:var(--W);border-color:var(--K)}
 .ft:hover:not(.active){background:var(--G)}
 
-/* MODAL */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:flex;align-items:center;justify-content:center;padding:1rem}
-.modal{background:var(--W);border-radius:12px;padding:1.5rem;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
-.modal-title{font-size:15px;font-weight:600;color:var(--K);margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between}
-.modal-close{font-size:18px;cursor:pointer;color:var(--G3);background:none;border:none;line-height:1;padding:2px 6px}
-.modal-close:hover{color:var(--K)}
+.funil-wrap{overflow-x:auto;padding-bottom:.75rem}
+.board{display:flex;gap:10px;align-items:flex-start}
+.col{width:230px;flex-shrink:0;background:var(--W);border:1px solid var(--G2);border-radius:10px;display:flex;flex-direction:column;min-height:200px}
+.col.over{border-color:var(--L);background:var(--L3)}
+.col-hdr{padding:.625rem .875rem;border-bottom:1px solid var(--G2);display:flex;align-items:center;justify-content:space-between}
+.col-hdr-nome{font-size:12px;font-weight:600;color:var(--K)}
+.col-cnt{background:var(--G);border-radius:20px;padding:1px 7px;font-size:11px;color:var(--G3)}
+.col-edit{font-size:11px;padding:2px 6px;cursor:pointer;border-radius:4px;border:1px solid var(--G2);background:transparent;color:var(--G3)}
+.col-edit:hover{background:var(--G)}
+.col-body{padding:.5rem;flex:1}
+.col-footer{padding:.5rem;border-top:1px solid var(--G2)}
+.add-col{width:160px;flex-shrink:0;background:transparent;border:2px dashed var(--G2);border-radius:10px;padding:2rem 1rem;text-align:center;cursor:pointer;color:var(--G3);font-size:12px;transition:.15s;display:flex;flex-direction:column;align-items:center;gap:6px;min-height:200px;justify-content:center}
+.add-col:hover{border-color:var(--L);color:var(--L);background:var(--L3)}
 
-/* PERDA MOTIVOS */
-.motivos-sugestoes{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.75rem}
-.motivo-chip{font-size:11px;padding:4px 10px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:transparent;color:var(--G3);transition:.15s}
-.motivo-chip:hover,.motivo-chip.sel{background:var(--VM2);color:var(--VM);border-color:var(--VM2)}
+/* KCARD */
+.kc{background:var(--W);border:1px solid var(--G2);border-radius:8px;padding:.625rem .75rem;margin-bottom:6px;cursor:grab;user-select:none;transition:.15s}
+.kc:hover{border-color:var(--L);box-shadow:0 2px 8px rgba(209,117,67,.12)}
+.kc.dragging{opacity:.45;cursor:grabbing}
+.kc-nome{font-size:13px;font-weight:500;color:var(--K);margin-bottom:3px}
+.kc-meta{font-size:11px;color:var(--G3);display:flex;gap:5px;flex-wrap:wrap;margin-bottom:5px}
+.kc-btns{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+
+/* ATIVIDADE BOTÃO */
+.atv-btn{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;border:none;cursor:pointer;letter-spacing:.04em;transition:.15s}
+.atv-verde{background:#C8E6C9;color:#1B5E20}
+.atv-verde:hover{background:#A5D6A7}
+.atv-vermelho{background:#FFCDD2;color:#B71C1C}
+.atv-vermelho:hover{background:#EF9A9A}
+.atv-amarelo{background:#FFF9C4;color:#F57F17}
+.atv-amarelo:hover{background:#FFF59D}
+.atv-cinza{background:var(--G2);color:var(--G3)}
+.atv-cinza:hover{background:#C8C0B4}
+
+/* CONTATO CARD */
+.cc{background:var(--W);border:1px solid var(--G2);border-radius:10px;padding:.875rem 1rem;margin-bottom:8px}
+.cc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
+.cc-nome{font-size:14px;font-weight:500;color:var(--K)}
+.cc-info{font-size:12px;color:var(--G3);line-height:1.6;margin-bottom:6px}
 
 /* FILTROS */
 .filtros{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.875rem}
 .filtro{font-size:11px;padding:4px 12px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:var(--W);color:var(--G3);transition:.15s}
 .filtro.active,.filtro:hover{background:var(--K);color:var(--W);border-color:var(--K)}
 
-/* CONTATO CARD */
-.ccard{background:var(--W);border:1px solid var(--G2);border-radius:10px;padding:.875rem 1rem;margin-bottom:8px}
-.ccard-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
-.ccard-nome{font-size:14px;font-weight:500;color:var(--K)}
-.ccard-info{font-size:12px;color:var(--G3);line-height:1.6;margin-bottom:6px}
-.mover-wrap{margin-top:8px}
-.mover-lbl{font-size:10px;color:var(--G3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
-.mover-btns{display:flex;gap:4px;flex-wrap:wrap}
-.mv{font-size:11px;padding:2px 9px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:transparent;color:var(--G3);transition:.15s}
-.mv:hover{background:var(--K);color:var(--W);border-color:var(--K)}
+/* BUSCA */
+.bw{position:relative;margin-bottom:.875rem}
+.bi{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--G3);pointer-events:none;font-size:14px}
+.busca{padding-left:30px}
 
-/* INSIGHTS */
-.insight-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:1.5rem}
-.ig-card{background:var(--W);border:1px solid var(--G2);border-radius:10px;padding:1.25rem;text-align:center}
-.ig-n{font-size:28px;font-weight:500;color:var(--K);line-height:1}
-.ig-l{font-size:12px;color:var(--G3);margin-top:4px}
-.ig-s{font-size:12px;font-weight:500;margin-top:3px}
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:flex;align-items:center;justify-content:center;padding:1rem}
+.modal{background:var(--W);border-radius:12px;padding:1.5rem;width:100%;max-width:500px;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:15px;font-weight:600;color:var(--K);margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between}
+.mcl{font-size:18px;cursor:pointer;color:var(--G3);background:none;border:none;padding:2px 6px;line-height:1}
+.mcl:hover{color:var(--K)}
 
-/* PERIODO FILTROS */
-.periodo-wrap{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:1rem}
-.periodo-btn{font-size:11px;padding:4px 12px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:var(--W);color:var(--G3);transition:.15s}
-.periodo-btn.active{background:var(--L);color:var(--W);border-color:var(--L)}
+/* CHIPS MOTIVO */
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.75rem}
+.chip{font-size:11px;padding:4px 10px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:transparent;color:var(--G3);transition:.15s}
+.chip:hover,.chip.sel{background:var(--VM2);color:var(--VM);border-color:var(--VM2)}
 
-/* FEEDBACK */
+/* INSIGHTS PERIODO */
+.pbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:1rem}
+.pb{font-size:11px;padding:4px 12px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:var(--W);color:var(--G3);transition:.15s}
+.pb.active{background:var(--L);color:var(--W);border-color:var(--L)}
+
 .fb{font-size:12px;margin-top:6px;min-height:16px}
 .fb.ok{color:var(--VD)}.fb.er{color:var(--VM)}.fb.info{color:var(--G3)}
-
-/* BUSCA */
-.busca-wrap{position:relative;margin-bottom:.875rem}
-.busca-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--G3);pointer-events:none}
-.busca-in{padding-left:32px}
 
 @media(max-width:600px){
   .fg2,.fg3{grid-template-columns:1fr}
   .mg{grid-template-columns:repeat(2,1fr)}
-  .funil-col{width:180px}
+  .col{width:185px}
 }
 </style>
 </head>
@@ -196,12 +178,12 @@ textarea.finput{resize:vertical;min-height:60px}
 <header class="hdr">
   <div class="hdr-logo">✳ PSN <span>CRM</span> ✳</div>
   <div class="hdr-right">
-    <div id="user-btns" style="display:flex;gap:4px"></div>
-    <div style="display:flex;align-items:center;gap:6px">
-      <div class="sync-dot ld" id="sdot"></div>
-      <span class="sync-txt" id="stxt">Conectando...</span>
+    <div id="ubtns" style="display:flex;gap:4px"></div>
+    <div style="display:flex;align-items:center;gap:5px">
+      <div class="sdot ld" id="sdot"></div>
+      <span class="stxt" id="stxt">Conectando...</span>
     </div>
-    <button class="hdr-sync" onclick="sync()">↻</button>
+    <button class="hdr-sync" onclick="doSync()" title="Sincronizar">↻</button>
   </div>
 </header>
 
@@ -218,86 +200,71 @@ textarea.finput{resize:vertical;min-height:60px}
 
 <!-- FUNIL -->
 <div id="pane-funil" class="pane active">
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:.75rem">
-    <div class="funil-tabs" id="funil-tabs" style="margin-bottom:0"></div>
-    <button class="btn sm laranja" onclick="abrirModalNovoFunil()">+ Funil</button>
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:.875rem;flex-wrap:wrap">
+    <div class="funil-sel" id="funil-tabs" style="margin-bottom:0"></div>
+    <button class="btn sm laranja" onclick="openModal('modal-funil',null)">+ Funil</button>
   </div>
   <div class="funil-wrap">
-    <div class="funil-board" id="funil-board"></div>
+    <div class="board" id="board"></div>
   </div>
 </div>
 
 <!-- CONTATOS -->
 <div id="pane-contatos" class="pane">
-  <div class="busca-wrap">
-    <span class="busca-icon">⌕</span>
-    <input class="finput busca-in" type="text" id="busca" placeholder="Buscar por nome..." oninput="renderContatos()">
-  </div>
-  <div class="filtros" id="filtros-contatos">
-    <button class="filtro active" onclick="setFiltroC(this,'todos')">Todos</button>
-  </div>
-  <div id="lista-contatos"></div>
+  <div class="bw"><span class="bi">⌕</span><input class="fi busca" id="busca" placeholder="Buscar por nome..." oninput="renderContatos()"></div>
+  <div class="filtros" id="filtros-c"></div>
+  <div id="lista-c"></div>
 </div>
 
 <!-- INSIGHTS -->
 <div id="pane-insights" class="pane">
-  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:1rem">
-    <div class="periodo-wrap" style="margin-bottom:0">
-      <button class="periodo-btn active" onclick="setPeriodo(this,'7')">7 dias</button>
-      <button class="periodo-btn" onclick="setPeriodo(this,'30')">30 dias</button>
-      <button class="periodo-btn" onclick="setPeriodo(this,'90')">90 dias</button>
-      <button class="periodo-btn" onclick="setPeriodo(this,'0')">Tudo</button>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:1rem">
+    <div class="pbar" style="margin-bottom:0">
+      <button class="pb" onclick="setPer(this,'7')">7 dias</button>
+      <button class="pb active" onclick="setPer(this,'30')">30 dias</button>
+      <button class="pb" onclick="setPer(this,'90')">90 dias</button>
+      <button class="pb" onclick="setPer(this,'0')">Tudo</button>
     </div>
-    <select class="finput" style="width:auto;font-size:12px" id="filtro-usuario" onchange="renderInsights()">
+    <select class="fi" style="width:auto;font-size:12px" id="ins-user" onchange="renderInsights()">
       <option value="todos">Todos os usuários</option>
     </select>
+    <select class="fi" style="width:auto;font-size:12px" id="ins-funil" onchange="renderInsights()">
+      <option value="todos">Todos os funis</option>
+    </select>
   </div>
-  <div id="insights-content"></div>
+  <div id="ins-content"></div>
 </div>
 
 <!-- CONFIG -->
 <div id="pane-config" class="pane">
-  <div class="slbl">Funis</div>
-  <div id="config-funis"></div>
-  <button class="btn laranja" onclick="abrirModalNovoFunil()" style="margin-bottom:1.5rem">+ Novo funil</button>
-
+  <div class="slbl">Funis e Etapas</div>
+  <div id="cfg-funis"></div>
+  <button class="btn laranja sm" onclick="openModal('modal-funil',null)" style="margin-bottom:1.5rem">+ Novo funil</button>
   <div class="divider"></div>
   <div class="slbl">Usuários</div>
-  <div id="config-usuarios"></div>
-  <button class="btn" onclick="abrirModalNovoUsuario()">+ Novo usuário</button>
+  <div id="cfg-users"></div>
+  <button class="btn sm" onclick="openModal('modal-user',null)">+ Novo usuário</button>
 </div>
 
-</div>
+</div><!-- /cnt -->
 
-<!-- MODAL NOVO CONTATO / EDITAR -->
+<!-- MODAL CONTATO -->
 <div class="overlay" id="modal-contato" style="display:none">
 <div class="modal">
-  <div class="modal-title">
-    <span id="modal-contato-title">Novo contato</span>
-    <button class="modal-close" onclick="fecharModal('modal-contato')">✕</button>
-  </div>
+  <div class="modal-title"><span id="mc-title">Novo contato</span><button class="mcl" onclick="closeModal('modal-contato')">✕</button></div>
   <div class="fg fg2">
-    <div><label class="flabel">Nome *</label><input class="finput" id="f-nome" placeholder="Nome do cliente"></div>
-    <div><label class="flabel">Telefone</label><input class="finput" id="f-tel" placeholder="(84) 9 9999-9999"></div>
+    <div><label class="flbl">Nome *</label><input class="fi" id="f-nome" placeholder="Nome do cliente"></div>
+    <div><label class="flbl">Telefone</label><input class="fi" id="f-tel" placeholder="(84) 9 9999-9999"></div>
   </div>
   <div class="fg fg3">
-    <div>
-      <label class="flabel">Funil</label>
-      <select class="finput" id="f-funil" onchange="atualizarEtapasFunil()"></select>
-    </div>
-    <div>
-      <label class="flabel">Etapa</label>
-      <select class="finput" id="f-etapa"></select>
-    </div>
-    <div>
-      <label class="flabel">Responsável</label>
-      <select class="finput" id="f-user"></select>
-    </div>
+    <div><label class="flbl">Funil</label><select class="fi" id="f-funil" onchange="updEtapas()"></select></div>
+    <div><label class="flbl">Etapa</label><select class="fi" id="f-etapa"></select></div>
+    <div><label class="flbl">Responsável</label><select class="fi" id="f-user"></select></div>
   </div>
   <div class="fg fg3">
-    <div>
-      <label class="flabel">Canal de origem</label>
-      <select class="finput" id="f-canal">
+    <div><label class="flbl">Canal</label>
+      <select class="fi" id="f-canal">
+        <option value="instagram">Instagram</option>
         <option value="story">Story</option>
         <option value="anuncio">Anúncio</option>
         <option value="indicacao">Indicação</option>
@@ -306,171 +273,174 @@ textarea.finput{resize:vertical;min-height:60px}
         <option value="outro">Outro</option>
       </select>
     </div>
-    <div><label class="flabel">Valor (R$)</label><input class="finput" type="number" id="f-valor" placeholder="120"></div>
-    <div><label class="flabel">Próx. contato</label><input class="finput" type="date" id="f-followup"></div>
+    <div><label class="flbl">Valor (R$)</label><input class="fi" type="number" id="f-valor" placeholder="120"></div>
+    <div><label class="flbl">Follow-up</label><input class="fi" type="date" id="f-followup"></div>
   </div>
   <div class="fg fg1">
-    <div><label class="flabel">Produto / interesse</label><input class="finput" id="f-produto" placeholder="Kit Nordeste Vivo..."></div>
+    <div><label class="flbl">Produto / interesse</label><input class="fi" id="f-produto" placeholder="Kit Nordeste Vivo..."></div>
   </div>
   <div class="fg fg1">
-    <div><label class="flabel">Observação</label><textarea class="finput" id="f-obs" placeholder="Quer presentear a mãe..."></textarea></div>
+    <div><label class="flbl">Observação</label><textarea class="fi" id="f-obs"></textarea></div>
   </div>
-  <button class="btn primary full" id="btn-salvar-contato" onclick="salvarContato()">Salvar contato</button>
-  <div class="fb info" id="fb-contato"></div>
+  <button class="btn primary full" id="btn-sc" onclick="saveContato()">Salvar contato</button>
+  <div class="fb info" id="fb-c"></div>
 </div>
 </div>
 
 <!-- MODAL PERDA -->
 <div class="overlay" id="modal-perda" style="display:none">
 <div class="modal">
-  <div class="modal-title">
-    <span>Registrar motivo de perda</span>
-    <button class="modal-close" onclick="fecharModal('modal-perda')">✕</button>
-  </div>
-  <p style="font-size:12px;color:var(--G3);margin-bottom:1rem">Selecione ou escreva o motivo para ajudar nos insights:</p>
-  <div class="motivos-sugestoes" id="motivos-chips">
-    <button class="motivo-chip" onclick="selecionarMotivo(this,'Preço alto')">Preço alto</button>
-    <button class="motivo-chip" onclick="selecionarMotivo(this,'Não respondeu')">Não respondeu</button>
-    <button class="motivo-chip" onclick="selecionarMotivo(this,'Comprou em outro lugar')">Comprou em outro lugar</button>
-    <button class="motivo-chip" onclick="selecionarMotivo(this,'Não tinha tamanho')">Não tinha tamanho</button>
-    <button class="motivo-chip" onclick="selecionarMotivo(this,'Prazo muito longo')">Prazo muito longo</button>
-    <button class="motivo-chip" onclick="selecionarMotivo(this,'Mudou de ideia')">Mudou de ideia</button>
-    <button class="motivo-chip" onclick="selecionarMotivo(this,'Sem dinheiro no momento')">Sem dinheiro agora</button>
-    <button class="motivo-chip" onclick="selecionarMotivo(this,'Achou caro o frete')">Frete caro</button>
+  <div class="modal-title"><span>Motivo de perda</span><button class="mcl" onclick="closeModal('modal-perda')">✕</button></div>
+  <p style="font-size:12px;color:var(--G3);margin-bottom:.75rem">Selecione ou escreva o motivo:</p>
+  <div class="chips">
+    <button class="chip" onclick="selMotivo(this,'Preço alto')">Preço alto</button>
+    <button class="chip" onclick="selMotivo(this,'Não respondeu')">Não respondeu</button>
+    <button class="chip" onclick="selMotivo(this,'Comprou em outro lugar')">Comprou em outro lugar</button>
+    <button class="chip" onclick="selMotivo(this,'Não tinha tamanho')">Não tinha tamanho</button>
+    <button class="chip" onclick="selMotivo(this,'Prazo muito longo')">Prazo muito longo</button>
+    <button class="chip" onclick="selMotivo(this,'Mudou de ideia')">Mudou de ideia</button>
+    <button class="chip" onclick="selMotivo(this,'Sem dinheiro agora')">Sem dinheiro agora</button>
+    <button class="chip" onclick="selMotivo(this,'Frete caro')">Frete caro</button>
   </div>
   <div class="fg fg1" style="margin-bottom:1rem">
-    <div><label class="flabel">Outro motivo (opcional)</label><input class="finput" id="f-motivo-outro" placeholder="Descreva o motivo..."></div>
+    <div><label class="flbl">Outro motivo</label><input class="fi" id="f-motivo" placeholder="Descreva..."></div>
   </div>
   <div style="display:flex;gap:8px">
-    <button class="btn danger full" onclick="confirmarPerda()">Confirmar perda</button>
-    <button class="btn full" onclick="fecharModal('modal-perda')">Cancelar</button>
+    <button class="btn danger full" onclick="confirmPerda()">Confirmar perda</button>
+    <button class="btn full" onclick="closeModal('modal-perda')">Cancelar</button>
   </div>
 </div>
 </div>
 
-<!-- MODAL NOVO FUNIL -->
+<!-- MODAL ATIVIDADE -->
+<div class="overlay" id="modal-atv" style="display:none">
+<div class="modal">
+  <div class="modal-title"><span id="atv-title">Agendar atividade</span><button class="mcl" onclick="closeModal('modal-atv')">✕</button></div>
+  <div class="fg fg1" style="margin-bottom:.75rem">
+    <div><label class="flbl">Data da atividade *</label><input class="fi" type="date" id="f-atv-data"></div>
+  </div>
+  <div class="fg fg1" style="margin-bottom:1rem">
+    <div><label class="flbl">Descrição</label><input class="fi" id="f-atv-desc" placeholder="Ex: Enviar proposta, ligar, visitar..."></div>
+  </div>
+  <div style="display:flex;gap:8px">
+    <button class="btn primary full" onclick="saveAtv()">Salvar atividade</button>
+    <button class="btn full" onclick="limparAtv()">Remover atividade</button>
+  </div>
+</div>
+</div>
+
+<!-- MODAL FUNIL -->
 <div class="overlay" id="modal-funil" style="display:none">
 <div class="modal">
-  <div class="modal-title">
-    <span id="modal-funil-title">Novo funil</span>
-    <button class="modal-close" onclick="fecharModal('modal-funil')">✕</button>
-  </div>
+  <div class="modal-title"><span id="mf-title">Novo funil</span><button class="mcl" onclick="closeModal('modal-funil')">✕</button></div>
   <div class="fg fg1" style="margin-bottom:1rem">
-    <div><label class="flabel">Nome do funil</label><input class="finput" id="f-funil-nome" placeholder="Ex: D2C, B2B, Parcerias..."></div>
+    <div><label class="flbl">Nome do funil</label><input class="fi" id="f-funil-nome" placeholder="Ex: D2C, B2B..."></div>
   </div>
-  <button class="btn primary full" onclick="salvarFunil()">Salvar funil</button>
-  <div class="fb info" id="fb-funil"></div>
+  <button class="btn primary full" onclick="saveFunil()">Salvar</button>
+  <div class="fb info" id="fb-f"></div>
 </div>
 </div>
 
-<!-- MODAL NOVA ETAPA -->
+<!-- MODAL ETAPA -->
 <div class="overlay" id="modal-etapa" style="display:none">
 <div class="modal">
-  <div class="modal-title">
-    <span id="modal-etapa-title">Nova etapa</span>
-    <button class="modal-close" onclick="fecharModal('modal-etapa')">✕</button>
-  </div>
+  <div class="modal-title"><span id="me-title">Nova etapa</span><button class="mcl" onclick="closeModal('modal-etapa')">✕</button></div>
   <div class="fg fg1" style="margin-bottom:1rem">
-    <div><label class="flabel">Nome da etapa</label><input class="finput" id="f-etapa-nome" placeholder="Ex: Primeiro contato, Proposta enviada..."></div>
+    <div><label class="flbl">Nome da etapa</label><input class="fi" id="f-etapa-nome" placeholder="Ex: Proposta enviada..."></div>
   </div>
-  <button class="btn primary full" onclick="salvarEtapa()">Salvar etapa</button>
-  <div class="fb info" id="fb-etapa"></div>
+  <button class="btn primary full" onclick="saveEtapa()">Salvar</button>
 </div>
 </div>
 
-<!-- MODAL NOVO USUÁRIO -->
-<div class="overlay" id="modal-usuario" style="display:none">
+<!-- MODAL USUARIO -->
+<div class="overlay" id="modal-user" style="display:none">
 <div class="modal">
-  <div class="modal-title">
-    <span>Novo usuário</span>
-    <button class="modal-close" onclick="fecharModal('modal-usuario')">✕</button>
-  </div>
+  <div class="modal-title"><span>Novo usuário</span><button class="mcl" onclick="closeModal('modal-user')">✕</button></div>
   <div class="fg fg1" style="margin-bottom:1rem">
-    <div><label class="flabel">Nome</label><input class="finput" id="f-usuario-nome" placeholder="Ex: Lucas, Ana..."></div>
+    <div><label class="flbl">Nome</label><input class="fi" id="f-user-nome" placeholder="Ex: Lucas, Ana..."></div>
   </div>
-  <button class="btn primary full" onclick="salvarUsuario()">Salvar</button>
+  <button class="btn primary full" onclick="saveUser()">Salvar</button>
 </div>
 </div>
 
 <script>
-const API = 'https://script.google.com/macros/s/AKfycbxawuqkhN04J7TiX4qVyYzqRWRaExyGFAzdMs9CR6dc03Zfd19lkkvLYmmNarTFWbEFAA/exec';
-
-// STATE
-let contatos = [];
-let config = {
-  funis: [
-    {id:'d2c', nome:'D2C', etapas:[{id:'novo',nome:'Novo contato'},{id:'atendimento',nome:'Atendimento'},{id:'pensando',nome:'Pensando'},{id:'fechado',nome:'Fechado'},{id:'perdido',nome:'Perdido'}]},
-    {id:'b2b', nome:'B2B', etapas:[{id:'b2b-novo',nome:'Prospecção'},{id:'b2b-proposta',nome:'Proposta'},{id:'b2b-negociacao',nome:'Negociação'},{id:'b2b-fechado',nome:'Fechado'},{id:'b2b-perdido',nome:'Perdido'}]}
+const API='https://script.google.com/macros/s/AKfycbxawuqkhN04J7TiX4qVyYzqRWRaExyGFAzdMs9CR6dc03Zfd19lkkvLYmmNarTFWbEFAA/exec';
+let contatos=[];
+let cfg={
+  funis:[
+    {id:'d2c',nome:'D2C',etapas:[{id:'d2c-novo',nome:'Novo contato'},{id:'d2c-atend',nome:'Atendimento'},{id:'d2c-pens',nome:'Pensando'},{id:'d2c-fech',nome:'Fechado'},{id:'d2c-perd',nome:'Perdido'}]},
+    {id:'b2b',nome:'B2B',etapas:[{id:'b2b-prosp',nome:'Prospecção'},{id:'b2b-prop',nome:'Proposta'},{id:'b2b-neg',nome:'Negociação'},{id:'b2b-fech',nome:'Fechado'},{id:'b2b-perd',nome:'Perdido'}]}
   ],
-  usuarios: [{id:'lucas',nome:'Lucas'},{id:'ana',nome:'Ana'}]
+  usuarios:[{id:'lucas',nome:'Lucas'},{id:'ana',nome:'Ana'}]
 };
-let funilAtivo = 'd2c';
-let filtroContatos = 'todos';
-let periodoInsights = '30';
-let filtroUsuarioInsights = 'todos';
-let editandoContatoId = null;
-let editandoFunilId = null;
-let editandoEtapaFunilId = null;
-let editandoEtapaId = null;
-let perdaContatoId = null;
-let motivoSelecionado = '';
-let dragId = null;
-let userAtivo = 'todos';
+let funilAtivo='d2c';
+let filtroC='todos';
+let periodo='30';
+let userAtivo='todos';
+let editCid=null;
+let editFid=null;
+let editEfid=null;
+let editEid=null;
+let perdaCid=null;
+let atvCid=null;
+let motivoSel='';
+let dragId=null;
 
-const CANAL_LABEL = {story:'Story',anuncio:'Anúncio',indicacao:'Indicação',atelie:'Ateliê',busca:'Google',outro:'Outro'};
+const CANAL={instagram:'Instagram',story:'Story',anuncio:'Anúncio',indicacao:'Indicação',atelie:'Ateliê',busca:'Google',outro:'Outro'};
 
-// SYNC STATUS
-function ss(s,msg){ const d=document.getElementById('sdot'),t=document.getElementById('stxt'); d.className='sync-dot'+(s==='ld'?' ld':s==='er'?' er':''); t.textContent=msg; }
+function ss(s,m){
+  const d=document.getElementById('sdot'),t=document.getElementById('stxt');
+  d.className='sdot'+(s==='ld'?' ld':s==='er'?' er':'');
+  t.textContent=m;
+}
 
-// API
-async function apiCall(payload){
-  const r = await fetch(API,{method:'POST',body:JSON.stringify(payload)});
+function loadCfg(){const s=localStorage.getItem('psn_cfg2');if(s){try{cfg=JSON.parse(s);}catch(e){}}}
+function saveCfg(){localStorage.setItem('psn_cfg2',JSON.stringify(cfg));}
+
+async function api(p){
+  const r=await fetch(API,{method:'POST',body:JSON.stringify(p)});
   return r.json();
 }
 
-// LOAD CONFIG FROM LOCALSTORAGE
-function loadConfig(){
-  const s = localStorage.getItem('psn_config');
-  if(s){ try{ config = JSON.parse(s); }catch(e){} }
-}
-function saveConfig(){ localStorage.setItem('psn_config',JSON.stringify(config)); }
-
-async function sync(){
+async function doSync(){
   ss('ld','Sincronizando...');
   try{
-    const rows = await apiCall({action:'getAll'});
-    if(!Array.isArray(rows)||rows.length<2){ contatos=[]; }
+    const rows=await api({action:'getAll'});
+    if(!Array.isArray(rows)||rows.length<2){contatos=[];}
     else{
-      contatos = rows.slice(1).filter(r=>r[0]).map(r=>({
+      contatos=rows.slice(1).filter(r=>r[0]).map(r=>({
         id:String(r[0]),nome:String(r[1]||''),tel:String(r[2]||''),
-        et:String(r[3]||'novo'),canal:String(r[4]||'outro'),
+        et:String(r[3]||''),canal:String(r[4]||'outro'),
         valor:parseFloat(r[5])||0,produto:String(r[6]||''),
         obs:String(r[7]||''),data:String(r[8]||new Date().toISOString()),
         compras:parseInt(r[9])||0,
         funil:String(r[10]||'d2c'),
-        etapa:String(r[11]||'novo'),
+        etapa:String(r[11]||'d2c-novo'),
         usuario:String(r[12]||''),
         followup:String(r[13]||''),
-        motivo_perda:String(r[14]||'')
+        motivo_perda:String(r[14]||''),
+        atv_data:String(r[15]||''),
+        atv_desc:String(r[16]||'')
       }));
     }
     ss('ok',contatos.length+' contato'+(contatos.length!==1?'s':''));
     renderAll();
-  }catch(e){ ss('er','Erro de conexão'); }
+  }catch(e){ss('er','Erro de conexão');}
 }
 
-async function saveContato(c){
-  return apiCall({action:'save',contato:{
+async function apiSave(c){
+  return api({action:'save',contato:{
     id:c.id,nome:c.nome,tel:c.tel,et:c.et,canal:c.canal,
     valor:c.valor,produto:c.produto,obs:c.obs,data:c.data,
     compras:c.compras,funil:c.funil,etapa:c.etapa,
-    usuario:c.usuario,followup:c.followup,motivo_perda:c.motivo_perda||''
+    usuario:c.usuario,followup:c.followup,
+    motivo_perda:c.motivo_perda||'',
+    atv_data:c.atv_data||'',
+    atv_desc:c.atv_desc||''
   }});
 }
 
-async function delContato(id){
-  return apiCall({action:'delete',id});
-}
+async function apiDel(id){return api({action:'delete',id});}
 
 // TABS
 function showTab(id){
@@ -478,163 +448,237 @@ function showTab(id){
   document.querySelectorAll('.tb').forEach((b,i)=>b.classList.toggle('active',ids[i]===id));
   document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
   document.getElementById('pane-'+id).classList.add('active');
-  if(id==='funil') renderFunil();
-  if(id==='contatos') renderContatos();
-  if(id==='insights') renderInsights();
-  if(id==='config') renderConfig();
+  if(id==='funil')renderFunil();
+  if(id==='contatos')renderContatos();
+  if(id==='insights')renderInsights();
+  if(id==='config')renderConfig();
+}
+
+// HELPERS
+function getFunil(id){return cfg.funis.find(f=>f.id===id);}
+function getEtapa(fid,eid){const f=getFunil(fid);return f?f.etapas.find(e=>e.id===eid):null;}
+function fmtD(iso){try{return new Date(iso).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});}catch(e){return '';}}
+function isGanho(fid,eid){const e=getEtapa(fid,eid);return e&&e.nome.toLowerCase().includes('fechado');}
+function isPerdido(fid,eid){const e=getEtapa(fid,eid);return e&&e.nome.toLowerCase().includes('perdido');}
+
+// ATIVIDADE STATUS
+function atvStatus(c){
+  if(!c.atv_data) return 'sem'; // vermelho
+  const hoje=new Date(); hoje.setHours(0,0,0,0);
+  const d=new Date(c.atv_data+'T00:00:00');
+  if(d<hoje) return 'atrasada'; // amarelo
+  if(d.getTime()===hoje.getTime()) return 'hoje'; // verde
+  return 'agendada'; // cinza
+}
+
+function atvBtnHtml(c){
+  const s=atvStatus(c);
+  const labels={sem:'● Sem atividade',hoje:'● Hoje',atrasada:'● Atrasada',agendada:'● Agendada'};
+  const cls={sem:'atv-vermelho',hoje:'atv-verde',atrasada:'atv-amarelo',agendada:'atv-cinza'};
+  const desc=c.atv_desc?` — ${c.atv_desc.substring(0,20)}${c.atv_desc.length>20?'...':''}`:c.atv_data?` ${fmtD(c.atv_data)}`:'' ;
+  return `<button class="atv-btn ${cls[s]}" onclick="openAtv('${c.id}')" title="${c.atv_desc||'Clique para agendar atividade'}">${labels[s]}${desc}</button>`;
 }
 
 // FUNIL
-function getFunil(id){ return config.funis.find(f=>f.id===id); }
-function getEtapa(funilId,etapaId){ const f=getFunil(funilId); return f?f.etapas.find(e=>e.id===etapaId):null; }
-
 function renderFunilTabs(){
-  const el = document.getElementById('funil-tabs');
-  el.innerHTML = config.funis.map(f=>`<button class="ft${funilAtivo===f.id?' active':''}" onclick="setFunilAtivo('${f.id}')">${f.nome}</button>`).join('');
+  const el=document.getElementById('funil-tabs');
+  el.innerHTML=cfg.funis.map(f=>`<button class="ft${funilAtivo===f.id?' active':''}" onclick="setFunil('${f.id}')">${f.nome}</button>`).join('');
 }
 
-function setFunilAtivo(id){ funilAtivo=id; renderFunil(); }
+function setFunil(id){funilAtivo=id;renderFunil();}
 
 function renderFunil(){
   renderFunilTabs();
-  const funil = getFunil(funilAtivo);
-  if(!funil){ document.getElementById('funil-board').innerHTML='<div class="empty">Nenhum funil criado</div>'; return; }
-  const board = document.getElementById('funil-board');
-  board.innerHTML = '';
+  const funil=getFunil(funilAtivo);
+  const board=document.getElementById('board');
+  board.innerHTML='';
+  if(!funil){board.innerHTML='<div class="empty">Nenhum funil</div>';return;}
   funil.etapas.forEach(etapa=>{
-    const cards = contatos.filter(c=>c.funil===funilAtivo && c.etapa===etapa.id && (userAtivo==='todos'||c.usuario===userAtivo));
-    const col = document.createElement('div');
-    col.className = 'funil-col';
-    col.dataset.etapa = etapa.id;
-    col.innerHTML = `
+    const cards=contatos.filter(c=>c.funil===funilAtivo&&c.etapa===etapa.id&&(userAtivo==='todos'||c.usuario===userAtivo));
+    const col=document.createElement('div');
+    col.className='col';
+    col.dataset.etapa=etapa.id;
+    col.innerHTML=`
       <div class="col-hdr">
         <span class="col-hdr-nome">${etapa.nome}</span>
         <div style="display:flex;gap:4px;align-items:center">
-          <span class="col-hdr-count">${cards.length}</span>
-          <button class="col-hdr-edit" onclick="abrirModalEditarEtapa('${funil.id}','${etapa.id}')">✎</button>
+          <span class="col-cnt">${cards.length}</span>
+          <button class="col-edit" onclick="openModal('modal-etapa','${funil.id}','${etapa.id}')">✎</button>
         </div>
       </div>
-      <div class="col-body" id="col-${etapa.id}" ondragover="onDragOver(event)" ondrop="onDrop(event,'${etapa.id}')">
-        ${cards.map(c=>renderKcard(c)).join('')}
+      <div class="col-body" id="cb-${etapa.id}"
+        ondragover="ev.preventDefault();ev.currentTarget.closest('.col').classList.add('over')"
+        ondrop="onDrop(event,'${etapa.id}')">
+        ${cards.map(c=>kcardHtml(c)).join('')}
       </div>
-      <div class="col-add">
-        <button class="btn xs full" onclick="abrirModalContato(null,'${funil.id}','${etapa.id}')">+ Contato</button>
-      </div>
-    `;
+      <div class="col-footer">
+        <button class="btn xs full" onclick="openContato(null,'${funil.id}','${etapa.id}')">+ Contato</button>
+      </div>`;
+    col.querySelector('.col-body').addEventListener('dragover',e=>{e.preventDefault();col.classList.add('over');});
+    col.querySelector('.col-body').addEventListener('dragleave',e=>{if(!col.contains(e.relatedTarget))col.classList.remove('over');});
     board.appendChild(col);
   });
-  // Botão adicionar coluna
-  const addCol = document.createElement('div');
-  addCol.className = 'add-col-btn';
-  addCol.onclick = ()=>abrirModalNovaEtapa(funil.id);
-  addCol.innerHTML = `<span style="font-size:20px">+</span><span>Nova etapa</span>`;
-  board.appendChild(addCol);
+  // Add col btn
+  const a=document.createElement('div');
+  a.className='add-col';
+  a.onclick=()=>openModal('modal-etapa',funil.id,null);
+  a.innerHTML='<span style="font-size:22px;line-height:1">+</span><span>Nova etapa</span>';
+  board.appendChild(a);
+  // Rebind drag events
+  bindDrag();
 }
 
-function renderKcard(c){
-  const vl = c.valor?`R$ ${Math.round(c.valor)}`:'';
-  const usr = c.usuario ? config.usuarios.find(u=>u.id===c.usuario) : null;
-  const fl = c.followup ? `<span style="color:${new Date(c.followup)<new Date()?'var(--VM)':'var(--AM)'}">📅 ${new Date(c.followup).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}</span>` : '';
-  return `<div class="kcard" draggable="true" id="kc-${c.id}" ondragstart="onDragStart(event,'${c.id}')" ondragend="onDragEnd(event)">
-    <div class="kcard-nome">${c.nome}</div>
-    <div class="kcard-meta">
+function kcardHtml(c){
+  const usr=cfg.usuarios.find(u=>u.id===c.usuario);
+  const vl=c.valor?`R$${Math.round(c.valor)}`:'';
+  return `<div class="kc" draggable="true" data-id="${c.id}">
+    <div class="kc-nome">${c.nome}</div>
+    <div class="kc-meta">
       ${vl?`<span>${vl}</span>`:''}
-      ${c.canal?`<span>${CANAL_LABEL[c.canal]||c.canal}</span>`:''}
+      ${c.canal?`<span>${CANAL[c.canal]||c.canal}</span>`:''}
       ${usr?`<span>👤 ${usr.nome}</span>`:''}
-      ${fl}
     </div>
-    ${c.motivo_perda?`<div style="font-size:10px;color:var(--VM);margin-top:2px">⚠ ${c.motivo_perda}</div>`:''}
-    <div class="kcard-actions">
-      <button class="btn xs" onclick="abrirModalContato('${c.id}')">Editar</button>
-      <button class="btn xs danger" onclick="confirmarDelete('${c.id}')">✕</button>
+    ${c.motivo_perda?`<div style="font-size:10px;color:var(--VM);margin-bottom:4px">⚠ ${c.motivo_perda}</div>`:''}
+    <div class="kc-btns">
+      ${atvBtnHtml(c)}
+      <button class="btn xs" onclick="openContato('${c.id}')">✎</button>
+      <button class="btn xs danger" onclick="delC('${c.id}')">✕</button>
     </div>
   </div>`;
 }
 
-// DRAG & DROP
-function onDragStart(e,id){ dragId=id; e.currentTarget.classList.add('dragging'); }
-function onDragEnd(e){ e.currentTarget.classList.remove('dragging'); document.querySelectorAll('.funil-col').forEach(c=>c.classList.remove('drag-over')); }
-function onDragOver(e){ e.preventDefault(); e.currentTarget.closest('.funil-col').classList.add('drag-over'); }
-async function onDrop(e,etapaId){
-  e.preventDefault();
-  document.querySelectorAll('.funil-col').forEach(c=>c.classList.remove('drag-over'));
-  if(!dragId) return;
-  const c = contatos.find(x=>x.id===dragId);
-  if(!c) return;
-  // Se arrastar para "perdido", abrir modal de motivo
-  const etapa = getEtapa(funilAtivo,etapaId);
-  if(etapa && etapa.nome.toLowerCase().includes('perdido')){
-    perdaContatoId = dragId;
-    c.etapa = etapaId;
-    document.getElementById('modal-perda').style.display='flex';
-    dragId = null;
-    return;
-  }
-  c.etapa = etapaId;
-  if(etapa && etapa.nome.toLowerCase().includes('fechado')) c.et='fechado';
-  ss('ld','Salvando...');
-  try{ await saveContato(c); await sync(); }catch(ex){ ss('er','Erro ao mover'); }
-  dragId = null;
+function bindDrag(){
+  document.querySelectorAll('.kc').forEach(el=>{
+    el.addEventListener('dragstart',e=>{dragId=el.dataset.id;el.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
+    el.addEventListener('dragend',e=>{el.classList.remove('dragging');document.querySelectorAll('.col').forEach(c=>c.classList.remove('over'));dragId=null;});
+  });
+  document.querySelectorAll('.col-body').forEach(el=>{
+    el.addEventListener('drop',e=>{
+      e.preventDefault();
+      const col=e.currentTarget.closest('.col');
+      col.classList.remove('over');
+      const eid=col.dataset.etapa;
+      if(dragId) dropCard(eid);
+    });
+  });
 }
 
-// MODAL CONTATO
-function abrirModalContato(id=null, funilId=null, etapaId=null){
-  editandoContatoId = id;
-  const c = id ? contatos.find(x=>x.id===id) : null;
-  document.getElementById('modal-contato-title').textContent = id?'Editar contato':'Novo contato';
-  document.getElementById('btn-salvar-contato').textContent = id?'Salvar alterações':'Salvar contato';
-  // preencher funis
-  const fSelect = document.getElementById('f-funil');
-  fSelect.innerHTML = config.funis.map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');
-  fSelect.value = c?c.funil:(funilId||funilAtivo);
-  atualizarEtapasFunil();
-  // preencher usuarios
-  const uSelect = document.getElementById('f-user');
-  uSelect.innerHTML = '<option value="">Nenhum</option>'+config.usuarios.map(u=>`<option value="${u.id}">${u.nome}</option>`).join('');
+async function dropCard(etapaId){
+  if(!dragId)return;
+  const c=contatos.find(x=>x.id===dragId);
+  if(!c)return;
+  if(isPerdido(funilAtivo,etapaId)){
+    c.etapa=etapaId;c.et='perdido';
+    perdaCid=dragId;
+    document.getElementById('modal-perda').style.display='flex';
+    dragId=null;return;
+  }
+  c.etapa=etapaId;
+  if(isGanho(funilAtivo,etapaId))c.et='fechado';
+  else c.et='atendimento';
+  ss('ld','Salvando...');
+  try{await apiSave(c);await doSync();}catch(ex){ss('er','Erro');}
+  dragId=null;
+}
+
+// PERDA
+function selMotivo(btn,m){document.querySelectorAll('.chip').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');motivoSel=m;}
+async function confirmPerda(){
+  const outro=document.getElementById('f-motivo').value.trim();
+  const motivo=outro||motivoSel||'Não informado';
+  const c=contatos.find(x=>x.id===perdaCid);
+  if(!c){closeModal('modal-perda');return;}
+  c.motivo_perda=motivo;c.et='perdido';
+  ss('ld','Salvando...');
+  try{await apiSave(c);await doSync();}catch(ex){ss('er','Erro');}
+  closeModal('modal-perda');
+  motivoSel='';document.getElementById('f-motivo').value='';
+  document.querySelectorAll('.chip').forEach(b=>b.classList.remove('sel'));
+  perdaCid=null;
+}
+
+// ATIVIDADE
+function openAtv(id){
+  atvCid=id;
+  const c=contatos.find(x=>x.id===id);
+  document.getElementById('atv-title').textContent=`Atividade — ${c?c.nome:''}`;
+  document.getElementById('f-atv-data').value=c?c.atv_data||'':'';
+  document.getElementById('f-atv-desc').value=c?c.atv_desc||'':'';
+  document.getElementById('modal-atv').style.display='flex';
+}
+async function saveAtv(){
+  const c=contatos.find(x=>x.id===atvCid);
+  if(!c)return;
+  c.atv_data=document.getElementById('f-atv-data').value;
+  c.atv_desc=document.getElementById('f-atv-desc').value.trim();
+  ss('ld','Salvando...');
+  try{await apiSave(c);await doSync();}catch(ex){ss('er','Erro');}
+  closeModal('modal-atv');atvCid=null;
+}
+async function limparAtv(){
+  const c=contatos.find(x=>x.id===atvCid);
+  if(!c)return;
+  c.atv_data='';c.atv_desc='';
+  ss('ld','Salvando...');
+  try{await apiSave(c);await doSync();}catch(ex){ss('er','Erro');}
+  closeModal('modal-atv');atvCid=null;
+}
+
+// CONTATO MODAL
+function openContato(id=null,fid=null,eid=null){
+  editCid=id;
+  const c=id?contatos.find(x=>x.id===id):null;
+  document.getElementById('mc-title').textContent=id?'Editar contato':'Novo contato';
+  document.getElementById('btn-sc').textContent=id?'Salvar alterações':'Salvar contato';
+  // funil select
+  const fs=document.getElementById('f-funil');
+  fs.innerHTML=cfg.funis.map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');
+  fs.value=c?c.funil:(fid||funilAtivo);
+  updEtapas();
+  // user select
+  const us=document.getElementById('f-user');
+  us.innerHTML='<option value="">Nenhum</option>'+cfg.usuarios.map(u=>`<option value="${u.id}">${u.nome}</option>`).join('');
   if(c){
     document.getElementById('f-nome').value=c.nome;
     document.getElementById('f-tel').value=c.tel||'';
     document.getElementById('f-funil').value=c.funil;
-    atualizarEtapasFunil();
-    document.getElementById('f-etapa').value=c.etapa;
-    document.getElementById('f-canal').value=c.canal||'story';
+    updEtapas();
+    setTimeout(()=>{document.getElementById('f-etapa').value=c.etapa;},10);
+    document.getElementById('f-canal').value=c.canal||'instagram';
     document.getElementById('f-valor').value=c.valor||'';
     document.getElementById('f-followup').value=c.followup||'';
     document.getElementById('f-produto').value=c.produto||'';
     document.getElementById('f-obs').value=c.obs||'';
     document.getElementById('f-user').value=c.usuario||'';
-  } else {
+  }else{
     ['f-nome','f-tel','f-valor','f-followup','f-produto','f-obs'].forEach(x=>document.getElementById(x).value='');
-    document.getElementById('f-canal').value='story';
+    document.getElementById('f-canal').value='instagram';
     document.getElementById('f-user').value='';
-    if(etapaId){ setTimeout(()=>{ document.getElementById('f-etapa').value=etapaId; },50); }
+    if(eid)setTimeout(()=>{document.getElementById('f-etapa').value=eid;},30);
   }
-  document.getElementById('fb-contato').textContent='';
+  document.getElementById('fb-c').textContent='';
   document.getElementById('modal-contato').style.display='flex';
 }
 
-function atualizarEtapasFunil(){
-  const fid = document.getElementById('f-funil').value;
-  const funil = getFunil(fid);
-  const eSelect = document.getElementById('f-etapa');
-  eSelect.innerHTML = funil ? funil.etapas.map(e=>`<option value="${e.id}">${e.nome}</option>`).join('') : '';
+function updEtapas(){
+  const fid=document.getElementById('f-funil').value;
+  const funil=getFunil(fid);
+  const es=document.getElementById('f-etapa');
+  es.innerHTML=funil?funil.etapas.map(e=>`<option value="${e.id}">${e.nome}</option>`).join(''):'';
 }
 
-async function salvarContato(){
-  const nome = document.getElementById('f-nome').value.trim();
-  if(!nome){ document.getElementById('fb-contato').className='fb er'; document.getElementById('fb-contato').textContent='Nome obrigatório'; return; }
-  document.getElementById('fb-contato').className='fb info'; document.getElementById('fb-contato').textContent='Salvando...';
-  document.getElementById('btn-salvar-contato').disabled=true;
-  const prev = editandoContatoId?contatos.find(x=>x.id===editandoContatoId)||{}:{};
-  const fid = document.getElementById('f-funil').value;
-  const eid = document.getElementById('f-etapa').value;
-  const etapa = getEtapa(fid,eid);
-  const isF = etapa&&etapa.nome.toLowerCase().includes('fechado');
-  const isP = etapa&&etapa.nome.toLowerCase().includes('perdido');
-  const c = {
-    id:editandoContatoId||String(Date.now()),
-    nome, tel:document.getElementById('f-tel').value.trim(),
-    et:isF?'fechado':isP?'perdido':'atendimento',
+async function saveContato(){
+  const nome=document.getElementById('f-nome').value.trim();
+  if(!nome){setFb('fb-c','Nome obrigatório','er');return;}
+  setFb('fb-c','Salvando...','info');
+  document.getElementById('btn-sc').disabled=true;
+  const prev=editCid?contatos.find(x=>x.id===editCid)||{}:{};
+  const fid=document.getElementById('f-funil').value;
+  const eid=document.getElementById('f-etapa').value;
+  const c={
+    id:editCid||String(Date.now()),
+    nome,tel:document.getElementById('f-tel').value.trim(),
+    et:isGanho(fid,eid)?'fechado':isPerdido(fid,eid)?'perdido':'atendimento',
     canal:document.getElementById('f-canal').value,
     valor:parseFloat(document.getElementById('f-valor').value)||0,
     produto:document.getElementById('f-produto').value.trim(),
@@ -644,162 +688,63 @@ async function salvarContato(){
     funil:fid,etapa:eid,
     usuario:document.getElementById('f-user').value,
     followup:document.getElementById('f-followup').value,
-    motivo_perda:prev.motivo_perda||''
+    motivo_perda:prev.motivo_perda||'',
+    atv_data:prev.atv_data||'',
+    atv_desc:prev.atv_desc||''
   };
   try{
-    await saveContato(c);
-    document.getElementById('fb-contato').className='fb ok'; document.getElementById('fb-contato').textContent='Salvo!';
-    fecharModal('modal-contato');
-    await sync();
-  }catch(ex){ document.getElementById('fb-contato').className='fb er'; document.getElementById('fb-contato').textContent='Erro ao salvar'; }
-  document.getElementById('btn-salvar-contato').disabled=false;
+    await apiSave(c);
+    setFb('fb-c','Salvo!','ok');
+    closeModal('modal-contato');
+    await doSync();
+  }catch(ex){setFb('fb-c','Erro ao salvar','er');}
+  document.getElementById('btn-sc').disabled=false;
 }
 
-// MODAL PERDA
-function selecionarMotivo(btn,motivo){
-  document.querySelectorAll('.motivo-chip').forEach(b=>b.classList.remove('sel'));
-  btn.classList.add('sel');
-  motivoSelecionado = motivo;
-}
-
-async function confirmarPerda(){
-  const outro = document.getElementById('f-motivo-outro').value.trim();
-  const motivo = outro || motivoSelecionado || 'Não informado';
-  const c = contatos.find(x=>x.id===perdaContatoId);
-  if(!c){ fecharModal('modal-perda'); return; }
-  c.motivo_perda = motivo;
-  c.et = 'perdido';
-  ss('ld','Salvando...');
-  try{ await saveContato(c); await sync(); }catch(ex){ ss('er','Erro'); }
-  fecharModal('modal-perda');
-  motivoSelecionado='';
-  document.getElementById('f-motivo-outro').value='';
-  document.querySelectorAll('.motivo-chip').forEach(b=>b.classList.remove('sel'));
-  perdaContatoId=null;
-}
-
-// DELETE
-async function confirmarDelete(id){
-  if(!confirm('Remover este contato?')) return;
+async function delC(id){
+  if(!confirm('Remover este contato?'))return;
   ss('ld','Removendo...');
-  try{ await delContato(id); await sync(); }catch(ex){ ss('er','Erro'); }
-}
-
-// FUNIS
-function abrirModalNovoFunil(id=null){
-  editandoFunilId=id;
-  const f = id?getFunil(id):null;
-  document.getElementById('modal-funil-title').textContent=id?'Editar funil':'Novo funil';
-  document.getElementById('f-funil-nome').value=f?f.nome:'';
-  document.getElementById('fb-funil').textContent='';
-  document.getElementById('modal-funil').style.display='flex';
-}
-
-function salvarFunil(){
-  const nome = document.getElementById('f-funil-nome').value.trim();
-  if(!nome){ document.getElementById('fb-funil').textContent='Nome obrigatório'; return; }
-  if(editandoFunilId){
-    const f=getFunil(editandoFunilId); if(f) f.nome=nome;
-  } else {
-    const id='f'+Date.now();
-    config.funis.push({id,nome,etapas:[{id:'e'+Date.now(),nome:'Novo contato'},{id:'e'+(Date.now()+1),nome:'Em andamento'},{id:'e'+(Date.now()+2),nome:'Fechado'},{id:'e'+(Date.now()+3),nome:'Perdido'}]});
-    funilAtivo=id;
-  }
-  saveConfig();
-  fecharModal('modal-funil');
-  renderAll();
-}
-
-// ETAPAS
-function abrirModalNovaEtapa(funilId){
-  editandoEtapaFunilId=funilId; editandoEtapaId=null;
-  document.getElementById('modal-etapa-title').textContent='Nova etapa';
-  document.getElementById('f-etapa-nome').value='';
-  document.getElementById('fb-etapa').textContent='';
-  document.getElementById('modal-etapa').style.display='flex';
-}
-
-function abrirModalEditarEtapa(funilId,etapaId){
-  editandoEtapaFunilId=funilId; editandoEtapaId=etapaId;
-  const e=getEtapa(funilId,etapaId);
-  document.getElementById('modal-etapa-title').textContent='Editar etapa';
-  document.getElementById('f-etapa-nome').value=e?e.nome:'';
-  document.getElementById('fb-etapa').textContent='';
-  document.getElementById('modal-etapa').style.display='flex';
-}
-
-function salvarEtapa(){
-  const nome=document.getElementById('f-etapa-nome').value.trim();
-  if(!nome){ document.getElementById('fb-etapa').textContent='Nome obrigatório'; return; }
-  const funil=getFunil(editandoEtapaFunilId);
-  if(!funil){ fecharModal('modal-etapa'); return; }
-  if(editandoEtapaId){
-    const e=funil.etapas.find(x=>x.id===editandoEtapaId); if(e) e.nome=nome;
-  } else {
-    funil.etapas.push({id:'e'+Date.now(),nome});
-  }
-  saveConfig();
-  fecharModal('modal-etapa');
-  renderFunil();
-}
-
-// USUARIOS
-function abrirModalNovoUsuario(){ document.getElementById('f-usuario-nome').value=''; document.getElementById('modal-usuario').style.display='flex'; }
-
-function salvarUsuario(){
-  const nome=document.getElementById('f-usuario-nome').value.trim();
-  if(!nome) return;
-  config.usuarios.push({id:'u'+Date.now(),nome});
-  saveConfig();
-  fecharModal('modal-usuario');
-  renderConfig();
-  renderUserBtns();
+  try{await apiDel(id);await doSync();}catch(ex){ss('er','Erro ao remover');}
 }
 
 // CONTATOS LIST
-function setFiltroC(btn,f){ document.querySelectorAll('#filtros-contatos .filtro').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); filtroContatos=f; renderContatos(); }
-
 function renderContatos(){
-  const busca=(document.getElementById('busca')||{value:''}).value.toLowerCase();
   const funil=getFunil(funilAtivo);
-  // Rebuild filtros
-  const fc=document.getElementById('filtros-contatos');
-  fc.innerHTML='<button class="filtro'+(filtroContatos==='todos'?' active':'')+'" onclick="setFiltroC(this,\'todos\')">Todos</button>';
-  if(funil) funil.etapas.forEach(e=>{ fc.innerHTML+=`<button class="filtro${filtroContatos===e.id?' active':''}" onclick="setFiltroC(this,'${e.id}')">${e.nome}</button>`; });
+  const fc=document.getElementById('filtros-c');
+  fc.innerHTML=`<button class="filtro${filtroC==='todos'?' active':''}" onclick="setFiltroC(this,'todos')">Todos</button>`;
+  if(funil)funil.etapas.forEach(e=>{fc.innerHTML+=`<button class="filtro${filtroC===e.id?' active':''}" onclick="setFiltroC(this,'${e.id}')">${e.nome}</button>`;});
+  const busca=(document.getElementById('busca')||{value:''}).value.toLowerCase();
   const lista=contatos.filter(c=>{
-    const mf=filtroContatos==='todos'||c.etapa===filtroContatos;
+    const mf=filtroC==='todos'||c.etapa===filtroC;
     const mb=!busca||c.nome.toLowerCase().includes(busca);
     const mu=userAtivo==='todos'||c.usuario===userAtivo;
     return mf&&mb&&mu;
   });
-  const el=document.getElementById('lista-contatos');
-  if(!lista.length){ el.innerHTML=`<div class="empty">${contatos.length?'Nenhum contato encontrado':'Nenhum contato ainda. Use o funil para adicionar.'}</div>`; return; }
+  const el=document.getElementById('lista-c');
+  if(!lista.length){el.innerHTML=`<div class="empty">${contatos.length?'Nenhum encontrado':'Nenhum contato ainda'}</div>`;return;}
   el.innerHTML=lista.map(c=>{
-    const funil=getFunil(c.funil);
-    const etapa=funil?funil.etapas.find(e=>e.id===c.etapa):null;
-    const usr=config.usuarios.find(u=>u.id===c.usuario);
-    return `<div class="ccard">
-      <div class="ccard-top">
+    const f=getFunil(c.funil);const e=f?f.etapas.find(x=>x.id===c.etapa):null;
+    const u=cfg.usuarios.find(x=>x.id===c.usuario);
+    return `<div class="cc">
+      <div class="cc-top">
         <div>
-          <div class="ccard-nome">${c.nome}</div>
-          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px">
-            ${funil?`<span class="bdg-canal">${funil.nome}</span>`:''}
-            ${etapa?`<span class="bdg-canal">${etapa.nome}</span>`:''}
-            <span class="bdg-canal">${CANAL_LABEL[c.canal]||c.canal}</span>
-            ${c.valor?`<span class="bdg-canal">R$ ${Math.round(c.valor)}</span>`:''}
-            ${usr?`<span class="bdg-canal">👤 ${usr.nome}</span>`:''}
+          <div class="cc-nome">${c.nome}</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
+            ${f?`<span class="bdg bdg-canal">${f.nome}</span>`:''}
+            ${e?`<span class="bdg bdg-canal">${e.nome}</span>`:''}
+            <span class="bdg bdg-canal">${CANAL[c.canal]||c.canal}</span>
+            ${c.valor?`<span class="bdg bdg-canal">R$${Math.round(c.valor)}</span>`:''}
+            ${u?`<span class="bdg bdg-canal">👤 ${u.nome}</span>`:''}
           </div>
         </div>
         <div style="display:flex;gap:4px">
-          <button class="btn xs" onclick="abrirModalContato('${c.id}')">Editar</button>
-          <button class="btn xs danger" onclick="confirmarDelete('${c.id}')">✕</button>
+          ${atvBtnHtml(c)}
+          <button class="btn xs" onclick="openContato('${c.id}')">✎</button>
+          <button class="btn xs danger" onclick="delC('${c.id}')">✕</button>
         </div>
       </div>
-      <div class="ccard-info">
-        ${c.tel?`📞 ${c.tel} &nbsp;`:''}
-        ${c.produto?`👕 ${c.produto} &nbsp;`:''}
-        📅 ${fmtData(c.data)}
-        ${c.followup?`&nbsp; 🔔 ${fmtData(c.followup)}`:''}
+      <div class="cc-info">
+        ${c.tel?`📞 ${c.tel} &nbsp;`:''}${c.produto?`👕 ${c.produto} &nbsp;`:''}📅 ${fmtD(c.data)}
         ${c.motivo_perda?`<div style="color:var(--VM);margin-top:2px">⚠ Perda: ${c.motivo_perda}</div>`:''}
         ${c.obs?`<div style="font-style:italic;margin-top:2px">"${c.obs}"</div>`:''}
       </div>
@@ -807,175 +752,192 @@ function renderContatos(){
   }).join('');
 }
 
-// INSIGHTS
-function setPeriodo(btn,p){ document.querySelectorAll('.periodo-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); periodoInsights=p; renderInsights(); }
+function setFiltroC(btn,f){document.querySelectorAll('#filtros-c .filtro').forEach(b=>b.classList.remove('active'));btn.classList.add('active');filtroC=f;renderContatos();}
 
-function filtrarPorPeriodo(lista){
-  if(periodoInsights==='0') return lista;
-  const d=new Date(); d.setDate(d.getDate()-parseInt(periodoInsights));
+// INSIGHTS
+function setPer(btn,p){document.querySelectorAll('.pb').forEach(b=>b.classList.remove('active'));btn.classList.add('active');periodo=p;renderInsights();}
+
+function filtPeriodo(lista){
+  if(periodo==='0')return lista;
+  const d=new Date();d.setDate(d.getDate()-parseInt(periodo));
   return lista.filter(c=>new Date(c.data)>=d);
 }
 
 function renderInsights(){
-  filtroUsuarioInsights=document.getElementById('filtro-usuario')||{value:'todos'};
-  filtroUsuarioInsights=document.getElementById('filtro-usuario').value;
-  let lista=filtrarPorPeriodo(contatos);
-  if(filtroUsuarioInsights!=='todos') lista=lista.filter(c=>c.usuario===filtroUsuarioInsights);
+  // Atualizar selects
+  const su=document.getElementById('ins-user');
+  if(su)su.innerHTML='<option value="todos">Todos os usuários</option>'+cfg.usuarios.map(u=>`<option value="${u.id}">${u.nome}</option>`).join('');
+  const sf=document.getElementById('ins-funil');
+  if(sf)sf.innerHTML='<option value="todos">Todos os funis</option>'+cfg.funis.map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');
+
+  const insUser=(document.getElementById('ins-user')||{value:'todos'}).value;
+  const insFunil=(document.getElementById('ins-funil')||{value:'todos'}).value;
+
+  let lista=filtPeriodo(contatos);
+  if(insUser!=='todos')lista=lista.filter(c=>c.usuario===insUser);
+  if(insFunil!=='todos')lista=lista.filter(c=>c.funil===insFunil);
+
   const total=lista.length;
-  const fechados=lista.filter(c=>c.etapa&&getEtapa(c.funil,c.etapa)&&getEtapa(c.funil,c.etapa).nome.toLowerCase().includes('fechado'));
-  const perdidos=lista.filter(c=>c.etapa&&getEtapa(c.funil,c.etapa)&&getEtapa(c.funil,c.etapa).nome.toLowerCase().includes('perdido'));
-  const receita=fechados.reduce((a,b)=>a+(b.valor||0),0);
-  const txConv=total>0?Math.round((fechados.length/total)*100):0;
+  const ganhos=lista.filter(c=>isGanho(c.funil,c.etapa));
+  const perdidos=lista.filter(c=>isPerdido(c.funil,c.etapa));
+  const receita=ganhos.reduce((a,b)=>a+(b.valor||0),0);
+  const txConv=total>0?Math.round((ganhos.length/total)*100):0;
   const txPerda=total>0?Math.round((perdidos.length/total)*100):0;
-  const tkMedio=fechados.length>0?Math.round(receita/fechados.length):0;
+  const tkMedio=ganhos.length>0?Math.round(receita/ganhos.length):0;
+  const emAberto=lista.filter(c=>!isGanho(c.funil,c.etapa)&&!isPerdido(c.funil,c.etapa)).length;
 
   // Motivos de perda
-  const motivosCount={};
-  perdidos.forEach(c=>{ if(c.motivo_perda){ motivosCount[c.motivo_perda]=(motivosCount[c.motivo_perda]||0)+1; } });
-  const topMotivo=Object.entries(motivosCount).sort((a,b)=>b[1]-a[1]);
+  const mc={};perdidos.forEach(c=>{if(c.motivo_perda){mc[c.motivo_perda]=(mc[c.motivo_perda]||0)+1;}});
+  const topM=Object.entries(mc).sort((a,b)=>b[1]-a[1]);
+  const maxM=Math.max(1,...Object.values(mc));
 
   // Por canal
-  const canaisCount={};
-  lista.forEach(c=>{ const k=c.canal||'outro'; canaisCount[k]=(canaisCount[k]||0)+1; });
+  const cc={};lista.forEach(c=>{const k=c.canal||'outro';cc[k]=(cc[k]||0)+1;});
+  const maxC=Math.max(1,...Object.values(cc));
 
   // Por funil
-  const funisCount={};
-  lista.forEach(c=>{ const f=getFunil(c.funil); if(f){ funisCount[f.nome]=(funisCount[f.nome]||0)+1; } });
+  const fc2={};lista.forEach(c=>{const f=getFunil(c.funil);if(f)fc2[f.nome]=(fc2[f.nome]||0)+1;});
+  const maxF2=Math.max(1,...Object.values(fc2));
 
-  const maxM=Math.max(1,...Object.values(motivosCount));
-  const maxC=Math.max(1,...Object.values(canaisCount));
+  // Atividades
+  const hoje=new Date();hoje.setHours(0,0,0,0);
+  const atvHoje=lista.filter(c=>{if(!c.atv_data)return false;const d=new Date(c.atv_data+'T00:00:00');return d.getTime()===hoje.getTime();}).length;
+  const atvAtras=lista.filter(c=>{if(!c.atv_data)return false;const d=new Date(c.atv_data+'T00:00:00');return d<hoje;}).length;
 
-  document.getElementById('insights-content').innerHTML=`
-    <div class="insight-grid">
-      <div class="ig-card"><div class="ig-n">${total}</div><div class="ig-l">Total contatos</div></div>
-      <div class="ig-card"><div class="ig-n">${fechados.length}</div><div class="ig-l">Fechados</div></div>
-      <div class="ig-card"><div class="ig-n">${perdidos.length}</div><div class="ig-l">Perdidos</div></div>
-      <div class="ig-card"><div class="ig-n">${txConv}%</div><div class="ig-l">Taxa de conversão</div><div class="ig-s" style="color:${txConv>=15?'var(--VD)':txConv>=8?'var(--AM)':'var(--VM)'}">${txConv>=15?'Boa':txConv>=8?'Regular':'Baixa'}</div></div>
-      <div class="ig-card"><div class="ig-n">${txPerda}%</div><div class="ig-l">Taxa de perda</div><div class="ig-s" style="color:${txPerda<=30?'var(--VD)':'var(--VM)'}">${txPerda<=30?'Ok':'Alta'}</div></div>
-      <div class="ig-card"><div class="ig-n">R$${Math.round(receita).toLocaleString('pt-BR')}</div><div class="ig-l">Receita fechada</div></div>
-      <div class="ig-card"><div class="ig-n">R$${tkMedio.toLocaleString('pt-BR')}</div><div class="ig-l">Ticket médio</div></div>
+  document.getElementById('ins-content').innerHTML=`
+    <div class="mg">
+      <div class="mc"><div class="mc-n">${total}</div><div class="mc-l">Total</div></div>
+      <div class="mc"><div class="mc-n">${ganhos.length}</div><div class="mc-l">Ganhos</div></div>
+      <div class="mc"><div class="mc-n">${perdidos.length}</div><div class="mc-l">Perdidos</div></div>
+      <div class="mc"><div class="mc-n">${emAberto}</div><div class="mc-l">Em aberto</div></div>
+      <div class="mc"><div class="mc-n">${txConv}%</div><div class="mc-l">Tx. conversão</div><div class="mc-s ${txConv>=15?'v':txConv>=8?'a':'r'}">${txConv>=15?'Boa':txConv>=8?'Regular':'Baixa'}</div></div>
+      <div class="mc"><div class="mc-n">${txPerda}%</div><div class="mc-l">Tx. perda</div><div class="mc-s ${txPerda<=30?'v':'r'}">${txPerda<=30?'Ok':'Alta'}</div></div>
+      <div class="mc"><div class="mc-n">R$${Math.round(receita).toLocaleString('pt-BR')}</div><div class="mc-l">Receita</div></div>
+      <div class="mc"><div class="mc-n">R$${tkMedio.toLocaleString('pt-BR')}</div><div class="mc-l">Ticket médio</div></div>
+      <div class="mc"><div class="mc-n">${atvHoje}</div><div class="mc-l">Ativ. hoje</div><div class="mc-s v">Fazer hoje</div></div>
+      <div class="mc"><div class="mc-n">${atvAtras}</div><div class="mc-l">Ativ. atrasadas</div><div class="mc-s ${atvAtras>0?'r':'v'}">${atvAtras>0?'Atenção':'Ok'}</div></div>
     </div>
 
     <div class="divider"></div>
-    <div class="slbl">Principais motivos de perda</div>
-    ${topMotivo.length?`
-      ${topMotivo.slice(0,6).map(([m,n])=>`
-        <div class="bb">
-          <div class="bb-row"><span>${m}</span><span>${n}</span></div>
-          <div class="bar"><div class="bar-f" style="width:${Math.round((n/maxM)*100)}%;background:#E24B4A"></div></div>
-        </div>
-      `).join('')}
-      ${topMotivo[0]?`<div style="background:var(--VM2);border-radius:6px;padding:.75rem 1rem;font-size:12px;color:var(--VM);margin-top:.5rem">⚠ Principal motivo de perda: <strong>${topMotivo[0][0]}</strong> (${topMotivo[0][1]} vez${topMotivo[0][1]>1?'es':''})</div>`:''}
-    `:`<div class="empty">Nenhuma perda registrada no período</div>`}
+    <div class="slbl">Motivos de perda</div>
+    ${topM.length?topM.slice(0,8).map(([m,n])=>`<div class="bb"><div class="bb-row"><span>${m}</span><span>${n}</span></div><div class="bar"><div class="bar-f" style="width:${Math.round((n/maxM)*100)}%;background:#E24B4A"></div></div></div>`).join('')+''+
+    (topM[0]?`<div style="background:var(--VM2);border-radius:6px;padding:.625rem 1rem;font-size:12px;color:var(--VM);margin-top:.5rem">⚠ Principal motivo: <strong>${topM[0][0]}</strong> (${topM[0][1]}x)</div>`:'')
+    :'<div class="empty">Nenhuma perda no período</div>'}
 
     <div class="divider"></div>
-    <div class="slbl">Por canal de origem</div>
-    ${Object.entries(canaisCount).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`
-      <div class="bb">
-        <div class="bb-row"><span>${CANAL_LABEL[k]||k}</span><span>${n}</span></div>
-        <div class="bar"><div class="bar-f" style="width:${Math.round((n/maxC)*100)}%;background:var(--A)"></div></div>
-      </div>
-    `).join('')||'<div class="empty">Sem dados</div>'}
+    <div class="slbl">Por canal</div>
+    ${Object.entries(cc).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<div class="bb"><div class="bb-row"><span>${CANAL[k]||k}</span><span>${n}</span></div><div class="bar"><div class="bar-f" style="width:${Math.round((n/maxC)*100)}%;background:var(--A)"></div></div></div>`).join('')||'<div class="empty">Sem dados</div>'}
 
     <div class="divider"></div>
     <div class="slbl">Por funil</div>
-    ${Object.entries(funisCount).map(([nome,n])=>`
-      <div class="bb">
-        <div class="bb-row"><span>${nome}</span><span>${n}</span></div>
-        <div class="bar"><div class="bar-f" style="width:${Math.round((n/Math.max(1,...Object.values(funisCount))))*100}%;background:var(--L)"></div></div>
-      </div>
-    `).join('')||'<div class="empty">Sem dados</div>'}
+    ${Object.entries(fc2).map(([nome,n])=>`<div class="bb"><div class="bb-row"><span>${nome}</span><span>${n}</span></div><div class="bar"><div class="bar-f" style="width:${Math.round((n/maxF2)*100)}%;background:var(--L)"></div></div></div>`).join('')||'<div class="empty">Sem dados</div>'}
   `;
 }
 
 // CONFIG
 function renderConfig(){
-  const fc=document.getElementById('config-funis');
-  fc.innerHTML=config.funis.map(f=>`
-    <div class="fcard" style="margin-bottom:.75rem">
-      <div class="ftitle">
-        <span>${f.nome}</span>
+  document.getElementById('cfg-funis').innerHTML=cfg.funis.map(f=>`
+    <div class="fcard">
+      <div class="ftitle"><span>${f.nome}</span>
         <div style="display:flex;gap:6px">
-          <button class="btn sm" onclick="abrirModalNovoFunil('${f.id}')">Renomear</button>
-          <button class="btn sm danger" onclick="deletarFunil('${f.id}')">Apagar</button>
+          <button class="btn sm" onclick="openModal('modal-funil','${f.id}')">Renomear</button>
+          <button class="btn sm danger" onclick="delFunil('${f.id}')">Apagar</button>
         </div>
       </div>
-      <div style="font-size:12px;color:var(--G3);margin-bottom:.75rem">${f.etapas.length} etapas</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px">
-        ${f.etapas.map(e=>`
-          <div style="display:flex;align-items:center;gap:4px;background:var(--G);border-radius:6px;padding:4px 8px">
-            <span style="font-size:12px;color:var(--K)">${e.nome}</span>
-            <button class="btn xs" onclick="abrirModalEditarEtapa('${f.id}','${e.id}')" style="padding:1px 5px">✎</button>
-            <button class="btn xs danger" onclick="deletarEtapa('${f.id}','${e.id}')" style="padding:1px 5px">✕</button>
-          </div>
-        `).join('')}
-        <button class="btn xs" onclick="abrirModalNovaEtapa('${f.id}')">+ Etapa</button>
+        ${f.etapas.map(e=>`<div style="display:flex;align-items:center;gap:4px;background:var(--G);border-radius:6px;padding:4px 8px">
+          <span style="font-size:12px">${e.nome}</span>
+          <button class="btn xs" onclick="openModal('modal-etapa','${f.id}','${e.id}')">✎</button>
+          <button class="btn xs danger" onclick="delEtapa('${f.id}','${e.id}')">✕</button>
+        </div>`).join('')}
+        <button class="btn xs" onclick="openModal('modal-etapa','${f.id}',null)">+ Etapa</button>
       </div>
     </div>
   `).join('');
-
-  const uc=document.getElementById('config-usuarios');
-  uc.innerHTML=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.75rem">
-    ${config.usuarios.map(u=>`
-      <div style="display:flex;align-items:center;gap:6px;background:var(--G);border-radius:20px;padding:5px 12px">
-        <span style="font-size:12px;color:var(--K)">👤 ${u.nome}</span>
-        <button class="btn xs danger" onclick="deletarUsuario('${u.id}')" style="padding:1px 5px;border-radius:50%">✕</button>
-      </div>
-    `).join('')}
+  document.getElementById('cfg-users').innerHTML=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.75rem">
+    ${cfg.usuarios.map(u=>`<div style="display:flex;align-items:center;gap:6px;background:var(--G);border-radius:20px;padding:5px 12px">
+      <span style="font-size:12px">👤 ${u.nome}</span>
+      <button class="btn xs danger" onclick="delUser('${u.id}')">✕</button>
+    </div>`).join('')}
   </div>`;
 }
 
-function deletarFunil(id){
-  if(!confirm('Apagar este funil? Os contatos associados ficarão sem funil.')) return;
-  config.funis=config.funis.filter(f=>f.id!==id);
-  if(funilAtivo===id && config.funis.length) funilAtivo=config.funis[0].id;
-  saveConfig(); renderAll();
-}
-
-function deletarEtapa(funilId,etapaId){
-  if(!confirm('Apagar esta etapa?')) return;
-  const f=getFunil(funilId); if(!f) return;
-  f.etapas=f.etapas.filter(e=>e.id!==etapaId);
-  saveConfig(); renderAll();
-}
-
-function deletarUsuario(id){
-  if(!confirm('Remover este usuário?')) return;
-  config.usuarios=config.usuarios.filter(u=>u.id!==id);
-  saveConfig(); renderConfig(); renderUserBtns();
-}
-
-// USER BTNS (header)
-function renderUserBtns(){
-  const el=document.getElementById('user-btns');
-  el.innerHTML=`<button class="hdr-user${userAtivo==='todos'?' active':''}" onclick="setUserAtivo('todos')">Todos</button>`
-    +config.usuarios.map(u=>`<button class="hdr-user${userAtivo===u.id?' active':''}" onclick="setUserAtivo('${u.id}')">${u.nome}</button>`).join('');
-  // Atualizar select insights
-  const sel=document.getElementById('filtro-usuario');
-  if(sel){
-    sel.innerHTML='<option value="todos">Todos os usuários</option>'+config.usuarios.map(u=>`<option value="${u.id}">${u.nome}</option>`).join('');
+// FUNIL MODAL
+function openModal(modal,fid=null,eid=null){
+  editFid=fid;editEfid=fid;editEid=eid;
+  if(modal==='modal-funil'){
+    const f=fid?getFunil(fid):null;
+    document.getElementById('mf-title').textContent=fid?'Renomear funil':'Novo funil';
+    document.getElementById('f-funil-nome').value=f?f.nome:'';
+    document.getElementById('fb-f').textContent='';
   }
+  if(modal==='modal-etapa'){
+    const e=fid&&eid?getEtapa(fid,eid):null;
+    document.getElementById('me-title').textContent=eid?'Editar etapa':'Nova etapa';
+    document.getElementById('f-etapa-nome').value=e?e.nome:'';
+  }
+  document.getElementById(modal).style.display='flex';
 }
 
-function setUserAtivo(id){ userAtivo=id; renderUserBtns(); renderAll(); }
+function saveFunil(){
+  const nome=document.getElementById('f-funil-nome').value.trim();
+  if(!nome){document.getElementById('fb-f').textContent='Nome obrigatório';return;}
+  if(editFid){const f=getFunil(editFid);if(f)f.nome=nome;}
+  else{const id='f'+Date.now();cfg.funis.push({id,nome,etapas:[{id:'e'+Date.now(),nome:'Novo contato'},{id:'e'+(Date.now()+1),nome:'Fechado'},{id:'e'+(Date.now()+2),nome:'Perdido'}]});funilAtivo=id;}
+  saveCfg();closeModal('modal-funil');renderAll();
+}
+
+function saveEtapa(){
+  const nome=document.getElementById('f-etapa-nome').value.trim();
+  if(!nome)return;
+  const funil=getFunil(editEfid);if(!funil)return;
+  if(editEid){const e=funil.etapas.find(x=>x.id===editEid);if(e)e.nome=nome;}
+  else funil.etapas.push({id:'e'+Date.now(),nome});
+  saveCfg();closeModal('modal-etapa');renderFunil();
+}
+
+function saveUser(){
+  const nome=document.getElementById('f-user-nome').value.trim();
+  if(!nome)return;
+  cfg.usuarios.push({id:'u'+Date.now(),nome});
+  saveCfg();closeModal('modal-user');renderConfig();renderUbtns();
+}
+
+function delFunil(id){if(!confirm('Apagar funil?'))return;cfg.funis=cfg.funis.filter(f=>f.id!==id);if(funilAtivo===id&&cfg.funis.length)funilAtivo=cfg.funis[0].id;saveCfg();renderAll();}
+function delEtapa(fid,eid){if(!confirm('Apagar etapa?'))return;const f=getFunil(fid);if(f)f.etapas=f.etapas.filter(e=>e.id!==eid);saveCfg();renderAll();}
+function delUser(id){if(!confirm('Remover usuário?'))return;cfg.usuarios=cfg.usuarios.filter(u=>u.id!==id);saveCfg();renderConfig();renderUbtns();}
+
+// HEADER USER BTNS
+function renderUbtns(){
+  const el=document.getElementById('ubtns');
+  el.innerHTML=`<button class="hdr-ubtn${userAtivo==='todos'?' on':''}" onclick="setUser('todos')">Todos</button>`
+    +cfg.usuarios.map(u=>`<button class="hdr-ubtn${userAtivo===u.id?' on':''}" onclick="setUser('${u.id}')">${u.nome}</button>`).join('');
+  // Update insight user select
+  const su=document.getElementById('ins-user');
+  if(su)su.innerHTML='<option value="todos">Todos os usuários</option>'+cfg.usuarios.map(u=>`<option value="${u.id}">${u.nome}</option>`).join('');
+  const sf=document.getElementById('ins-funil');
+  if(sf)sf.innerHTML='<option value="todos">Todos os funis</option>'+cfg.funis.map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');
+}
+
+function setUser(id){userAtivo=id;renderUbtns();renderAll();}
 
 // MODAL
-function fecharModal(id){ document.getElementById(id).style.display='none'; }
-document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.querySelectorAll('.overlay').forEach(o=>o.style.display='none'); });
+function closeModal(id){document.getElementById(id).style.display='none';}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.overlay').forEach(o=>o.style.display='none');});
 
-// UTILS
-function fmtData(iso){ try{return new Date(iso).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});}catch(e){return '';} }
+// HELPERS
+function setFb(id,msg,type){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='fb '+type;}}
 
 function renderAll(){
   renderFunil();
   renderContatos();
-  renderUserBtns();
+  renderUbtns();
 }
 
 // INIT
-loadConfig();
-renderUserBtns();
-sync();
+loadCfg();
+renderUbtns();
+doSync();
 </script>
 </body>
 </html>
