@@ -506,6 +506,27 @@ async function doSync() {
           resultado:    String(r[17] || '')
         }));
     }
+    // Corrigir etapas órfãs — se o ID da etapa não existe no funil,
+    // mantém o contato mas move para a primeira etapa disponível
+    contatos.forEach(c => {
+      const funil = getFunil(c.funil);
+      if (!funil) {
+        // funil não existe — tenta d2c como fallback
+        const fallback = getFunil('d2c');
+        if (fallback) { c.funil = 'd2c'; c.etapa = fallback.etapas[0].id; }
+        return;
+      }
+      const etapaExiste = funil.etapas.some(e => e.id === c.etapa);
+      if (!etapaExiste) {
+        // Tenta encontrar etapa pelo nome parecido
+        const etapaNome = c.etapa.replace(/^[a-z0-9]+-/, '').toLowerCase();
+        const match = funil.etapas.find(e =>
+          e.nome.toLowerCase().includes(etapaNome) ||
+          e.id.toLowerCase().includes(etapaNome)
+        );
+        c.etapa = match ? match.id : funil.etapas[0].id;
+      }
+    });
     ss('ok', contatos.length + ' contato' + (contatos.length !== 1 ? 's' : ''));
     renderAll();
   } catch(e) {
