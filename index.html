@@ -378,11 +378,11 @@ let contatos = [];
 let cfg = {
   funis: [
     {id:'d2c', nome:'D2C', etapas:[
-      {id:'d2c-novo',  nome:'Novo contato'},
-      {id:'d2c-atend', nome:'Atendimento'},
-      {id:'d2c-pens',  nome:'Pensando'},
-      {id:'d2c-fech',  nome:'Fechado'},
-      {id:'d2c-perd',  nome:'Perdido'}
+      {id:'d2c-bv',    nome:'Boas Vindas 🤝'},
+      {id:'d2c-ni',    nome:'Necessidade de Interesse 🔍'},
+      {id:'d2c-neg',   nome:'Negociação Comercial 🤑'},
+      {id:'d2c-cn',    nome:'Cliente Novo'},
+      {id:'d2c-cr',    nome:'Cliente Para Resgate'}
     ]},
     {id:'b2b', nome:'B2B', etapas:[
       {id:'b2b-prosp', nome:'Prospecção'},
@@ -422,10 +422,29 @@ function ss(s, m) {
 }
 
 // ── CONFIG PERSIST ─────────────────────────────────────
-function loadCfg() {
-  try { const s = localStorage.getItem('psn_cfg3'); if(s) cfg = JSON.parse(s); } catch(e){}
+async function loadCfg() {
+  // Tenta carregar da planilha — fonte única de verdade
+  try {
+    const r = await apiPost({action:'getConfig'});
+    if (r && typeof r === 'object' && r.funis) {
+      cfg = r;
+      return;
+    }
+    // Se vier como string JSON dentro do objeto
+    if (r && typeof r === 'string') {
+      const parsed = JSON.parse(r);
+      if (parsed && parsed.funis) { cfg = parsed; return; }
+    }
+  } catch(e) {}
+  // Fallback: localStorage (offline ou erro)
+  try { const s = localStorage.getItem('psn_cfg3'); if(s) cfg = JSON.parse(s); } catch(e) {}
 }
-function saveCfg() { localStorage.setItem('psn_cfg3', JSON.stringify(cfg)); }
+
+async function saveCfg() {
+  // Salva na planilha (fonte única) e no localStorage (cache offline)
+  try { await apiPost({action:'saveConfig', config: cfg}); } catch(e) {}
+  try { localStorage.setItem('psn_cfg3', JSON.stringify(cfg)); } catch(e) {}
+}
 
 // ── API ────────────────────────────────────────────────
 async function apiPost(payload) {
@@ -1161,7 +1180,7 @@ function openFunilModal(fid = null) {
   document.getElementById('modal-funil').style.display = 'flex';
 }
 
-function saveFunil() {
+async function saveFunil() {
   const nome = document.getElementById('f-funil-nome').value.trim();
   if (!nome) { document.getElementById('fb-f').textContent = 'Nome obrigatório'; return; }
   if (editFid) {
@@ -1175,7 +1194,7 @@ function saveFunil() {
     ]});
     funilAtivo = id;
   }
-  saveCfg();
+  await saveCfg();
   closeM('modal-funil');
   renderAll();
 }
@@ -1189,7 +1208,7 @@ function openEtapaModal(fid, eid = null) {
   document.getElementById('modal-etapa').style.display = 'flex';
 }
 
-function saveEtapa() {
+async function saveEtapa() {
   const nome  = document.getElementById('f-etapa-nome').value.trim();
   if (!nome) return;
   const funil = getFunil(editEfid);
@@ -1199,7 +1218,7 @@ function saveEtapa() {
   } else {
     funil.etapas.push({id:'e'+Date.now(), nome});
   }
-  saveCfg();
+  await saveCfg();
   closeM('modal-etapa');
   renderFunil();
 }
@@ -1209,33 +1228,33 @@ function openUserModal() {
   document.getElementById('modal-user').style.display = 'flex';
 }
 
-function saveUser() {
+async function saveUser() {
   const nome = document.getElementById('f-user-nome').value.trim();
   if (!nome) return;
   cfg.usuarios.push({id:'u'+Date.now(), nome});
-  saveCfg();
+  await saveCfg();
   closeM('modal-user');
   renderConfig();
   renderUbtns();
 }
 
-function delFunil(id) {
+async function delFunil(id) {
   if (!confirm('Apagar funil? Contatos associados ficarão sem funil.')) return;
   cfg.funis = cfg.funis.filter(f => f.id !== id);
   if (funilAtivo === id && cfg.funis.length) funilAtivo = cfg.funis[0].id;
-  saveCfg(); renderAll();
+  await saveCfg(); renderAll();
 }
 
-function delEtapa(fid, eid) {
+async function delEtapa(fid, eid) {
   if (!confirm('Apagar etapa?')) return;
   const f = getFunil(fid); if (f) f.etapas = f.etapas.filter(e => e.id !== eid);
-  saveCfg(); renderAll();
+  await saveCfg(); renderAll();
 }
 
-function delUser(id) {
+async function delUser(id) {
   if (!confirm('Remover usuário?')) return;
   cfg.usuarios = cfg.usuarios.filter(u => u.id !== id);
-  saveCfg(); renderConfig(); renderUbtns();
+  await saveCfg(); renderConfig(); renderUbtns();
 }
 
 // ── HEADER USER BTNS ───────────────────────────────────
@@ -1269,9 +1288,12 @@ function renderAll() {
 }
 
 // ── INIT ───────────────────────────────────────────────
-loadCfg();
-renderUbtns();
-doSync();
+(async function() {
+  ss('ld', 'Carregando configuração...');
+  await loadCfg();
+  renderUbtns();
+  await doSync();
+})();
 </script>
 </body>
 </html>
