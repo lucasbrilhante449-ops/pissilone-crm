@@ -234,6 +234,13 @@ textarea.fi{resize:vertical;min-height:60px}
 
 <!-- CONFIG -->
 <div id="pane-config" class="pane">
+  <div id="cfg-sync-bar" style="background:var(--AM2);border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap">
+    <div>
+      <div style="font-size:12px;font-weight:600;color:var(--AM)">☁ Sincronizar configuração</div>
+      <div style="font-size:11px;color:var(--G3);margin-top:2px">Salva funis, etapas e usuários na planilha para todos os dispositivos verem igual</div>
+    </div>
+    <button class="btn sm laranja" onclick="forceSaveConfig()">Salvar na nuvem agora</button>
+  </div>
   <div class="slbl">Funis e Etapas</div>
   <div id="cfg-funis"></div>
   <button class="btn laranja sm" onclick="openFunilModal(null)" style="margin-bottom:1.5rem">+ Novo funil</button>
@@ -371,7 +378,7 @@ textarea.fi{resize:vertical;min-height:60px}
 </div>
 
 <script>
-const API = 'https://script.google.com/macros/s/AKfycbxrJTFMTbOyw9UwIz0RMhkF6lGGVsHznllBPo5uKlGrAyxb028SAlW0z2arpvEtShueRg/exec';
+const API = 'https://script.google.com/macros/s/AKfycbxyttSTJIYJusK3yL4EoVsXoVG8p0W_4LFnw3zB5DuO9P6ykMbS5dPvyMXi406Ch8jCCA/exec';
 
 // ── STATE ──────────────────────────────────────────────
 let contatos = [];
@@ -423,26 +430,39 @@ function ss(s, m) {
 
 // ── CONFIG PERSIST ─────────────────────────────────────
 async function loadCfg() {
-  // Tenta carregar da planilha — fonte única de verdade
   try {
     const r = await apiPost({action:'getConfig'});
-    if (r && typeof r === 'object' && r.funis) {
-      cfg = r;
+    // A API retorna o conteúdo da célula A1 da aba config
+    // Pode ser: objeto já parseado, string JSON, ou array [["{...}"]]
+    let parsed = null;
+    if (Array.isArray(r) && r.length > 0) {
+      // formato [[valor]]
+      const val = Array.isArray(r[0]) ? r[0][0] : r[0];
+      if (typeof val === 'string' && val.startsWith('{')) {
+        try { parsed = JSON.parse(val); } catch(e2) {}
+      } else if (typeof val === 'object' && val.funis) {
+        parsed = val;
+      }
+    } else if (r && typeof r === 'object' && r.funis) {
+      parsed = r;
+    } else if (typeof r === 'string' && r.startsWith('{')) {
+      try { parsed = JSON.parse(r); } catch(e2) {}
+    }
+    if (parsed && parsed.funis && parsed.funis.length > 0) {
+      cfg = parsed;
+      // Atualizar localStorage como cache
+      try { localStorage.setItem('psn_cfg3', JSON.stringify(cfg)); } catch(e) {}
       return;
     }
-    // Se vier como string JSON dentro do objeto
-    if (r && typeof r === 'string') {
-      const parsed = JSON.parse(r);
-      if (parsed && parsed.funis) { cfg = parsed; return; }
-    }
-  } catch(e) {}
-  // Fallback: localStorage (offline ou erro)
-  try { const s = localStorage.getItem('psn_cfg3'); if(s) cfg = JSON.parse(s); } catch(e) {}
+  } catch(e) {
+    console.warn('loadCfg error:', e);
+  }
+  // Fallback: localStorage
+  try { const s = localStorage.getItem('psn_cfg3'); if(s) { const p=JSON.parse(s); if(p&&p.funis) cfg=p; } } catch(e) {}
 }
 
 async function saveCfg() {
-  // Salva na planilha (fonte única) e no localStorage (cache offline)
-  try { await apiPost({action:'saveConfig', config: cfg}); } catch(e) {}
+  try { await apiPost({action:'saveConfig', config: cfg}); } catch(e) { console.warn('saveCfg error:', e); }
   try { localStorage.setItem('psn_cfg3', JSON.stringify(cfg)); } catch(e) {}
 }
 
@@ -1168,6 +1188,27 @@ function renderConfig() {
           <button class="btn xs danger" onclick="delUser('${u.id}')">✕</button>
         </div>`).join('')}
     </div>`;
+}
+
+// ── FORCE SAVE CONFIG ─────────────────────────────────
+async function forceSaveConfig() {
+  const btn = event.target;
+  btn.textContent = 'Salvando...';
+  btn.disabled = true;
+  try {
+    await apiPost({action:'saveConfig', config: cfg});
+    btn.textContent = '✓ Salvo!';
+    btn.style.background = '#4CAF50';
+    setTimeout(() => {
+      btn.textContent = 'Salvar na nuvem agora';
+      btn.style.background = '';
+      btn.disabled = false;
+    }, 2000);
+  } catch(ex) {
+    btn.textContent = 'Erro — tente novamente';
+    btn.disabled = false;
+    console.error(ex);
+  }
 }
 
 // ── FUNIL / ETAPA / USER MODALS ────────────────────────
