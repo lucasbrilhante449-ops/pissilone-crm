@@ -156,6 +156,12 @@ textarea.fi{resize:vertical;min-height:60px}
 .fb.ok{color:var(--VD)}.fb.er{color:var(--VM)}.fb.info{color:var(--G3)}
 
 .bdg-canal{font-size:10px;padding:2px 7px;border-radius:20px;background:var(--G);color:var(--G3);border:1px solid var(--G2);display:inline-block}
+.res-ganho{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:#C8E6C9;color:#1B5E20;border:none;cursor:default;display:inline-block}
+.res-perda{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:#FFCDD2;color:#B71C1C;border:none;cursor:default;display:inline-block}
+.btn-ganho{font-size:10px;padding:2px 8px;cursor:pointer;border-radius:20px;border:1px solid #A5D6A7;background:#F1F8E9;color:#2E7D32;font-family:'Barlow',sans-serif;font-weight:600;transition:.15s}
+.btn-ganho:hover{background:#C8E6C9}
+.btn-perda{font-size:10px;padding:2px 8px;cursor:pointer;border-radius:20px;border:1px solid #EF9A9A;background:#FFF3F3;color:#C62828;font-family:'Barlow',sans-serif;font-weight:600;transition:.15s}
+.btn-perda:hover{background:#FFCDD2}
 
 @media(max-width:600px){
   .fg2,.fg3{grid-template-columns:1fr}
@@ -374,6 +380,12 @@ let cfg = {
       {id:'b2b-neg',   nome:'Negociação'},
       {id:'b2b-fech',  nome:'Fechado'},
       {id:'b2b-perd',  nome:'Perdido'}
+    ]},
+    {id:'pissifa', nome:'Pissifã', etapas:[
+      {id:'psf-ativo',    nome:'Ativo'},
+      {id:'psf-contato',  nome:'Em contato'},
+      {id:'psf-recompra', nome:'Recompra'},
+      {id:'psf-inativo',  nome:'Inativo'}
     ]}
   ],
   usuarios: [{id:'lucas', nome:'Lucas'}, {id:'ana', nome:'Ana'}]
@@ -441,7 +453,8 @@ async function doSync() {
           followup:     String(r[13] || ''),
           motivo_perda: String(r[14] || ''),
           atv_data:     String(r[15] || ''),
-          atv_desc:     String(r[16] || '')
+          atv_desc:     String(r[16] || ''),
+          resultado:    String(r[17] || '')
         }));
     }
     ss('ok', contatos.length + ' contato' + (contatos.length !== 1 ? 's' : ''));
@@ -459,7 +472,8 @@ function contatoPayload(c) {
     obs: c.obs, data: c.data, compras: c.compras,
     funil: c.funil, etapa: c.etapa, usuario: c.usuario,
     followup: c.followup, motivo_perda: c.motivo_perda || '',
-    atv_data: c.atv_data || '', atv_desc: c.atv_desc || ''
+    atv_data: c.atv_data || '', atv_desc: c.atv_desc || '',
+    resultado: c.resultado || ''
   };
 }
 
@@ -587,6 +601,18 @@ function renderFunil() {
 function kcardHtml(c) {
   const usr = cfg.usuarios.find(u => u.id === c.usuario);
   const vl  = c.valor ? `R$${Math.round(c.valor)}` : '';
+  const res = c.resultado;
+  const resBadge = res === 'ganho'
+    ? `<span class="res-ganho">✓ Ganho</span>`
+    : res === 'perda'
+    ? `<span class="res-perda">✗ Perda</span>`
+    : '';
+  const btnGanho = res !== 'ganho'
+    ? `<button class="btn-ganho" onclick="setResultado('${c.id}','ganho')">✓ Ganho</button>`
+    : '';
+  const btnPerda = res !== 'perda'
+    ? `<button class="btn-perda" onclick="setResultado('${c.id}','perda')">✗ Perda</button>`
+    : '';
   return `<div class="kc" draggable="true" data-id="${c.id}">
     <div class="kc-nome">${c.nome}</div>
     <div class="kc-sub">
@@ -594,11 +620,14 @@ function kcardHtml(c) {
       ${c.canal ? `<span>${CANAL_LABEL[c.canal]||c.canal}</span>` : ''}
       ${usr ? `<span>👤 ${usr.nome}</span>` : ''}
     </div>
+    ${resBadge ? `<div style="margin-bottom:4px">${resBadge}</div>` : ''}
     ${c.motivo_perda ? `<div style="font-size:10px;color:var(--VM);margin-bottom:4px">⚠ ${c.motivo_perda}</div>` : ''}
     <div class="kc-actions">
-      <div class="kc-left">
-        <button class="btn xs" onclick="openContato('${c.id}')">✎</button>
-        <button class="btn xs danger" onclick="delC('${c.id}')">✕</button>
+      <div class="kc-left" style="flex-wrap:wrap;gap:3px">
+        ${btnGanho}${btnPerda}
+        <button class="btn xs" onclick="openContato('${c.id}')" title="Editar">✎</button>
+        <button class="btn xs" onclick="duplicarCard('${c.id}')" title="Duplicar para Pissifã">⧉</button>
+        <button class="btn xs danger" onclick="delC('${c.id}')" title="Excluir">✕</button>
       </div>
       ${atvDotHtml(c)}
     </div>
@@ -642,6 +671,7 @@ async function confirmPerda() {
   if (!c) { closeM('modal-perda'); return; }
   c.motivo_perda = motivo;
   c.et           = 'perdido';
+  c.resultado    = 'perda';
   ss('ld', 'Salvando...');
   try { await apiSave(c); await doSync(); }
   catch(ex) { ss('er','Erro'); console.error(ex); }
@@ -657,6 +687,61 @@ function cancelPerda() {
   perdaCid = null;
   closeM('modal-perda');
   renderFunil();
+}
+
+// ── RESULTADO (GANHO / PERDA) ─────────────────────────
+async function setResultado(id, resultado) {
+  const c = contatos.find(x => x.id === id);
+  if (!c) return;
+  // Se perda, abrir modal de motivo
+  if (resultado === 'perda' && !c.motivo_perda) {
+    perdaCid = id;
+    c.resultado = 'perda';
+    document.getElementById('modal-perda').style.display = 'flex';
+    return;
+  }
+  c.resultado = resultado;
+  if (resultado === 'ganho') { c.et = 'fechado'; c.motivo_perda = ''; }
+  if (resultado === 'perda') { c.et = 'perdido'; }
+  ss('ld','Salvando...');
+  try { await apiSave(c); await doSync(); }
+  catch(ex) { ss('er','Erro'); console.error(ex); }
+}
+
+// ── DUPLICAR CARD → PISSIFÃ ────────────────────────────
+async function duplicarCard(id) {
+  const orig = contatos.find(x => x.id === id);
+  if (!orig) return;
+  const funilPsf = getFunil('pissifa');
+  if (!funilPsf) {
+    alert('Funil Pissifã não encontrado. Crie um funil chamado "Pissifã" primeiro.');
+    return;
+  }
+  const primeiraEtapa = funilPsf.etapas[0];
+  if (!confirm(`Duplicar "${orig.nome}" para o funil Pissifã?`)) return;
+  const novo = {
+    id:           String(Date.now()),
+    nome:         orig.nome,
+    tel:          orig.tel,
+    et:           'atendimento',
+    canal:        orig.canal,
+    valor:        orig.valor,
+    produto:      orig.produto,
+    obs:          orig.obs,
+    data:         new Date().toISOString(),
+    compras:      orig.compras,
+    funil:        'pissifa',
+    etapa:        primeiraEtapa.id,
+    usuario:      orig.usuario,
+    followup:     '',
+    motivo_perda: '',
+    atv_data:     '',
+    atv_desc:     '',
+    resultado:    ''
+  };
+  ss('ld','Duplicando...');
+  try { await apiSave(novo); await doSync(); }
+  catch(ex) { ss('er','Erro ao duplicar'); console.error(ex); }
 }
 
 // ── ATIVIDADE ──────────────────────────────────────────
@@ -897,8 +982,8 @@ function renderInsights() {
   if (iFunil !== 'todos') lista = lista.filter(c => c.funil   === iFunil);
 
   const total    = lista.length;
-  const ganhos   = lista.filter(c => isGanho(c.funil,   c.etapa));
-  const perdidos = lista.filter(c => isPerdido(c.funil, c.etapa));
+  const ganhos   = lista.filter(c => c.resultado === 'ganho' || isGanho(c.funil, c.etapa));
+  const perdidos = lista.filter(c => c.resultado === 'perda' || isPerdido(c.funil, c.etapa));
   const receita  = ganhos.reduce((a,b) => a + (b.valor||0), 0);
   const txConv   = total > 0 ? Math.round((ganhos.length   / total) * 100) : 0;
   const txPerda  = total > 0 ? Math.round((perdidos.length / total) * 100) : 0;
