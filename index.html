@@ -596,7 +596,7 @@ function showTab(id) {
   });
   if (id==='funil')    renderFunil();
   if (id==='contatos') renderContatos();
-  if (id==='insights') renderInsights();
+  if (id==='insights') initInsights();
   if (id==='config')   renderConfig();
 }
 
@@ -1063,6 +1063,22 @@ function setPer(btn, p) {
   renderInsights();
 }
 
+// Garantir que ao entrar na aba insights os selects estejam atualizados
+function initInsights() {
+  const su = document.getElementById('ins-user');
+  if (su) {
+    su.innerHTML = '<option value="todos">Todos usuários</option>' +
+      cfg.usuarios.map(u => `<option value="${u.id}">${u.nome}</option>`).join('');
+    if (userAtivo !== 'todos') su.value = userAtivo;
+  }
+  const sf = document.getElementById('ins-funil');
+  if (sf) {
+    sf.innerHTML = '<option value="todos">Todos funis</option>' +
+      cfg.funis.map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
+  }
+  renderInsights();
+}
+
 function filtPer(lista) {
   if (periodo === '0') return lista;
   const d = new Date(); d.setDate(d.getDate() - parseInt(periodo));
@@ -1070,20 +1086,37 @@ function filtPer(lista) {
 }
 
 function renderInsights() {
-  // atualizar selects
+  // Popular selects preservando o valor selecionado
   const su = document.getElementById('ins-user');
-  if (su) su.innerHTML = '<option value="todos">Todos usuários</option>' +
-    cfg.usuarios.map(u => `<option value="${u.id}">${u.nome}</option>`).join('');
+  if (su) {
+    const prevU = su.value;
+    su.innerHTML = '<option value="todos">Todos usuários</option>' +
+      cfg.usuarios.map(u => `<option value="${u.id}">${u.nome}</option>`).join('');
+    if (prevU) su.value = prevU;
+  }
   const sf = document.getElementById('ins-funil');
-  if (sf) sf.innerHTML = '<option value="todos">Todos funis</option>' +
-    cfg.funis.map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
+  if (sf) {
+    const prevF = sf.value;
+    sf.innerHTML = '<option value="todos">Todos funis</option>' +
+      cfg.funis.map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
+    if (prevF) sf.value = prevF;
+  }
 
-  const iUser  = (document.getElementById('ins-user')  || {value:'todos'}).value;
-  const iFunil = (document.getElementById('ins-funil') || {value:'todos'}).value;
+  const insUserEl  = document.getElementById('ins-user');
+  const insFunilEl = document.getElementById('ins-funil');
+  const iUser      = insUserEl  ? insUserEl.value  : 'todos';
+  const iFunil     = insFunilEl ? insFunilEl.value : 'todos';
 
   let lista = filtPer(contatos);
-  if (iUser  !== 'todos') lista = lista.filter(c => c.usuario === iUser);
-  if (iFunil !== 'todos') lista = lista.filter(c => c.funil   === iFunil);
+  // Filtro de usuário: select do insights OU botão do header
+  const filtroUser = iUser !== 'todos' ? iUser : (userAtivo !== 'todos' ? userAtivo : 'todos');
+  if (filtroUser !== 'todos') lista = lista.filter(c => c.usuario === filtroUser);
+  if (iFunil !== 'todos')     lista = lista.filter(c => c.funil   === iFunil);
+  // Sincronizar select com botão do header se necessário
+  if (userAtivo !== 'todos' && iUser === 'todos') {
+    const su2 = document.getElementById('ins-user');
+    if (su2) su2.value = userAtivo;
+  }
 
   const total    = lista.length;
   // Ganhos e perdidos por resultado marcado manualmente
@@ -1328,7 +1361,14 @@ function renderUbtns() {
     ).join('');
 }
 
-function setUser(id) { userAtivo = id; renderUbtns(); renderAll(); }
+function setUser(id) {
+  userAtivo = id;
+  renderUbtns();
+  renderAll();
+  // Se estiver na aba insights, re-renderizar com o filtro do header
+  const insPane = document.getElementById('pane-insights');
+  if (insPane && insPane.classList.contains('active')) renderInsights();
+}
 
 // ── MODAL HELPERS ──────────────────────────────────────
 function closeM(id) { document.getElementById(id).style.display = 'none'; }
