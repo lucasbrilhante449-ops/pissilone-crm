@@ -279,6 +279,9 @@ textarea.fi{resize:vertical;min-height:60px}
   <div class="fg fg1">
     <div><label class="flbl">Observação</label><textarea class="fi" id="f-obs"></textarea></div>
   </div>
+  <div id="reabrir-wrap" style="display:none;margin-bottom:.75rem">
+    <button class="btn full" style="border-color:var(--AM);color:var(--AM)" onclick="reabrirCard()">↺ Reabrir card (remover ganho/perda)</button>
+  </div>
   <button class="btn primary full" id="btn-sc" onclick="saveContato()">Salvar contato</button>
   <div class="fb" id="fb-c"></div>
 </div>
@@ -361,7 +364,7 @@ textarea.fi{resize:vertical;min-height:60px}
 </div>
 
 <script>
-const API = 'https://script.google.com/macros/s/AKfycbxawuqkhN04J7TiX4qVyYzqRWRaExyGFAzdMs9CR6dc03Zfd19lkkvLYmmNarTFWbEFAA/exec';
+const API = 'https://script.google.com/macros/s/AKfycbxrJTFMTbOyw9UwIz0RMhkF6lGGVsHznllBPo5uKlGrAyxb028SAlW0z2arpvEtShueRg/exec';
 
 // ── STATE ──────────────────────────────────────────────
 let contatos = [];
@@ -493,6 +496,14 @@ function isPerdido(fid, eid) {
   const e = getEtapa(fid, eid);
   return e && e.nome.toLowerCase().includes('perdido');
 }
+function isBoasVindas(fid, eid) {
+  const e = getEtapa(fid, eid);
+  return e && e.nome.toLowerCase().includes('boas vindas');
+}
+function isNegociacao(fid, eid) {
+  const e = getEtapa(fid, eid);
+  return e && e.nome.toLowerCase().includes('negociação comercial');
+}
 
 function atvStatus(c) {
   if (!c.atv_data) return 'sem';
@@ -602,17 +613,17 @@ function kcardHtml(c) {
   const usr = cfg.usuarios.find(u => u.id === c.usuario);
   const vl  = c.valor ? `R$${Math.round(c.valor)}` : '';
   const res = c.resultado;
-  const resBadge = res === 'ganho'
-    ? `<span class="res-ganho">✓ Ganho</span>`
-    : res === 'perda'
-    ? `<span class="res-perda">✗ Perda</span>`
-    : '';
-  const btnGanho = res !== 'ganho'
-    ? `<button class="btn-ganho" onclick="setResultado('${c.id}','ganho')">✓ Ganho</button>`
-    : '';
-  const btnPerda = res !== 'perda'
-    ? `<button class="btn-perda" onclick="setResultado('${c.id}','perda')">✗ Perda</button>`
-    : '';
+  // Botões ganho/perda — só mostrar se card está em negociação
+  const emNeg = isNegociacao(c.funil, c.etapa);
+  let botoesRes = '';
+  if (res === 'ganho') {
+    botoesRes = `<span class="res-ganho">✓ Ganho</span>`;
+  } else if (res === 'perda') {
+    botoesRes = `<span class="res-perda">✗ Perda</span>`;
+  } else if (emNeg) {
+    botoesRes = `<button class="btn-ganho" onclick="setResultado('${c.id}','ganho')">✓ Ganho</button>`
+              + `<button class="btn-perda" onclick="setResultado('${c.id}','perda')">✗ Perda</button>`;
+  }
   return `<div class="kc" draggable="true" data-id="${c.id}">
     <div class="kc-nome">${c.nome}</div>
     <div class="kc-sub">
@@ -620,11 +631,10 @@ function kcardHtml(c) {
       ${c.canal ? `<span>${CANAL_LABEL[c.canal]||c.canal}</span>` : ''}
       ${usr ? `<span>👤 ${usr.nome}</span>` : ''}
     </div>
-    ${resBadge ? `<div style="margin-bottom:4px">${resBadge}</div>` : ''}
+    ${botoesRes ? `<div style="margin-bottom:5px;display:flex;gap:4px;flex-wrap:wrap">${botoesRes}</div>` : ''}
     ${c.motivo_perda ? `<div style="font-size:10px;color:var(--VM);margin-bottom:4px">⚠ ${c.motivo_perda}</div>` : ''}
     <div class="kc-actions">
       <div class="kc-left" style="flex-wrap:wrap;gap:3px">
-        ${btnGanho}${btnPerda}
         <button class="btn xs" onclick="openContato('${c.id}')" title="Editar">✎</button>
         <button class="btn xs" onclick="duplicarCard('${c.id}')" title="Duplicar para Pissifã">⧉</button>
         <button class="btn xs danger" onclick="delC('${c.id}')" title="Excluir">✕</button>
@@ -693,19 +703,19 @@ function cancelPerda() {
 async function setResultado(id, resultado) {
   const c = contatos.find(x => x.id === id);
   if (!c) return;
-  // Se perda, abrir modal de motivo
-  if (resultado === 'perda' && !c.motivo_perda) {
+  if (resultado === 'perda') {
     perdaCid = id;
     c.resultado = 'perda';
     document.getElementById('modal-perda').style.display = 'flex';
     return;
   }
-  c.resultado = resultado;
-  if (resultado === 'ganho') { c.et = 'fechado'; c.motivo_perda = ''; }
-  if (resultado === 'perda') { c.et = 'perdido'; }
-  ss('ld','Salvando...');
+  // ganho direto
+  c.resultado    = 'ganho';
+  c.et           = 'fechado';
+  c.motivo_perda = '';
+  ss('ld','Salvando ganho...');
   try { await apiSave(c); await doSync(); }
-  catch(ex) { ss('er','Erro'); console.error(ex); }
+  catch(ex) { ss('er','Erro ao salvar'); console.error(ex); }
 }
 
 // ── DUPLICAR CARD → PISSIFÃ ────────────────────────────
@@ -742,6 +752,23 @@ async function duplicarCard(id) {
   ss('ld','Duplicando...');
   try { await apiSave(novo); await doSync(); }
   catch(ex) { ss('er','Erro ao duplicar'); console.error(ex); }
+}
+
+// ── REABRIR CARD ──────────────────────────────────────
+async function reabrirCard() {
+  if (!editCid) return;
+  const c = contatos.find(x => x.id === editCid);
+  if (!c) return;
+  if (!confirm('Reabrir card? O resultado (ganho/perda) será removido.')) return;
+  c.resultado    = '';
+  c.et           = 'atendimento';
+  c.motivo_perda = '';
+  ss('ld','Reabrindo...');
+  try {
+    await apiSave(c);
+    await doSync();
+    closeM('modal-c');
+  } catch(ex) { ss('er','Erro'); console.error(ex); }
 }
 
 // ── ATIVIDADE ──────────────────────────────────────────
@@ -818,6 +845,9 @@ function openContato(id = null, fid = null, eid = null) {
     if (eid) setTimeout(() => { document.getElementById('f-etapa').value = eid; }, 30);
   }
 
+  // Mostrar botão reabrir se card tem resultado definido
+  const rw = document.getElementById('reabrir-wrap');
+  if (rw) rw.style.display = (c && c.resultado) ? 'block' : 'none';
   document.getElementById('modal-c').style.display = 'flex';
 }
 
@@ -982,13 +1012,39 @@ function renderInsights() {
   if (iFunil !== 'todos') lista = lista.filter(c => c.funil   === iFunil);
 
   const total    = lista.length;
-  const ganhos   = lista.filter(c => c.resultado === 'ganho' || isGanho(c.funil, c.etapa));
-  const perdidos = lista.filter(c => c.resultado === 'perda' || isPerdido(c.funil, c.etapa));
+  // Ganhos e perdidos por resultado marcado manualmente
+  const ganhos   = lista.filter(c => c.resultado === 'ganho');
+  const perdidos = lista.filter(c => c.resultado === 'perda');
   const receita  = ganhos.reduce((a,b) => a + (b.valor||0), 0);
-  const txConv   = total > 0 ? Math.round((ganhos.length   / total) * 100) : 0;
-  const txPerda  = total > 0 ? Math.round((perdidos.length / total) * 100) : 0;
+
+  // Abordados = cards que passaram por "Boas Vindas" (qualquer funil D2C)
+  const abordados = lista.filter(c => {
+    // conta quem está em boas vindas OU já passou (ganho/perda/negociação)
+    const f = getFunil(c.funil);
+    if (!f) return false;
+    // se tem resultado = já foi abordado
+    if (c.resultado) return true;
+    // se está em boas vindas ou além = abordado
+    const etapaIdx = f.etapas.findIndex(e => e.id === c.etapa);
+    const bvIdx    = f.etapas.findIndex(e => e.nome.toLowerCase().includes('boas vindas'));
+    return bvIdx >= 0 && etapaIdx >= bvIdx;
+  });
+
+  // Base para % = cards que entraram em Negociação Comercial
+  const emNegociacao = lista.filter(c => {
+    const f = getFunil(c.funil);
+    if (!f) return false;
+    if (c.resultado) return true; // já teve resultado = passou por negociação
+    const etapaIdx = f.etapas.findIndex(e => e.id === c.etapa);
+    const negIdx   = f.etapas.findIndex(e => e.nome.toLowerCase().includes('negociação comercial'));
+    return negIdx >= 0 && etapaIdx >= negIdx;
+  });
+
+  const baseConv = emNegociacao.length;
+  const txConv   = baseConv > 0 ? Math.round((ganhos.length   / baseConv) * 100) : 0;
+  const txPerda  = baseConv > 0 ? Math.round((perdidos.length / baseConv) * 100) : 0;
   const tkMedio  = ganhos.length > 0 ? Math.round(receita / ganhos.length) : 0;
-  const emAberto = lista.filter(c => !isGanho(c.funil,c.etapa) && !isPerdido(c.funil,c.etapa)).length;
+  const emAberto = lista.filter(c => !c.resultado && !isGanho(c.funil,c.etapa) && !isPerdido(c.funil,c.etapa)).length;
 
   const hoje = new Date(); hoje.setHours(0,0,0,0);
   const atvH = lista.filter(c => { if(!c.atv_data) return false; const d=new Date(c.atv_data+'T00:00:00'); return d.getTime()===hoje.getTime(); }).length;
@@ -1006,10 +1062,12 @@ function renderInsights() {
 
   document.getElementById('ins-content').innerHTML = `
     <div class="mg">
-      <div class="mc"><div class="mc-n">${total}</div><div class="mc-l">Total</div></div>
-      <div class="mc"><div class="mc-n">${ganhos.length}</div><div class="mc-l">Ganhos</div></div>
-      <div class="mc"><div class="mc-n">${perdidos.length}</div><div class="mc-l">Perdidos</div></div>
+      <div class="mc"><div class="mc-n">${total}</div><div class="mc-l">Total contatos</div></div>
+      <div class="mc"><div class="mc-n">${abordados.length}</div><div class="mc-l">Abordados</div><div class="mc-s v">Boas Vindas+</div></div>
+      <div class="mc"><div class="mc-n">${baseConv}</div><div class="mc-l">Em negociação</div></div>
       <div class="mc"><div class="mc-n">${emAberto}</div><div class="mc-l">Em aberto</div></div>
+      <div class="mc"><div class="mc-n">${ganhos.length}</div><div class="mc-l">Ganhos</div><div class="mc-s v">✓</div></div>
+      <div class="mc"><div class="mc-n">${perdidos.length}</div><div class="mc-l">Perdidos</div><div class="mc-s r">✗</div></div>
       <div class="mc"><div class="mc-n">${txConv}%</div><div class="mc-l">Tx. conversão</div>
         <div class="mc-s ${txConv>=15?'v':txConv>=8?'a':'r'}">${txConv>=15?'Boa':txConv>=8?'Regular':'Baixa'}</div></div>
       <div class="mc"><div class="mc-n">${txPerda}%</div><div class="mc-l">Tx. perda</div>
@@ -1018,6 +1076,10 @@ function renderInsights() {
       <div class="mc"><div class="mc-n">R$${tkMedio.toLocaleString('pt-BR')}</div><div class="mc-l">Ticket médio</div></div>
       <div class="mc"><div class="mc-n">${atvH}</div><div class="mc-l">Ativ. hoje</div><div class="mc-s v">Fazer hoje</div></div>
       <div class="mc"><div class="mc-n">${atvA}</div><div class="mc-l">Atrasadas</div><div class="mc-s ${atvA>0?'r':'v'}">${atvA>0?'Atenção':'Ok'}</div></div>
+    </div>
+    <div style="background:var(--G);border-radius:6px;padding:.75rem 1rem;font-size:12px;color:var(--G3);margin-bottom:1rem">
+      📊 Taxas calculadas sobre <strong style="color:var(--K)">${baseConv} card${baseConv!==1?'s':''}</strong> que entraram em Negociação Comercial
+      ${baseConv===0?'<span style="color:var(--AM)"> — nenhum card em negociação ainda</span>':''}
     </div>
     <div class="divider"></div>
     <div class="slbl">Motivos de perda</div>
