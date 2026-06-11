@@ -77,8 +77,8 @@ textarea.fi{resize:vertical;min-height:60px}
 .board{display:flex;gap:10px;align-items:flex-start;min-width:max-content}
 .kcol{width:200px;flex-shrink:0;background:var(--W);border:1px solid var(--G2);border-radius:10px;display:flex;flex-direction:column}
 .kcol.over{border-color:var(--L);background:var(--L3)}
-.kcol-hdr{padding:.625rem .875rem;border-bottom:1px solid var(--G2);display:flex;align-items:center;justify-content:space-between;gap:6px}
-.kcol-nome{font-size:12px;font-weight:600;color:var(--K);flex:1}
+.kcol-hdr{padding:.625rem .875rem;border-bottom:1px solid var(--G2);display:flex;align-items:flex-start;justify-content:space-between;gap:6px}
+.kcol-nome{font-size:12px;font-weight:600;color:var(--K)}
 .kcol-cnt{background:var(--G);border-radius:20px;padding:1px 8px;font-size:11px;color:var(--G3);white-space:nowrap}
 .kcol-edit{font-size:11px;padding:2px 5px;cursor:pointer;border-radius:4px;border:1px solid var(--G2);background:transparent;color:var(--G3);line-height:1.4}
 .kcol-edit:hover{background:var(--G)}
@@ -629,9 +629,16 @@ function renderFunil() {
     col.className = 'kcol';
     col.dataset.etapa = etapa.id;
 
+    const somaValores = cards.reduce((a, c) => a + (c.valor || 0), 0);
+    const somaStr = somaValores > 0
+      ? 'R$' + Math.round(somaValores).toLocaleString('pt-BR')
+      : '';
     col.innerHTML = `
       <div class="kcol-hdr">
-        <span class="kcol-nome">${etapa.nome}</span>
+        <div style="flex:1;min-width:0">
+          <div class="kcol-nome">${etapa.nome}</div>
+          ${somaStr ? `<div style="font-size:11px;font-weight:600;color:var(--L);margin-top:1px">${somaStr}</div>` : ''}
+        </div>
         <span class="kcol-cnt">${cards.length}</span>
         <button class="kcol-edit" onclick="openEtapaModal('${funil.id}','${etapa.id}')">✎</button>
       </div>
