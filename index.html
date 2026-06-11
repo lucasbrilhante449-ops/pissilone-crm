@@ -430,7 +430,7 @@ textarea.fi{resize:vertical;min-height:60px}
 </div>
 
 <script>
-const API = 'https://script.google.com/macros/s/AKfycbxyttSTJIYJusK3yL4EoVsXoVG8p0W_4LFnw3zB5DuO9P6ykMbS5dPvyMXi406Ch8jCCA/exec';
+const API = 'https://script.google.com/macros/s/AKfycbyH1LZdXPP-vXCi4pth7UYrPUd2875rfwPxWSSc_BrOmHBbvXxTttJtTMqdrcHkXgp2mw/exec';
 
 // ── STATE ──────────────────────────────────────────────
 let contatos = [];
@@ -557,7 +557,8 @@ async function doSync() {
           motivo_perda: String(r[14] || ''),
           atv_data:     String(r[15] || ''),
           atv_desc:     String(r[16] || ''),
-          resultado:    String(r[17] || '')
+          resultado:    String(r[17] || ''),
+          atv_hist:     parseInt(r[18]) || 0
         }));
     }
     // Corrigir etapas órfãs — se o ID da etapa não existe no funil,
@@ -597,7 +598,8 @@ function contatoPayload(c) {
     funil: c.funil, etapa: c.etapa, usuario: c.usuario,
     followup: c.followup, motivo_perda: c.motivo_perda || '',
     atv_data: c.atv_data || '', atv_desc: c.atv_desc || '',
-    resultado: c.resultado || ''
+    resultado: c.resultado || '',
+    atv_hist: c.atv_hist || 0
   };
 }
 
@@ -626,12 +628,33 @@ function isNegociacao(fid, eid) {
   return e && e.nome.toLowerCase().includes('negociação comercial');
 }
 
+function normDate(d) {
+  // Normaliza qualquer formato para YYYY-MM-DD
+  if (!d || d.trim() === '') return '';
+  // Já está em YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+  // Formato DD/MM/YYYY
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(d)) {
+    const [dd,mm,yyyy] = d.split('/');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  // Formato M/D/YYYY ou outros — tenta parse genérico
+  const dt = new Date(d);
+  if (!isNaN(dt)) return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+  return '';
+}
+
+function hojeISO() {
+  const h = new Date();
+  return h.getFullYear()+'-'+String(h.getMonth()+1).padStart(2,'0')+'-'+String(h.getDate()).padStart(2,'0');
+}
+
 function atvStatus(c) {
-  if (!c.atv_data || c.atv_data.trim() === '') return 'sem';
-  const hoje = new Date();
-  const hj   = hoje.getFullYear() + '-' + String(hoje.getMonth()+1).padStart(2,'0') + '-' + String(hoje.getDate()).padStart(2,'0');
-  if (c.atv_data < hj) return 'atrasada';
-  if (c.atv_data === hj) return 'hoje';
+  const d = normDate(c.atv_data);
+  if (!d) return 'sem';
+  const hj = hojeISO();
+  if (d < hj)  return 'atrasada';
+  if (d === hj) return 'hoje';
   return 'agendada';
 }
 
@@ -927,9 +950,15 @@ function openAtv(id) {
     const cores = {hoje:'#C8E6C9', atrasada:'#FFCDD2', agendada:' var(--G)'};
     const card  = document.getElementById('atv-atual-card');
     card.style.background = cores[s] || 'var(--G)';
-    const fmtBR = d => new Date(d+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
-    const labels = {hoje:'📅 Hoje', atrasada:'⚠ Atrasada — ', agendada:'📅 '};
-    document.getElementById('atv-atual-data').textContent = (labels[s]||'') + fmtBR(c.atv_data);
+    const dn = normDate(c.atv_data);
+    const fmtBR = iso => {
+      if (!iso) return '';
+      const [y,m,d] = iso.split('-');
+      const dt = new Date(parseInt(y), parseInt(m)-1, parseInt(d));
+      return dt.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+    };
+    const labels = {hoje:'📅 Hoje — ', atrasada:'⚠ Atrasada desde ', agendada:'📅 '};
+    document.getElementById('atv-atual-data').textContent = (labels[s]||'') + fmtBR(dn);
     document.getElementById('atv-atual-data').style.color = s==='atrasada'?'var(--VM)':s==='hoje'?'var(--VD)':'var(--K)';
     document.getElementById('atv-atual-desc').textContent = c.atv_desc || '';
     // Botão check
@@ -945,7 +974,8 @@ function openAtv(id) {
 async function saveAtv() {
   const c = contatos.find(x => x.id === atvCid);
   if (!c) return;
-  c.atv_data = document.getElementById('f-atv-data').value;
+  const rawData = document.getElementById('f-atv-data').value;
+  c.atv_data = normDate(rawData) || rawData; // garante ISO
   c.atv_desc = document.getElementById('f-atv-desc').value.trim();
   ss('ld','Salvando atividade...');
   try { await apiSave(c); await doSync(); }
@@ -972,7 +1002,8 @@ async function checkpointAtv() {
   if (!c) return;
   const btn = document.getElementById('btn-checkpoint');
   if (btn) { btn.textContent = 'Salvando...'; btn.disabled = true; }
-  // Marcar como concluída — limpa a atividade atual
+  // Incrementar contador histórico + limpar atividade atual
+  c.atv_hist = (c.atv_hist || 0) + 1;
   c.atv_data = '';
   c.atv_desc = '';
   ss('ld','Atividade concluída...');
@@ -1399,6 +1430,41 @@ function renderInsights() {
       ? topM.slice(0,8).map(([m,n]) => `<div class="bb"><div class="bb-row"><span>${m}</span><span>${n}</span></div><div class="bar"><div class="bar-f" style="width:${Math.round((n/maxM)*100)}%;background:#E24B4A"></div></div></div>`).join('')
         + (topM[0] ? `<div style="background:var(--VM2);border-radius:6px;padding:.625rem 1rem;font-size:12px;color:var(--VM);margin-top:.5rem">⚠ Principal motivo: <strong>${topM[0][0]}</strong> (${topM[0][1]}x)</div>` : '')
       : '<div class="empty">Nenhuma perda no período</div>'}
+    <div class="divider"></div>
+    <div class="slbl">Volume de atividade</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:.75rem">
+      <div class="mc">
+        <div class="mc-n">${lista.reduce((a,c)=>a+(c.atv_hist||0),0)}</div>
+        <div class="mc-l">Checkpoints dados</div>
+        <div class="mc-s v">total executado</div>
+      </div>
+      <div class="mc">
+        <div class="mc-n">${lista.filter(c=>atvStatus(c)==='hoje').length}</div>
+        <div class="mc-l">Ativ. para hoje</div>
+        <div class="mc-s v">🟢 Fazer agora</div>
+      </div>
+      <div class="mc">
+        <div class="mc-n">${lista.filter(c=>atvStatus(c)==='agendada').length}</div>
+        <div class="mc-l">Agendadas</div>
+        <div class="mc-s" style="color:var(--G3)">⚫ Futuras</div>
+      </div>
+      <div class="mc">
+        <div class="mc-n">${lista.filter(c=>atvStatus(c)==='atrasada').length}</div>
+        <div class="mc-l">Atrasadas</div>
+        <div class="mc-s a">🟡 Atenção</div>
+      </div>
+      <div class="mc">
+        <div class="mc-n">${lista.filter(c=>atvStatus(c)==='sem').length}</div>
+        <div class="mc-l">Sem atividade</div>
+        <div class="mc-s r">🔴 Agendar</div>
+      </div>
+      <div class="mc">
+        <div class="mc-n">${lista.length > 0 ? Math.round(lista.reduce((a,c)=>a+(c.atv_hist||0),0)/lista.length*10)/10 : 0}</div>
+        <div class="mc-l">Média por card</div>
+        <div class="mc-s" style="color:var(--G3)">checkpoints</div>
+      </div>
+    </div>
+
     <div class="divider"></div>
     <div class="slbl">Por canal</div>
     ${Object.entries(cc).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<div class="bb"><div class="bb-row"><span>${CANAL_LABEL[k]||k}</span><span>${n}</span></div><div class="bar"><div class="bar-f" style="width:${Math.round((n/maxC)*100)}%;background:var(--A)"></div></div></div>`).join('')||'<div class="empty">Sem dados</div>'}
