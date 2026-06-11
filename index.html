@@ -198,6 +198,15 @@ textarea.fi{resize:vertical;min-height:60px}
 <div id="pane-funil" class="pane active">
   <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:.875rem;flex-wrap:wrap">
     <div class="funil-sel" id="funil-tabs"></div>
+    <div style="display:flex;align-items:center;gap:8px;flex:1;max-width:340px;min-width:180px">
+      <div style="position:relative;flex:1">
+        <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--G3);font-size:14px;pointer-events:none">⌕</span>
+        <input class="fi" id="funil-busca" type="text" placeholder="Buscar contato no funil..."
+          style="padding-left:30px;font-size:12px;height:32px"
+          oninput="renderFunil()">
+      </div>
+      <button class="btn sm" onclick="limparBuscaFunil()" id="funil-busca-clear" style="display:none;padding:4px 8px" title="Limpar busca">✕</button>
+    </div>
     <button class="btn sm laranja" onclick="openFunilModal(null)">+ Funil</button>
   </div>
   <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.75rem;align-items:center">
@@ -699,6 +708,12 @@ function renderFunilTabs() {
 
 function setFunil(id) { funilAtivo = id; renderFunil(); }
 
+function limparBuscaFunil() {
+  const el = document.getElementById('funil-busca');
+  if (el) { el.value = ''; el.focus(); }
+  renderFunil();
+}
+
 function setFiltroAtv(btn, f) {
   document.querySelectorAll('[id^="fatv-"]').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
@@ -715,13 +730,18 @@ function renderFunil() {
 
   funil.etapas.forEach(etapa => {
     // filtra contatos desta coluna
+    const buscaFunil = (document.getElementById('funil-busca') || {value:''}).value.toLowerCase().trim();
     const cards = contatos.filter(c => {
       if (c.funil !== funilAtivo) return false;
       if (c.etapa !== etapa.id)  return false;
       if (userAtivo !== 'todos' && c.usuario !== userAtivo) return false;
       if (filtroAtv !== 'todos' && atvStatus(c) !== filtroAtv) return false;
+      if (buscaFunil && !c.nome.toLowerCase().includes(buscaFunil)) return false;
       return true;
     });
+    // Mostrar/esconder botão limpar
+    const clearBtn = document.getElementById('funil-busca-clear');
+    if (clearBtn) clearBtn.style.display = buscaFunil ? 'inline-flex' : 'none';
 
     const col = document.createElement('div');
     col.className = 'kcol';
@@ -796,8 +816,12 @@ function kcardHtml(c) {
     botoesRes = `<button class="btn-ganho" onclick="setResultado('${c.id}','ganho')">✓ Ganho</button>`
               + `<button class="btn-perda" onclick="setResultado('${c.id}','perda')">✗ Perda</button>`;
   }
+  const buscaAtiva = (document.getElementById('funil-busca') || {value:''}).value.toLowerCase().trim();
+  const nomeHtml = buscaAtiva && c.nome.toLowerCase().includes(buscaAtiva)
+    ? c.nome.replace(new RegExp('('+buscaAtiva.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'), '<mark style="background:#F2E618;border-radius:2px;padding:0 1px">$1</mark>')
+    : c.nome;
   return `<div class="kc" draggable="true" data-id="${c.id}">
-    <div class="kc-nome">${c.nome}</div>
+    <div class="kc-nome">${nomeHtml}</div>
     <div class="kc-sub">
       ${vl ? `<span>${vl}</span>` : ''}
       ${c.canal ? `<span>${CANAL_LABEL[c.canal]||c.canal}</span>` : ''}
