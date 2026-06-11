@@ -75,16 +75,16 @@ textarea.fi{resize:vertical;min-height:60px}
 
 .board-wrap{overflow-x:auto;padding-bottom:.75rem}
 .board{display:flex;gap:10px;align-items:flex-start;min-width:max-content;height:calc(100vh - 220px)}
-.kcol{width:200px;flex-shrink:0;background:var(--W);border:1px solid var(--G2);border-radius:10px;display:flex;flex-direction:column;max-height:calc(100vh - 220px);overflow-y:auto}
+.kcol{width:200px;flex-shrink:0;background:var(--W);border:1px solid var(--G2);border-radius:10px;display:flex;flex-direction:column;max-height:calc(100vh - 220px);overflow:hidden}
 .kcol.over{border-color:var(--L);background:var(--L3)}
-.kcol-hdr{padding:.625rem .875rem;border-bottom:1px solid var(--G2);display:flex;align-items:flex-start;justify-content:space-between;gap:6px;position:sticky;top:0;z-index:10;background:var(--W);border-radius:10px 10px 0 0}
+.kcol-hdr{padding:.625rem .875rem;border-bottom:1px solid var(--G2);display:flex;align-items:flex-start;justify-content:space-between;gap:6px;flex-shrink:0;background:var(--W);border-radius:10px 10px 0 0}
 .kcol.over .kcol-hdr{background:var(--L3)}
 .kcol-nome{font-size:12px;font-weight:600;color:var(--K)}
 .kcol-cnt{background:var(--G);border-radius:20px;padding:1px 8px;font-size:11px;color:var(--G3);white-space:nowrap}
 .kcol-edit{font-size:11px;padding:2px 5px;cursor:pointer;border-radius:4px;border:1px solid var(--G2);background:transparent;color:var(--G3);line-height:1.4}
 .kcol-edit:hover{background:var(--G)}
-.kcol-body{padding:.5rem;flex:1;min-height:120px}
-.kcol-footer{padding:.5rem;border-top:1px solid var(--G2);position:sticky;bottom:0;background:var(--W);border-radius:0 0 10px 10px;z-index:10}
+.kcol-body{padding:.5rem;flex:1;min-height:120px;overflow-y:auto}
+.kcol-footer{padding:.5rem;border-top:1px solid var(--G2);flex-shrink:0;background:var(--W);border-radius:0 0 10px 10px}
 .kcol.over .kcol-footer{background:var(--L3)}
 .add-col{width:150px;flex-shrink:0;background:transparent;border:2px dashed var(--G2);border-radius:10px;padding:2rem .75rem;text-align:center;cursor:pointer;color:var(--G3);font-size:12px;transition:.15s;display:flex;flex-direction:column;align-items:center;gap:6px;min-height:180px;justify-content:center}
 .add-col:hover{border-color:var(--L);color:var(--L);background:var(--L3)}
