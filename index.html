@@ -19,25 +19,25 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--G);color:var(--K);font-family:'Barlow',sans-serif;min-height:100vh;font-size:14px}
 
-.hdr{background:var(--K);padding:.75rem 1.25rem;display:flex;align-items:center;gap:.75rem;position:sticky;top:0;z-index:200;flex-wrap:wrap}
+.hdr{background:var(--L);padding:.75rem 1.25rem;display:flex;align-items:center;gap:.75rem;position:sticky;top:0;z-index:200;flex-wrap:wrap;box-shadow:0 2px 12px rgba(209,117,67,.25)}
 .hdr-logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:1.3rem;color:var(--W);letter-spacing:-.01em;white-space:nowrap}
-.hdr-logo span{color:var(--L)}
+.hdr-logo span{color:var(--Y)}
 .hdr-right{display:flex;align-items:center;gap:6px;margin-left:auto;flex-wrap:wrap}
-.sdot{width:7px;height:7px;border-radius:50%;background:#4CAF50;flex-shrink:0}
-.sdot.ld{background:#F2E618;animation:pulse 1s infinite}
-.sdot.er{background:#E24B4A}
+.sdot{width:7px;height:7px;border-radius:50%;background:#C8E6C9;flex-shrink:0}
+.sdot.ld{background:var(--Y);animation:pulse 1s infinite}
+.sdot.er{background:#FFCDD2}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.stxt{font-size:11px;color:rgba(255,255,255,.4)}
-.hdr-ubtn{font-size:11px;padding:4px 12px;cursor:pointer;border-radius:20px;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.5);transition:.15s;font-family:'Barlow',sans-serif}
-.hdr-ubtn:hover,.hdr-ubtn.on{background:rgba(255,255,255,.12);color:var(--W)}
-.hdr-sync{font-size:16px;padding:3px 8px;cursor:pointer;border-radius:4px;border:1px solid rgba(255,255,255,.12);background:transparent;color:rgba(255,255,255,.35)}
-.hdr-sync:hover{color:var(--W)}
+.stxt{font-size:11px;color:rgba(255,255,255,.75)}
+.hdr-ubtn{font-size:11px;padding:4px 12px;cursor:pointer;border-radius:20px;border:1px solid rgba(255,255,255,.3);background:transparent;color:rgba(255,255,255,.75);transition:.15s;font-family:'Barlow',sans-serif}
+.hdr-ubtn:hover,.hdr-ubtn.on{background:rgba(255,255,255,.2);color:var(--W);border-color:rgba(255,255,255,.6)}
+.hdr-sync{font-size:16px;padding:3px 8px;cursor:pointer;border-radius:4px;border:1px solid rgba(255,255,255,.3);background:transparent;color:rgba(255,255,255,.75)}
+.hdr-sync:hover{color:var(--W);background:rgba(255,255,255,.15)}
 
-.tabs-bar{background:var(--K);border-top:1px solid rgba(255,255,255,.06);padding:0 1.25rem}
+.tabs-bar{background:var(--K2);border-top:1px solid rgba(255,255,255,.06);padding:0 1.25rem}
 .tabs{display:flex}
-.tb{font-size:12px;font-weight:500;padding:9px 16px;cursor:pointer;border:none;background:none;color:rgba(255,255,255,.35);border-bottom:2px solid transparent;white-space:nowrap;transition:.15s;font-family:'Barlow',sans-serif}
-.tb.active{color:var(--L);border-bottom-color:var(--L)}
-.tb:hover:not(.active){color:rgba(255,255,255,.7)}
+.tb{font-size:12px;font-weight:500;padding:9px 16px;cursor:pointer;border:none;background:none;color:rgba(255,255,255,.45);border-bottom:2px solid transparent;white-space:nowrap;transition:.15s;font-family:'Barlow',sans-serif}
+.tb.active{color:var(--Y);border-bottom-color:var(--Y)}
+.tb:hover:not(.active){color:rgba(255,255,255,.8)}
 
 .cnt{padding:1rem;max-width:1300px;margin:0 auto}
 .pane{display:none}.pane.active{display:block}
@@ -45,8 +45,8 @@ body{background:var(--G);color:var(--K);font-family:'Barlow',sans-serif;min-heig
 /* BUTTONS */
 .btn{font-size:12px;padding:6px 13px;cursor:pointer;border-radius:6px;border:1px solid var(--G2);background:var(--W);color:var(--K);font-family:'Barlow',sans-serif;transition:.15s;font-weight:500;display:inline-flex;align-items:center;gap:4px}
 .btn:hover{background:var(--G)}
-.btn.primary{background:var(--K);color:var(--W);border-color:var(--K)}
-.btn.primary:hover{background:var(--K2)}
+.btn.primary{background:var(--L);color:var(--W);border-color:var(--L)}
+.btn.primary:hover{background:var(--L2)}
 .btn.danger{border-color:var(--VM2);color:var(--VM)}
 .btn.danger:hover{background:var(--VM2)}
 .btn.sm{font-size:11px;padding:4px 10px}
@@ -70,15 +70,16 @@ textarea.fi{resize:vertical;min-height:60px}
 /* KANBAN */
 .funil-sel{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .ft{font-size:12px;padding:5px 14px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:var(--W);color:var(--G3);transition:.15s;font-weight:500}
-.ft.active{background:var(--K);color:var(--W);border-color:var(--K)}
-.ft:hover:not(.active){background:var(--G)}
+.ft.active{background:var(--L);color:var(--W);border-color:var(--L)}
+.ft:hover:not(.active){background:var(--L3);border-color:var(--L4);color:var(--L2)}
 
 .board-wrap{overflow-x:auto;padding-bottom:.75rem}
 .board{display:flex;gap:10px;align-items:flex-start;min-width:max-content;height:calc(100vh - 220px)}
 .kcol{width:200px;flex-shrink:0;background:var(--W);border:1px solid var(--G2);border-radius:10px;display:flex;flex-direction:column;max-height:calc(100vh - 220px);overflow:hidden}
 .kcol.over{border-color:var(--L);background:var(--L3)}
-.kcol-hdr{padding:.625rem .875rem;border-bottom:1px solid var(--G2);display:flex;align-items:flex-start;justify-content:space-between;gap:6px;flex-shrink:0;background:var(--W);border-radius:10px 10px 0 0}
+.kcol-hdr{padding:.625rem .875rem;border-bottom:1px solid var(--G2);display:flex;align-items:flex-start;justify-content:space-between;gap:6px;flex-shrink:0;background:var(--G);border-radius:10px 10px 0 0}
 .kcol.over .kcol-hdr{background:var(--L3)}
+.kcol.over{border-color:var(--L)}
 .kcol-nome{font-size:12px;font-weight:600;color:var(--K)}
 .kcol-cnt{background:var(--G);border-radius:20px;padding:1px 8px;font-size:11px;color:var(--G3);white-space:nowrap}
 .kcol-edit{font-size:11px;padding:2px 5px;cursor:pointer;border-radius:4px;border:1px solid var(--G2);background:transparent;color:var(--G3);line-height:1.4}
@@ -115,7 +116,8 @@ textarea.fi{resize:vertical;min-height:60px}
 /* FILTROS */
 .filtros{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.875rem}
 .filtro{font-size:11px;padding:4px 12px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:var(--W);color:var(--G3);transition:.15s}
-.filtro.active,.filtro:hover{background:var(--K);color:var(--W);border-color:var(--K)}
+.filtro.active{background:var(--K2);color:var(--W);border-color:var(--K2)}
+.filtro:hover:not(.active){background:var(--L3);border-color:var(--L4);color:var(--L2)}
 
 .bw{position:relative;margin-bottom:.875rem}
 .bi{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--G3);pointer-events:none}
@@ -149,7 +151,8 @@ textarea.fi{resize:vertical;min-height:60px}
 
 .pbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .pb{font-size:11px;padding:4px 12px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:var(--W);color:var(--G3);transition:.15s}
-.pb.active{background:var(--L);color:var(--W);border-color:var(--L)}
+.pb.active{background:var(--L);color:var(--W);border-color:var(--L);box-shadow:0 2px 8px rgba(209,117,67,.25)}
+.pb:hover:not(.active){background:var(--L3);border-color:var(--L4);color:var(--L2)}
 
 .slbl{font-size:10px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.1em;margin:.875rem 0 .5rem}
 .divider{height:1px;background:var(--G2);margin:1rem 0}
@@ -292,9 +295,9 @@ textarea.fi{resize:vertical;min-height:60px}
 
 <!-- CONFIG -->
 <div id="pane-config" class="pane">
-  <div id="cfg-sync-bar" style="background:var(--AM2);border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap">
+  <div id="cfg-sync-bar" style="background:var(--A3);border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap">
     <div>
-      <div style="font-size:12px;font-weight:600;color:var(--AM)">☁ Sincronizar configuração</div>
+      <div style="font-size:12px;font-weight:600;color:var(--A2)">☁ Sincronizar configuração</div>
       <div style="font-size:11px;color:var(--G3);margin-top:2px">Salva funis, etapas e usuários na planilha para todos os dispositivos verem igual</div>
     </div>
     <button class="btn sm laranja" onclick="forceSaveConfig()">Salvar na nuvem agora</button>
