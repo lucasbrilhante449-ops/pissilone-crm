@@ -200,6 +200,22 @@ textarea.fi{resize:vertical;min-height:60px}
     <div class="funil-sel" id="funil-tabs"></div>
     <button class="btn sm laranja" onclick="openFunilModal(null)">+ Funil</button>
   </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.75rem;align-items:center">
+    <span style="font-size:11px;color:var(--G3);font-weight:500;text-transform:uppercase;letter-spacing:.06em">Atividade:</span>
+    <button class="filtro active" id="fatv-todos"   onclick="setFiltroAtv(this,'todos')">Todos</button>
+    <button class="filtro"        id="fatv-hoje"    onclick="setFiltroAtv(this,'hoje')">
+      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4CAF50;margin-right:4px"></span>Hoje
+    </button>
+    <button class="filtro"        id="fatv-agendada" onclick="setFiltroAtv(this,'agendada')">
+      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9E9E9E;margin-right:4px"></span>Agendada
+    </button>
+    <button class="filtro"        id="fatv-atrasada" onclick="setFiltroAtv(this,'atrasada')">
+      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#FDD835;margin-right:4px"></span>Atrasada
+    </button>
+    <button class="filtro"        id="fatv-sem"     onclick="setFiltroAtv(this,'sem')">
+      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#E53935;margin-right:4px"></span>Sem atividade
+    </button>
+  </div>
   <div class="board-wrap"><div class="board" id="board"></div></div>
 </div>
 
@@ -350,15 +366,31 @@ textarea.fi{resize:vertical;min-height:60px}
 <div class="overlay" id="modal-atv" style="display:none">
 <div class="modal">
   <div class="mtitle"><span id="atv-nome">Atividade</span><button class="mcl" onclick="closeM('modal-atv')">✕</button></div>
+
+  <!-- Atividade atual (se existir) -->
+  <div id="atv-atual-wrap" style="display:none;margin-bottom:1rem">
+    <div class="flbl" style="margin-bottom:.5rem">Atividade agendada</div>
+    <div id="atv-atual-card" style="border-radius:8px;padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:10px">
+      <div>
+        <div id="atv-atual-data" style="font-size:13px;font-weight:600;color:var(--K)"></div>
+        <div id="atv-atual-desc" style="font-size:12px;color:var(--G3);margin-top:2px"></div>
+      </div>
+      <button class="btn sm" id="btn-checkpoint" onclick="checkpointAtv()" style="white-space:nowrap">✓ Check</button>
+    </div>
+  </div>
+
+  <div class="divider" id="atv-divider" style="display:none"></div>
+
+  <div class="flbl" style="margin-bottom:.5rem;margin-top:.5rem">Nova atividade</div>
   <div class="fg fg1" style="margin-bottom:.75rem">
-    <div><label class="flbl">Data da atividade *</label><input class="fi" type="date" id="f-atv-data"></div>
+    <div><label class="flbl">Data *</label><input class="fi" type="date" id="f-atv-data"></div>
   </div>
   <div class="fg fg1" style="margin-bottom:1rem">
     <div><label class="flbl">Descrição</label><input class="fi" id="f-atv-desc" placeholder="Ex: Ligar, enviar proposta..."></div>
   </div>
   <div style="display:flex;gap:8px">
     <button class="btn primary full" onclick="saveAtv()">Salvar</button>
-    <button class="btn full" onclick="clearAtv()">Remover atividade</button>
+    <button class="btn full" onclick="clearAtv()">Remover</button>
   </div>
 </div>
 </div>
@@ -429,6 +461,7 @@ let cfg = {
 };
 let funilAtivo = 'd2c';
 let filtroC    = 'todos';
+let filtroAtv  = 'todos';
 let periodo    = '30';
 let periodoCustom = {ativo: false, de: null, ate: null};
 let userAtivo  = 'todos';
@@ -594,11 +627,11 @@ function isNegociacao(fid, eid) {
 }
 
 function atvStatus(c) {
-  if (!c.atv_data) return 'sem';
-  const hoje = new Date(); hoje.setHours(0,0,0,0);
-  const d    = new Date(c.atv_data + 'T00:00:00');
-  if (d < hoje)                     return 'atrasada';
-  if (d.getTime() === hoje.getTime()) return 'hoje';
+  if (!c.atv_data || c.atv_data.trim() === '') return 'sem';
+  const hoje = new Date();
+  const hj   = hoje.getFullYear() + '-' + String(hoje.getMonth()+1).padStart(2,'0') + '-' + String(hoje.getDate()).padStart(2,'0');
+  if (c.atv_data < hj) return 'atrasada';
+  if (c.atv_data === hj) return 'hoje';
   return 'agendada';
 }
 
@@ -631,6 +664,13 @@ function renderFunilTabs() {
 
 function setFunil(id) { funilAtivo = id; renderFunil(); }
 
+function setFiltroAtv(btn, f) {
+  document.querySelectorAll('[id^="fatv-"]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filtroAtv = f;
+  renderFunil();
+}
+
 function renderFunil() {
   renderFunilTabs();
   const funil = getFunil(funilAtivo);
@@ -640,11 +680,13 @@ function renderFunil() {
 
   funil.etapas.forEach(etapa => {
     // filtra contatos desta coluna
-    const cards = contatos.filter(c =>
-      c.funil === funilAtivo &&
-      c.etapa === etapa.id  &&
-      (userAtivo === 'todos' || c.usuario === userAtivo)
-    );
+    const cards = contatos.filter(c => {
+      if (c.funil !== funilAtivo) return false;
+      if (c.etapa !== etapa.id)  return false;
+      if (userAtivo !== 'todos' && c.usuario !== userAtivo) return false;
+      if (filtroAtv !== 'todos' && atvStatus(c) !== filtroAtv) return false;
+      return true;
+    });
 
     const col = document.createElement('div');
     col.className = 'kcol';
@@ -870,9 +912,33 @@ async function reabrirCard() {
 function openAtv(id) {
   atvCid = id;
   const c = contatos.find(x => x.id === id);
-  document.getElementById('atv-nome').textContent = c ? `Atividade — ${c.nome}` : 'Atividade';
-  document.getElementById('f-atv-data').value  = c ? (c.atv_data  || '') : '';
-  document.getElementById('f-atv-desc').value  = c ? (c.atv_desc  || '') : '';
+  if (!c) return;
+  document.getElementById('atv-nome').textContent = `Atividade — ${c.nome}`;
+  document.getElementById('f-atv-data').value = '';
+  document.getElementById('f-atv-desc').value = '';
+
+  // Mostrar atividade atual se existir
+  const wrap    = document.getElementById('atv-atual-wrap');
+  const divider = document.getElementById('atv-divider');
+  if (c.atv_data && c.atv_data.trim() !== '') {
+    wrap.style.display    = 'block';
+    divider.style.display = 'block';
+    const s = atvStatus(c);
+    const cores = {hoje:'#C8E6C9', atrasada:'#FFCDD2', agendada:' var(--G)'};
+    const card  = document.getElementById('atv-atual-card');
+    card.style.background = cores[s] || 'var(--G)';
+    const fmtBR = d => new Date(d+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+    const labels = {hoje:'📅 Hoje', atrasada:'⚠ Atrasada — ', agendada:'📅 '};
+    document.getElementById('atv-atual-data').textContent = (labels[s]||'') + fmtBR(c.atv_data);
+    document.getElementById('atv-atual-data').style.color = s==='atrasada'?'var(--VM)':s==='hoje'?'var(--VD)':'var(--K)';
+    document.getElementById('atv-atual-desc').textContent = c.atv_desc || '';
+    // Botão check
+    const btn = document.getElementById('btn-checkpoint');
+    btn.style.display = 'inline-flex';
+  } else {
+    wrap.style.display    = 'none';
+    divider.style.display = 'none';
+  }
   document.getElementById('modal-atv').style.display = 'flex';
 }
 
@@ -897,6 +963,25 @@ async function clearAtv() {
   try { await apiSave(c); await doSync(); }
   catch(ex) { ss('er','Erro'); console.error(ex); }
   closeM('modal-atv');
+  atvCid = null;
+}
+
+// ── CHECKPOINT ATIVIDADE ──────────────────────────────
+async function checkpointAtv() {
+  const c = contatos.find(x => x.id === atvCid);
+  if (!c) return;
+  const btn = document.getElementById('btn-checkpoint');
+  if (btn) { btn.textContent = 'Salvando...'; btn.disabled = true; }
+  // Marcar como concluída — limpa a atividade atual
+  c.atv_data = '';
+  c.atv_desc = '';
+  ss('ld','Atividade concluída...');
+  try {
+    await apiSave(c);
+    await doSync();
+    closeM('modal-atv');
+  } catch(ex) { ss('er','Erro'); console.error(ex); }
+  if (btn) { btn.disabled = false; }
   atvCid = null;
 }
 
