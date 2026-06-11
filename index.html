@@ -217,10 +217,12 @@ textarea.fi{resize:vertical;min-height:60px}
 <div id="pane-insights" class="pane">
   <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:1rem">
     <div class="pbar">
+      <button class="pb" onclick="setPer(this,'1')">Hoje</button>
       <button class="pb" onclick="setPer(this,'7')">7d</button>
       <button class="pb active" onclick="setPer(this,'30')">30d</button>
       <button class="pb" onclick="setPer(this,'90')">90d</button>
       <button class="pb" onclick="setPer(this,'0')">Tudo</button>
+      <button class="pb" id="pb-custom" onclick="toggleCustomPer()">Período ✦</button>
     </div>
     <select class="fi" style="width:auto;font-size:12px" id="ins-user" onchange="renderInsights()">
       <option value="todos">Todos usuários</option>
@@ -228,6 +230,24 @@ textarea.fi{resize:vertical;min-height:60px}
     <select class="fi" style="width:auto;font-size:12px" id="ins-funil" onchange="renderInsights()">
       <option value="todos">Todos funis</option>
     </select>
+  </div>
+  <div id="custom-per-wrap" style="display:none;background:var(--W);border:1px solid var(--G2);border-radius:8px;padding:.875rem 1rem;margin-bottom:1rem;display:none;flex-wrap:wrap;gap:10px;align-items:flex-end">
+    <div>
+      <label class="flbl">De</label>
+      <input class="fi" type="date" id="per-de" style="width:150px" onchange="aplicarCustomPer()">
+    </div>
+    <div>
+      <label class="flbl">Até</label>
+      <input class="fi" type="date" id="per-ate" style="width:150px" onchange="aplicarCustomPer()">
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn xs" onclick="setCustomPreset('hoje')">Hoje</button>
+      <button class="btn xs" onclick="setCustomPreset('ontem')">Ontem</button>
+      <button class="btn xs" onclick="setCustomPreset('semana')">Esta semana</button>
+      <button class="btn xs" onclick="setCustomPreset('mes')">Este mês</button>
+      <button class="btn xs" onclick="setCustomPreset('mes_passado')">Mês passado</button>
+    </div>
+    <div id="custom-per-label" style="font-size:11px;color:var(--G3);padding-top:2px"></div>
   </div>
   <div id="ins-content"></div>
 </div>
@@ -410,6 +430,7 @@ let cfg = {
 let funilAtivo = 'd2c';
 let filtroC    = 'todos';
 let periodo    = '30';
+let periodoCustom = {ativo: false, de: null, ate: null};
 let userAtivo  = 'todos';
 let editCid    = null;   // contato em edição
 let editFid    = null;   // funil em edição
@@ -1067,6 +1088,73 @@ function setPer(btn, p) {
   document.querySelectorAll('.pb').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   periodo = p;
+  periodoCustom.ativo = false;
+  // Esconder painel custom
+  const wrap = document.getElementById('custom-per-wrap');
+  if (wrap) wrap.style.display = 'none';
+  renderInsights();
+}
+
+function toggleCustomPer() {
+  const wrap = document.getElementById('custom-per-wrap');
+  if (!wrap) return;
+  const aberto = wrap.style.display === 'flex';
+  wrap.style.display = aberto ? 'none' : 'flex';
+  if (!aberto) {
+    // Preencher datas com o mês atual como padrão
+    const hoje = new Date();
+    const anoMes = hoje.toISOString().slice(0,7);
+    const de  = document.getElementById('per-de');
+    const ate = document.getElementById('per-ate');
+    if (de  && !de.value)  de.value  = anoMes + '-01';
+    if (ate && !ate.value) ate.value = hoje.toISOString().slice(0,10);
+    aplicarCustomPer();
+  }
+}
+
+function setCustomPreset(tipo) {
+  const hoje = new Date();
+  const fmt  = d => d.toISOString().slice(0,10);
+  let de, ate;
+  if (tipo === 'hoje') {
+    de = ate = fmt(hoje);
+  } else if (tipo === 'ontem') {
+    const ontem = new Date(hoje); ontem.setDate(hoje.getDate()-1);
+    de = ate = fmt(ontem);
+  } else if (tipo === 'semana') {
+    const seg = new Date(hoje);
+    seg.setDate(hoje.getDate() - ((hoje.getDay()+6)%7));
+    de = fmt(seg); ate = fmt(hoje);
+  } else if (tipo === 'mes') {
+    de = fmt(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
+    ate = fmt(hoje);
+  } else if (tipo === 'mes_passado') {
+    const pm = new Date(hoje.getFullYear(), hoje.getMonth()-1, 1);
+    const fim = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
+    de = fmt(pm); ate = fmt(fim);
+  }
+  const deEl  = document.getElementById('per-de');
+  const ateEl = document.getElementById('per-ate');
+  if (deEl)  deEl.value  = de;
+  if (ateEl) ateEl.value = ate;
+  aplicarCustomPer();
+}
+
+function aplicarCustomPer() {
+  const de  = document.getElementById('per-de')  ? document.getElementById('per-de').value  : '';
+  const ate = document.getElementById('per-ate') ? document.getElementById('per-ate').value : '';
+  if (!de || !ate) return;
+  periodoCustom = {ativo: true, de, ate};
+  // Desativar botões rápidos e ativar "Período"
+  document.querySelectorAll('.pb').forEach(b => b.classList.remove('active'));
+  const pb = document.getElementById('pb-custom');
+  if (pb) pb.classList.add('active');
+  // Mostrar label do período
+  const lbl = document.getElementById('custom-per-label');
+  if (lbl) {
+    const fmtBR = s => new Date(s+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
+    lbl.textContent = de === ate ? fmtBR(de) : fmtBR(de) + ' → ' + fmtBR(ate);
+  }
   renderInsights();
 }
 
@@ -1083,11 +1171,27 @@ function initInsights() {
     sf.innerHTML = '<option value="todos">Todos funis</option>' +
       cfg.funis.map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
   }
+  // Garantir que o botão 30d aparece ativo se não há custom
+  if (!periodoCustom.ativo) {
+    document.querySelectorAll('.pb').forEach(b => {
+      b.classList.toggle('active', b.textContent.trim() === '30d' && periodo === '30');
+    });
+  }
   renderInsights();
 }
 
 function filtPer(lista) {
+  if (periodoCustom.ativo && periodoCustom.de && periodoCustom.ate) {
+    const de  = new Date(periodoCustom.de  + 'T00:00:00');
+    const ate = new Date(periodoCustom.ate + 'T23:59:59');
+    return lista.filter(c => { const d = new Date(c.data); return d >= de && d <= ate; });
+  }
   if (periodo === '0') return lista;
+  if (periodo === '1') {
+    // Hoje
+    const hoje = new Date(); hoje.setHours(0,0,0,0);
+    return lista.filter(c => new Date(c.data) >= hoje);
+  }
   const d = new Date(); d.setDate(d.getDate() - parseInt(periodo));
   return lista.filter(c => new Date(c.data) >= d);
 }
