@@ -246,6 +246,17 @@ textarea.fi{resize:vertical;min-height:60px}
     <select class="fi" style="width:auto;font-size:12px" id="ins-funil" onchange="renderInsights()">
       <option value="todos">Todos funis</option>
     </select>
+    <select class="fi" style="width:auto;font-size:12px" id="ins-canal" onchange="renderInsights()">
+      <option value="todos">Todos canais</option>
+      <option value="instagram">Instagram</option>
+      <option value="story">Story</option>
+      <option value="anuncio">Anúncio</option>
+      <option value="indicacao">Indicação</option>
+      <option value="atelie">Ateliê</option>
+      <option value="busca">Google</option>
+      <option value="whatsapp">WhatsApp</option>
+      <option value="outro">Outro</option>
+    </select>
   </div>
   <div id="custom-per-wrap" style="display:none;background:var(--W);border:1px solid var(--G2);border-radius:8px;padding:.875rem 1rem;margin-bottom:1rem;display:none;flex-wrap:wrap;gap:10px;align-items:flex-end">
     <div>
@@ -310,6 +321,7 @@ textarea.fi{resize:vertical;min-height:60px}
         <option value="indicacao">Indicação</option>
         <option value="atelie">Ateliê</option>
         <option value="busca">Google</option>
+        <option value="whatsapp">WhatsApp</option>
         <option value="outro">Outro</option>
       </select>
     </div>
@@ -474,7 +486,7 @@ let atvCid     = null;   // contato para atividade
 let motivoSel  = '';
 let dragId     = null;
 
-const CANAL_LABEL = {instagram:'Instagram',story:'Story',anuncio:'Anúncio',indicacao:'Indicação',atelie:'Ateliê',busca:'Google',outro:'Outro'};
+const CANAL_LABEL = {instagram:'Instagram',story:'Story',anuncio:'Anúncio',indicacao:'Indicação',atelie:'Ateliê',busca:'Google',whatsapp:'WhatsApp',outro:'Outro'};
 
 // ── SYNC STATUS ────────────────────────────────────────
 function ss(s, m) {
@@ -1284,9 +1296,12 @@ function initInsights() {
   }
   const sf = document.getElementById('ins-funil');
   if (sf) {
+    const prevF2 = sf.value;
     sf.innerHTML = '<option value="todos">Todos funis</option>' +
       cfg.funis.map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
+    if (prevF2) sf.value = prevF2;
   }
+  // canal não precisa de rebuild — opções são fixas, só preservar valor
   // Garantir que o botão 30d aparece ativo se não há custom
   if (!periodoCustom.ativo) {
     document.querySelectorAll('.pb').forEach(b => {
@@ -1337,8 +1352,10 @@ function renderInsights() {
   let lista = filtPer(contatos);
   // Filtro de usuário: select do insights OU botão do header
   const filtroUser = iUser !== 'todos' ? iUser : (userAtivo !== 'todos' ? userAtivo : 'todos');
+  const iCanal = (document.getElementById('ins-canal') || {value:'todos'}).value;
   if (filtroUser !== 'todos') lista = lista.filter(c => c.usuario === filtroUser);
-  if (iFunil !== 'todos')     lista = lista.filter(c => c.funil   === iFunil);
+  if (iFunil     !== 'todos') lista = lista.filter(c => c.funil   === iFunil);
+  if (iCanal     !== 'todos') lista = lista.filter(c => c.canal   === iCanal);
   // Sincronizar select com botão do header se necessário
   if (userAtivo !== 'todos' && iUser === 'todos') {
     const su2 = document.getElementById('ins-user');
