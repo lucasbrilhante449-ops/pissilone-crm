@@ -774,13 +774,24 @@ function renderFunil() {
 
     // drag events on col-body
     const body = col.querySelector('.kcol-body');
-    body.addEventListener('dragover', e => { e.preventDefault(); col.classList.add('over'); });
-    body.addEventListener('dragleave', e => { if (!col.contains(e.relatedTarget)) col.classList.remove('over'); });
+    body.addEventListener('dragover', e => {
+      if (!dragId) return; // só previne default se há drag ativo
+      e.preventDefault();
+      col.classList.add('over');
+    });
+    body.addEventListener('dragleave', e => {
+      if (!col.contains(e.relatedTarget)) col.classList.remove('over');
+    });
     body.addEventListener('drop', e => {
+      if (!dragId) return;
       e.preventDefault();
       col.classList.remove('over');
-      if (dragId) dropCard(etapa.id);
+      dropCard(etapa.id);
     });
+    // Footer também recebe drop
+    const footer = col.querySelector('.kcol-footer');
+    footer.addEventListener('dragover', e => { if (dragId) { e.preventDefault(); col.classList.add('over'); } });
+    footer.addEventListener('drop', e => { if (!dragId) return; e.preventDefault(); col.classList.remove('over'); dropCard(etapa.id); });
 
     board.appendChild(col);
   });
