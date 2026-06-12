@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:ital,wght@0,700;0,900;1,900&display=swap" rel="stylesheet">
 <style>
 :root{
-  --L:#D17543;--L2:#A85528;--L3:#FDF0E8;
+  --L:#D17543;--L2:#A85528;--L3:#FDF0E8;--L4:#F5C4A8;
   --A:#64A6AC;--A2:#3D7A80;--A3:#E8F4F5;
   --K:#1A1208;--K2:#3D2E1A;
   --W:#FDFAF5;--G:#F0EDE6;--G2:#DDD8D0;--G3:#8A7A6A;
@@ -15,10 +15,10 @@
   --RX:#3C3489;--RX2:#EEEDFE;
   --VM:#791F1F;--VM2:#FCEBEB;
   --AM:#633806;--AM2:#FAEEDA;
+  --Y:#F2E618;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--G);color:var(--K);font-family:'Barlow',sans-serif;min-height:100vh;font-size:14px}
-
 .hdr{background:var(--L);padding:.75rem 1.25rem;display:flex;align-items:center;gap:.75rem;position:sticky;top:0;z-index:200;flex-wrap:wrap;box-shadow:0 2px 12px rgba(209,117,67,.25)}
 .hdr-logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:1.3rem;color:var(--W);letter-spacing:-.01em;white-space:nowrap}
 .hdr-logo span{color:var(--Y)}
@@ -32,17 +32,13 @@ body{background:var(--G);color:var(--K);font-family:'Barlow',sans-serif;min-heig
 .hdr-ubtn:hover,.hdr-ubtn.on{background:rgba(255,255,255,.2);color:var(--W);border-color:rgba(255,255,255,.6)}
 .hdr-sync{font-size:16px;padding:3px 8px;cursor:pointer;border-radius:4px;border:1px solid rgba(255,255,255,.3);background:transparent;color:rgba(255,255,255,.75)}
 .hdr-sync:hover{color:var(--W);background:rgba(255,255,255,.15)}
-
 .tabs-bar{background:var(--A2);border-top:1px solid rgba(255,255,255,.1);padding:0 1.25rem}
 .tabs{display:flex}
 .tb{font-size:12px;font-weight:500;padding:9px 16px;cursor:pointer;border:none;background:none;color:rgba(255,255,255,.6);border-bottom:2px solid transparent;white-space:nowrap;transition:.15s;font-family:'Barlow',sans-serif}
 .tb.active{color:var(--W);border-bottom-color:var(--W)}
 .tb:hover:not(.active){color:var(--W)}
-
 .cnt{padding:1rem;max-width:1300px;margin:0 auto}
 .pane{display:none}.pane.active{display:block}
-
-/* BUTTONS */
 .btn{font-size:12px;padding:6px 13px;cursor:pointer;border-radius:6px;border:1px solid var(--G2);background:var(--W);color:var(--K);font-family:'Barlow',sans-serif;transition:.15s;font-weight:500;display:inline-flex;align-items:center;gap:4px}
 .btn:hover{background:var(--G)}
 .btn.primary{background:var(--L);color:var(--W);border-color:var(--L)}
@@ -54,8 +50,6 @@ body{background:var(--G);color:var(--K);font-family:'Barlow',sans-serif;min-heig
 .btn.full{width:100%;justify-content:center}
 .btn.laranja{background:var(--L);color:var(--W);border-color:var(--L)}
 .btn.laranja:hover{background:var(--L2)}
-
-/* FORMS */
 .flbl{font-size:11px;color:var(--G3);display:block;margin-bottom:3px;font-weight:500;text-transform:uppercase;letter-spacing:.05em}
 .fi{width:100%;padding:7px 10px;font-size:13px;border:1px solid var(--G2);border-radius:6px;background:var(--W);color:var(--K);font-family:'Barlow',sans-serif;outline:none;transition:.15s}
 .fi:focus{border-color:var(--L)}
@@ -66,100 +60,77 @@ textarea.fi{resize:vertical;min-height:60px}
 .fg1{grid-template-columns:1fr}
 .fcard{background:var(--W);border:1px solid var(--G2);border-radius:10px;padding:1.25rem;margin-bottom:1rem}
 .ftitle{font-size:13px;font-weight:600;margin-bottom:1rem;padding-bottom:.625rem;border-bottom:1px solid var(--G2);display:flex;align-items:center;justify-content:space-between}
-
-/* KANBAN */
 .funil-sel{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .ft{font-size:12px;padding:5px 14px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:var(--W);color:var(--G3);transition:.15s;font-weight:500}
 .ft.active{background:var(--L);color:var(--W);border-color:var(--L)}
 .ft:hover:not(.active){background:var(--L3);border-color:var(--L4);color:var(--L2)}
-
 .board-wrap{overflow-x:auto;padding-bottom:.75rem}
 .board{display:flex;gap:10px;align-items:flex-start;min-width:max-content;height:calc(100vh - 220px)}
 .kcol{width:200px;flex-shrink:0;background:var(--W);border:1px solid var(--G2);border-radius:10px;display:flex;flex-direction:column;max-height:calc(100vh - 220px);overflow:hidden}
 .kcol.over{border-color:var(--L);background:var(--L3)}
 .kcol-hdr{padding:.625rem .875rem;border-bottom:1px solid var(--G2);display:flex;align-items:flex-start;justify-content:space-between;gap:6px;flex-shrink:0;background:var(--G);border-radius:10px 10px 0 0}
 .kcol.over .kcol-hdr{background:var(--L3)}
-.kcol.over{border-color:var(--L)}
 .kcol-nome{font-size:12px;font-weight:600;color:var(--K)}
-.kcol-cnt{background:var(--G);border-radius:20px;padding:1px 8px;font-size:11px;color:var(--G3);white-space:nowrap}
+.kcol-cnt{background:var(--W);border-radius:20px;padding:1px 8px;font-size:11px;color:var(--G3);white-space:nowrap;border:1px solid var(--G2)}
 .kcol-edit{font-size:11px;padding:2px 5px;cursor:pointer;border-radius:4px;border:1px solid var(--G2);background:transparent;color:var(--G3);line-height:1.4}
-.kcol-edit:hover{background:var(--G)}
+.kcol-edit:hover{background:var(--W)}
 .kcol-body{padding:.5rem;flex:1;min-height:120px;overflow-y:auto}
 .kcol-footer{padding:.5rem;border-top:1px solid var(--G2);flex-shrink:0;background:var(--W);border-radius:0 0 10px 10px}
 .kcol.over .kcol-footer{background:var(--L3)}
 .add-col{width:150px;flex-shrink:0;background:transparent;border:2px dashed var(--G2);border-radius:10px;padding:2rem .75rem;text-align:center;cursor:pointer;color:var(--G3);font-size:12px;transition:.15s;display:flex;flex-direction:column;align-items:center;gap:6px;min-height:180px;justify-content:center}
 .add-col:hover{border-color:var(--L);color:var(--L);background:var(--L3)}
-
-/* KCARD */
 .kc{background:var(--W);border:1px solid var(--G2);border-radius:8px;padding:.625rem .75rem;margin-bottom:6px;cursor:grab;user-select:none;transition:border-color .15s,box-shadow .15s;position:relative}
-.kc:hover{border-color:var(--L);box-shadow:0 2px 8px rgba(209,117,67,.12)}
+.kc:hover{border-color:var(--L4);box-shadow:0 2px 8px rgba(209,117,67,.1)}
 .kc.dragging{opacity:.4;cursor:grabbing}
 .kc-nome{font-size:13px;font-weight:500;color:var(--K);margin-bottom:2px}
-.kc-sub{font-size:11px;color:var(--G3);display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:6px}
-.kc-actions{display:flex;gap:4px;align-items:center;justify-content:space-between}
-.kc-left{display:flex;gap:4px}
-
-/* ATIVIDADE DOT */
+.kc-sub{font-size:11px;color:var(--G3);display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:5px}
+.kc-actions{display:flex;gap:4px;align-items:center;justify-content:space-between;margin-top:4px}
+.kc-left{display:flex;gap:4px;flex-wrap:wrap}
 .atv-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;cursor:pointer;border:2px solid rgba(0,0,0,.1);transition:transform .15s}
 .atv-dot:hover{transform:scale(1.3)}
 .atv-verde{background:#4CAF50}
 .atv-vermelho{background:#E53935}
 .atv-amarelo{background:#FDD835}
 .atv-cinza{background:#9E9E9E}
-
-/* CONTATO CARD */
 .cc{background:var(--W);border:1px solid var(--G2);border-radius:10px;padding:.875rem 1rem;margin-bottom:8px}
 .cc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
 .cc-nome{font-size:14px;font-weight:500;color:var(--K)}
 .cc-info{font-size:12px;color:var(--G3);line-height:1.6}
-
-/* FILTROS */
 .filtros{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.875rem}
 .filtro{font-size:11px;padding:4px 12px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:var(--W);color:var(--G3);transition:.15s}
 .filtro.active{background:var(--A2);color:var(--W);border-color:var(--A2)}
 .filtro:hover:not(.active){background:var(--L3);border-color:var(--L4);color:var(--L2)}
-
 .bw{position:relative;margin-bottom:.875rem}
 .bi{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--G3);pointer-events:none}
 .busca-fi{padding-left:30px}
-
-/* MODAL */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:flex;align-items:center;justify-content:center;padding:1rem}
 .modal{background:var(--W);border-radius:12px;padding:1.5rem;width:100%;max-width:500px;max-height:90vh;overflow-y:auto}
 .mtitle{font-size:15px;font-weight:600;color:var(--K);margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between}
 .mcl{font-size:18px;cursor:pointer;color:var(--G3);background:none;border:none;padding:2px 6px;line-height:1}
 .mcl:hover{color:var(--K)}
-
-/* CHIPS */
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.75rem}
 .chip{font-size:11px;padding:4px 10px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:transparent;color:var(--G3);transition:.15s}
 .chip:hover,.chip.sel{background:var(--VM2);color:var(--VM);border-color:var(--VM2)}
-
-/* METRICS */
 .mg{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:1rem}
 .mc{background:var(--W);border:1px solid var(--G2);border-radius:8px;padding:.875rem;text-align:center}
 .mc-n{font-size:22px;font-weight:500;color:var(--K);line-height:1}
 .mc-l{font-size:11px;color:var(--G3);margin-top:3px}
 .mc-s{font-size:11px;font-weight:500;margin-top:2px}
 .mc-s.v{color:var(--VD)}.mc-s.a{color:var(--AM)}.mc-s.r{color:var(--VM)}
-
 .bb{margin-bottom:.625rem}
 .bb-row{display:flex;justify-content:space-between;font-size:12px;color:var(--G3);margin-bottom:3px}
 .bb-row span:last-child{font-weight:500;color:var(--K)}
 .bar{height:7px;background:var(--G2);border-radius:4px;overflow:hidden}
 .bar-f{height:100%;border-radius:4px;transition:width .4s}
-
 .pbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .pb{font-size:11px;padding:4px 12px;cursor:pointer;border-radius:20px;border:1px solid var(--G2);background:var(--W);color:var(--G3);transition:.15s}
 .pb.active{background:var(--L);color:var(--W);border-color:var(--L);box-shadow:0 2px 8px rgba(209,117,67,.25)}
 .pb:hover:not(.active){background:var(--L3);border-color:var(--L4);color:var(--L2)}
-
 .slbl{font-size:10px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.1em;margin:.875rem 0 .5rem}
 .divider{height:1px;background:var(--G2);margin:1rem 0}
 .empty{text-align:center;padding:2rem 1rem;color:var(--G3);font-size:13px}
 .fb{font-size:12px;margin-top:6px;min-height:16px}
 .fb.ok{color:var(--VD)}.fb.er{color:var(--VM)}.fb.info{color:var(--G3)}
-
 .bdg-canal{font-size:10px;padding:2px 7px;border-radius:20px;background:var(--G);color:var(--G3);border:1px solid var(--G2);display:inline-block}
 .res-ganho{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:#C8E6C9;color:#1B5E20;border:none;cursor:default;display:inline-block}
 .res-perda{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:#FFCDD2;color:#B71C1C;border:none;cursor:default;display:inline-block}
@@ -167,15 +138,18 @@ textarea.fi{resize:vertical;min-height:60px}
 .btn-ganho:hover{background:#C8E6C9}
 .btn-perda{font-size:10px;padding:2px 8px;cursor:pointer;border-radius:20px;border:1px solid #EF9A9A;background:#FFF3F3;color:#C62828;font-family:'Barlow',sans-serif;font-weight:600;transition:.15s}
 .btn-perda:hover{background:#FFCDD2}
-
-@media(max-width:600px){
-  .fg2,.fg3{grid-template-columns:1fr}
-  .mg{grid-template-columns:repeat(2,1fr)}
-}
+/* HISTÓRICO NEGOCIAÇÃO */
+.neg-hist{font-size:10px;padding:2px 7px;border-radius:20px;display:inline-flex;align-items:center;gap:3px}
+.neg-hist-g{background:#EAF3DE;color:#27500A;border:1px solid #B2D8A0}
+.neg-hist-p{background:#FCEBEB;color:#791F1F;border:1px solid #F5ADAD}
+/* ÚLTIMA COMPRA */
+.ultima-compra{font-size:10px;color:var(--A2);background:var(--A3);border-radius:4px;padding:2px 6px;display:inline-block;margin-bottom:4px}
+.ultima-compra.alerta{color:var(--AM);background:var(--AM2)}
+.ultima-compra.critico{color:var(--VM);background:var(--VM2)}
+@media(max-width:600px){.fg2,.fg3{grid-template-columns:1fr}.mg{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
-
 <header class="hdr">
   <div class="hdr-logo">✳ PSN <span>CRM</span> ✳</div>
   <div class="hdr-right">
@@ -187,7 +161,6 @@ textarea.fi{resize:vertical;min-height:60px}
     <button class="hdr-sync" onclick="doSync()" title="Sincronizar">↻</button>
   </div>
 </header>
-
 <div class="tabs-bar">
   <div class="tabs">
     <button class="tb active" onclick="showTab('funil')">Funil</button>
@@ -196,54 +169,34 @@ textarea.fi{resize:vertical;min-height:60px}
     <button class="tb" onclick="showTab('config')">Configurar</button>
   </div>
 </div>
-
 <div class="cnt">
-
-<!-- FUNIL -->
 <div id="pane-funil" class="pane active">
   <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:.875rem;flex-wrap:wrap">
     <div class="funil-sel" id="funil-tabs"></div>
     <div style="display:flex;align-items:center;gap:8px;flex:1;max-width:340px;min-width:180px">
       <div style="position:relative;flex:1">
         <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--G3);font-size:14px;pointer-events:none">⌕</span>
-        <input class="fi" id="funil-busca" type="text" placeholder="Buscar contato no funil..."
-          style="padding-left:30px;font-size:12px;height:32px"
-          oninput="renderFunil()">
+        <input class="fi" id="funil-busca" type="text" placeholder="Buscar contato no funil..." style="padding-left:30px;font-size:12px;height:32px" oninput="renderFunil()">
       </div>
-      <button class="btn sm" onclick="limparBuscaFunil()" id="funil-busca-clear" style="display:none;padding:4px 8px" title="Limpar busca">✕</button>
+      <button class="btn sm" onclick="limparBuscaFunil()" id="funil-busca-clear" style="display:none;padding:4px 8px">✕</button>
     </div>
     <button class="btn sm laranja" onclick="openFunilModal(null)">+ Funil</button>
   </div>
   <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.75rem;align-items:center">
     <span style="font-size:11px;color:var(--G3);font-weight:500;text-transform:uppercase;letter-spacing:.06em">Atividade:</span>
-    <button class="filtro active" id="fatv-todos"   onclick="setFiltroAtv(this,'todos')">Todos</button>
-    <button class="filtro"        id="fatv-hoje"    onclick="setFiltroAtv(this,'hoje')">
-      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4CAF50;margin-right:4px"></span>Hoje
-    </button>
-    <button class="filtro"        id="fatv-agendada" onclick="setFiltroAtv(this,'agendada')">
-      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9E9E9E;margin-right:4px"></span>Agendada
-    </button>
-    <button class="filtro"        id="fatv-atrasada" onclick="setFiltroAtv(this,'atrasada')">
-      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#FDD835;margin-right:4px"></span>Atrasada
-    </button>
-    <button class="filtro"        id="fatv-sem"     onclick="setFiltroAtv(this,'sem')">
-      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#E53935;margin-right:4px"></span>Sem atividade
-    </button>
+    <button class="filtro active" id="fatv-todos" onclick="setFiltroAtv(this,'todos')">Todos</button>
+    <button class="filtro" id="fatv-hoje" onclick="setFiltroAtv(this,'hoje')"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4CAF50;margin-right:4px"></span>Hoje</button>
+    <button class="filtro" id="fatv-agendada" onclick="setFiltroAtv(this,'agendada')"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9E9E9E;margin-right:4px"></span>Agendada</button>
+    <button class="filtro" id="fatv-atrasada" onclick="setFiltroAtv(this,'atrasada')"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#FDD835;margin-right:4px"></span>Atrasada</button>
+    <button class="filtro" id="fatv-sem" onclick="setFiltroAtv(this,'sem')"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#E53935;margin-right:4px"></span>Sem atividade</button>
   </div>
   <div class="board-wrap"><div class="board" id="board"></div></div>
 </div>
-
-<!-- CONTATOS -->
 <div id="pane-contatos" class="pane">
-  <div class="bw">
-    <span class="bi">⌕</span>
-    <input class="fi busca-fi" id="busca" placeholder="Buscar por nome..." oninput="renderContatos()">
-  </div>
+  <div class="bw"><span class="bi">⌕</span><input class="fi busca-fi" id="busca" placeholder="Buscar por nome..." oninput="renderContatos()"></div>
   <div class="filtros" id="filtros-c"></div>
   <div id="lista-c"></div>
 </div>
-
-<!-- INSIGHTS -->
 <div id="pane-insights" class="pane">
   <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:1rem">
     <div class="pbar">
@@ -254,33 +207,19 @@ textarea.fi{resize:vertical;min-height:60px}
       <button class="pb" onclick="setPer(this,'0')">Tudo</button>
       <button class="pb" id="pb-custom" onclick="toggleCustomPer()">Período ✦</button>
     </div>
-    <select class="fi" style="width:auto;font-size:12px" id="ins-user" onchange="renderInsights()">
-      <option value="todos">Todos usuários</option>
-    </select>
-    <select class="fi" style="width:auto;font-size:12px" id="ins-funil" onchange="renderInsights()">
-      <option value="todos">Todos funis</option>
-    </select>
+    <select class="fi" style="width:auto;font-size:12px" id="ins-user" onchange="renderInsights()"><option value="todos">Todos usuários</option></select>
+    <select class="fi" style="width:auto;font-size:12px" id="ins-funil" onchange="renderInsights()"><option value="todos">Todos funis</option></select>
     <select class="fi" style="width:auto;font-size:12px" id="ins-canal" onchange="renderInsights()">
       <option value="todos">Todos canais</option>
-      <option value="instagram">Instagram</option>
-      <option value="story">Story</option>
-      <option value="anuncio">Anúncio</option>
-      <option value="indicacao">Indicação</option>
-      <option value="atelie">Ateliê</option>
-      <option value="busca">Google</option>
-      <option value="whatsapp">WhatsApp</option>
-      <option value="outro">Outro</option>
+      <option value="instagram">Instagram</option><option value="story">Story</option>
+      <option value="anuncio">Anúncio</option><option value="indicacao">Indicação</option>
+      <option value="atelie">Ateliê</option><option value="busca">Google</option>
+      <option value="whatsapp">WhatsApp</option><option value="outro">Outro</option>
     </select>
   </div>
-  <div id="custom-per-wrap" style="display:none;background:var(--W);border:1px solid var(--G2);border-radius:8px;padding:.875rem 1rem;margin-bottom:1rem;display:none;flex-wrap:wrap;gap:10px;align-items:flex-end">
-    <div>
-      <label class="flbl">De</label>
-      <input class="fi" type="date" id="per-de" style="width:150px" onchange="aplicarCustomPer()">
-    </div>
-    <div>
-      <label class="flbl">Até</label>
-      <input class="fi" type="date" id="per-ate" style="width:150px" onchange="aplicarCustomPer()">
-    </div>
+  <div id="custom-per-wrap" style="display:none;background:var(--W);border:1px solid var(--G2);border-radius:8px;padding:.875rem 1rem;margin-bottom:1rem;flex-wrap:wrap;gap:10px;align-items:flex-end">
+    <div><label class="flbl">De</label><input class="fi" type="date" id="per-de" style="width:150px" onchange="aplicarCustomPer()"></div>
+    <div><label class="flbl">Até</label><input class="fi" type="date" id="per-ate" style="width:150px" onchange="aplicarCustomPer()"></div>
     <div style="display:flex;gap:6px;flex-wrap:wrap">
       <button class="btn xs" onclick="setCustomPreset('hoje')">Hoje</button>
       <button class="btn xs" onclick="setCustomPreset('ontem')">Ontem</button>
@@ -288,18 +227,13 @@ textarea.fi{resize:vertical;min-height:60px}
       <button class="btn xs" onclick="setCustomPreset('mes')">Este mês</button>
       <button class="btn xs" onclick="setCustomPreset('mes_passado')">Mês passado</button>
     </div>
-    <div id="custom-per-label" style="font-size:11px;color:var(--G3);padding-top:2px"></div>
+    <div id="custom-per-label" style="font-size:11px;color:var(--G3)"></div>
   </div>
   <div id="ins-content"></div>
 </div>
-
-<!-- CONFIG -->
 <div id="pane-config" class="pane">
-  <div id="cfg-sync-bar" style="background:var(--A3);border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap">
-    <div>
-      <div style="font-size:12px;font-weight:600;color:var(--A2)">☁ Sincronizar configuração</div>
-      <div style="font-size:11px;color:var(--G3);margin-top:2px">Salva funis, etapas e usuários na planilha para todos os dispositivos verem igual</div>
-    </div>
+  <div style="background:var(--A3);border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap">
+    <div><div style="font-size:12px;font-weight:600;color:var(--A2)">☁ Sincronizar configuração</div><div style="font-size:11px;color:var(--G3);margin-top:2px">Salva funis, etapas e usuários na planilha para todos os dispositivos verem igual</div></div>
     <button class="btn sm laranja" onclick="forceSaveConfig()">Salvar na nuvem agora</button>
   </div>
   <div class="slbl">Funis e Etapas</div>
@@ -310,7 +244,6 @@ textarea.fi{resize:vertical;min-height:60px}
   <div id="cfg-users"></div>
   <button class="btn sm" onclick="openUserModal()">+ Novo usuário</button>
 </div>
-
 </div>
 
 <!-- MODAL CONTATO -->
@@ -329,32 +262,21 @@ textarea.fi{resize:vertical;min-height:60px}
   <div class="fg fg3">
     <div><label class="flbl">Canal</label>
       <select class="fi" id="f-canal">
-        <option value="instagram">Instagram</option>
-        <option value="story">Story</option>
-        <option value="anuncio">Anúncio</option>
-        <option value="indicacao">Indicação</option>
-        <option value="atelie">Ateliê</option>
-        <option value="busca">Google</option>
-        <option value="whatsapp">WhatsApp</option>
-        <option value="outro">Outro</option>
+        <option value="instagram">Instagram</option><option value="story">Story</option>
+        <option value="anuncio">Anúncio</option><option value="indicacao">Indicação</option>
+        <option value="atelie">Ateliê</option><option value="busca">Google</option>
+        <option value="whatsapp">WhatsApp</option><option value="outro">Outro</option>
       </select>
     </div>
     <div><label class="flbl">Valor (R$)</label><input class="fi" type="number" id="f-valor" placeholder="120"></div>
     <div><label class="flbl">Follow-up</label><input class="fi" type="date" id="f-followup"></div>
   </div>
-  <div class="fg fg1">
-    <div><label class="flbl">Produto</label><input class="fi" id="f-produto" placeholder="Kit Nordeste Vivo..."></div>
-  </div>
-  <div class="fg fg1">
-    <div><label class="flbl">Observação</label><textarea class="fi" id="f-obs"></textarea></div>
-  </div>
+  <div class="fg fg1"><div><label class="flbl">Produto</label><input class="fi" id="f-produto" placeholder="Kit Nordeste Vivo..."></div></div>
+  <div class="fg fg1"><div><label class="flbl">Observação</label><textarea class="fi" id="f-obs"></textarea></div></div>
   <div id="reabrir-wrap" style="display:none;margin-bottom:.75rem">
     <div style="background:var(--AM2);border-radius:8px;padding:.75rem 1rem;display:flex;align-items:center;gap:10px">
       <span id="reabrir-badge"></span>
-      <div style="flex:1">
-        <div style="font-size:12px;font-weight:600;color:var(--AM)">Card com resultado definido</div>
-        <div style="font-size:11px;color:var(--G3);margin-top:2px">Clique para reabrir e permitir nova marcação</div>
-      </div>
+      <div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--AM)">Card com resultado definido</div><div style="font-size:11px;color:var(--G3);margin-top:2px">Clique para reabrir e permitir nova marcação</div></div>
       <button class="btn sm" style="border-color:var(--AM);color:var(--AM);white-space:nowrap" onclick="reabrirCard()">↺ Reabrir card</button>
     </div>
   </div>
@@ -378,9 +300,7 @@ textarea.fi{resize:vertical;min-height:60px}
     <button class="chip" onclick="selM(this,'Sem dinheiro agora')">Sem dinheiro</button>
     <button class="chip" onclick="selM(this,'Frete caro')">Frete caro</button>
   </div>
-  <div class="fg fg1" style="margin-bottom:1rem">
-    <div><label class="flbl">Outro motivo</label><input class="fi" id="f-motivo" placeholder="Descreva..."></div>
-  </div>
+  <div class="fg fg1" style="margin-bottom:1rem"><div><label class="flbl">Outro motivo</label><input class="fi" id="f-motivo" placeholder="Descreva..."></div></div>
   <div style="display:flex;gap:8px">
     <button class="btn danger full" onclick="confirmPerda()">Confirmar perda</button>
     <button class="btn full" onclick="cancelPerda()">Cancelar</button>
@@ -392,28 +312,17 @@ textarea.fi{resize:vertical;min-height:60px}
 <div class="overlay" id="modal-atv" style="display:none">
 <div class="modal">
   <div class="mtitle"><span id="atv-nome">Atividade</span><button class="mcl" onclick="closeM('modal-atv')">✕</button></div>
-
-  <!-- Atividade atual (se existir) -->
   <div id="atv-atual-wrap" style="display:none;margin-bottom:1rem">
     <div class="flbl" style="margin-bottom:.5rem">Atividade agendada</div>
     <div id="atv-atual-card" style="border-radius:8px;padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:10px">
-      <div>
-        <div id="atv-atual-data" style="font-size:13px;font-weight:600;color:var(--K)"></div>
-        <div id="atv-atual-desc" style="font-size:12px;color:var(--G3);margin-top:2px"></div>
-      </div>
+      <div><div id="atv-atual-data" style="font-size:13px;font-weight:600;color:var(--K)"></div><div id="atv-atual-desc" style="font-size:12px;color:var(--G3);margin-top:2px"></div></div>
       <button class="btn sm" id="btn-checkpoint" onclick="checkpointAtv()" style="white-space:nowrap">✓ Check</button>
     </div>
   </div>
-
   <div class="divider" id="atv-divider" style="display:none"></div>
-
   <div class="flbl" style="margin-bottom:.5rem;margin-top:.5rem">Nova atividade</div>
-  <div class="fg fg1" style="margin-bottom:.75rem">
-    <div><label class="flbl">Data *</label><input class="fi" type="date" id="f-atv-data"></div>
-  </div>
-  <div class="fg fg1" style="margin-bottom:1rem">
-    <div><label class="flbl">Descrição</label><input class="fi" id="f-atv-desc" placeholder="Ex: Ligar, enviar proposta..."></div>
-  </div>
+  <div class="fg fg1" style="margin-bottom:.75rem"><div><label class="flbl">Data *</label><input class="fi" type="date" id="f-atv-data"></div></div>
+  <div class="fg fg1" style="margin-bottom:1rem"><div><label class="flbl">Descrição</label><input class="fi" id="f-atv-desc" placeholder="Ex: Ligar, enviar proposta..."></div></div>
   <div style="display:flex;gap:8px">
     <button class="btn primary full" onclick="saveAtv()">Salvar</button>
     <button class="btn full" onclick="clearAtv()">Remover</button>
@@ -425,9 +334,7 @@ textarea.fi{resize:vertical;min-height:60px}
 <div class="overlay" id="modal-funil" style="display:none">
 <div class="modal">
   <div class="mtitle"><span id="mf-title">Novo funil</span><button class="mcl" onclick="closeM('modal-funil')">✕</button></div>
-  <div class="fg fg1" style="margin-bottom:1rem">
-    <div><label class="flbl">Nome do funil</label><input class="fi" id="f-funil-nome" placeholder="Ex: D2C, B2B..."></div>
-  </div>
+  <div class="fg fg1" style="margin-bottom:1rem"><div><label class="flbl">Nome do funil</label><input class="fi" id="f-funil-nome" placeholder="Ex: D2C, B2B..."></div></div>
   <button class="btn primary full" onclick="saveFunil()">Salvar</button>
   <div class="fb" id="fb-f"></div>
 </div>
@@ -437,9 +344,7 @@ textarea.fi{resize:vertical;min-height:60px}
 <div class="overlay" id="modal-etapa" style="display:none">
 <div class="modal">
   <div class="mtitle"><span id="me-title">Nova etapa</span><button class="mcl" onclick="closeM('modal-etapa')">✕</button></div>
-  <div class="fg fg1" style="margin-bottom:1rem">
-    <div><label class="flbl">Nome da etapa</label><input class="fi" id="f-etapa-nome" placeholder="Ex: Atendimento, Proposta..."></div>
-  </div>
+  <div class="fg fg1" style="margin-bottom:1rem"><div><label class="flbl">Nome da etapa</label><input class="fi" id="f-etapa-nome" placeholder="Ex: Atendimento..."></div></div>
   <button class="btn primary full" onclick="saveEtapa()">Salvar</button>
 </div>
 </div>
@@ -448,772 +353,487 @@ textarea.fi{resize:vertical;min-height:60px}
 <div class="overlay" id="modal-user" style="display:none">
 <div class="modal">
   <div class="mtitle"><span>Novo usuário</span><button class="mcl" onclick="closeM('modal-user')">✕</button></div>
-  <div class="fg fg1" style="margin-bottom:1rem">
-    <div><label class="flbl">Nome</label><input class="fi" id="f-user-nome" placeholder="Ex: Lucas, Ana..."></div>
-  </div>
+  <div class="fg fg1" style="margin-bottom:1rem"><div><label class="flbl">Nome</label><input class="fi" id="f-user-nome" placeholder="Ex: Lucas, Ana..."></div></div>
   <button class="btn primary full" onclick="saveUser()">Salvar</button>
 </div>
 </div>
 
 <script>
-const API = 'https://script.google.com/macros/s/AKfycbyH1LZdXPP-vXCi4pth7UYrPUd2875rfwPxWSSc_BrOmHBbvXxTttJtTMqdrcHkXgp2mw/exec';
+const API='https://script.google.com/macros/s/AKfycbwPBm9rGpnrdJChY7suMc_rIgef_94GvFg2sYQMyPFqBUekV76ClJX-YsW4SZO0MRFUyg/exec';
 
-// ── STATE ──────────────────────────────────────────────
-let contatos = [];
-let cfg = {
-  funis: [
-    {id:'d2c', nome:'D2C', etapas:[
-      {id:'d2c-bv',    nome:'Boas Vindas 🤝'},
-      {id:'d2c-ni',    nome:'Necessidade de Interesse 🔍'},
-      {id:'d2c-neg',   nome:'Negociação Comercial 🤑'},
-      {id:'d2c-cn',    nome:'Cliente Novo'},
-      {id:'d2c-cr',    nome:'Cliente Para Resgate'}
+let contatos=[];
+let cfg={
+  funis:[
+    {id:'d2c',nome:'D2C',etapas:[
+      {id:'d2c-bv',nome:'Boas Vindas 🤝'},
+      {id:'d2c-ni',nome:'Necessidade de Interesse 🔍'},
+      {id:'d2c-neg',nome:'Negociação Comercial 🤑'},
+      {id:'d2c-cn',nome:'Cliente Novo'},
+      {id:'d2c-cr',nome:'Cliente Para Resgate'}
     ]},
-    {id:'b2b', nome:'B2B', etapas:[
-      {id:'b2b-prosp', nome:'Prospecção'},
-      {id:'b2b-prop',  nome:'Proposta'},
-      {id:'b2b-neg',   nome:'Negociação'},
-      {id:'b2b-fech',  nome:'Fechado'},
-      {id:'b2b-perd',  nome:'Perdido'}
+    {id:'b2b',nome:'B2B',etapas:[
+      {id:'b2b-prosp',nome:'Prospecção'},{id:'b2b-prop',nome:'Proposta'},
+      {id:'b2b-neg',nome:'Negociação'},{id:'b2b-fech',nome:'Fechado'},{id:'b2b-perd',nome:'Perdido'}
     ]},
-    {id:'pissifa', nome:'Pissifã', etapas:[
-      {id:'psf-ativo',    nome:'Ativo'},
-      {id:'psf-contato',  nome:'Em contato'},
-      {id:'psf-recompra', nome:'Recompra'},
-      {id:'psf-inativo',  nome:'Inativo'}
+    {id:'pissifa',nome:'Pissifã',etapas:[
+      {id:'psf-ativo',nome:'Ativo'},{id:'psf-contato',nome:'Em contato'},
+      {id:'psf-recompra',nome:'Recompra'},{id:'psf-inativo',nome:'Inativo'}
     ]}
   ],
-  usuarios: [{id:'lucas', nome:'Lucas'}, {id:'ana', nome:'Ana'}]
+  usuarios:[{id:'lucas',nome:'Lucas'},{id:'ana',nome:'Ana'}]
 };
-let funilAtivo = 'd2c';
-let filtroC    = 'todos';
-let filtroAtv  = 'todos';
-let periodo    = '30';
-let periodoCustom = {ativo: false, de: null, ate: null};
-let userAtivo  = 'todos';
-let editCid    = null;   // contato em edição
-let editFid    = null;   // funil em edição
-let editEfid   = null;   // funil da etapa em edição
-let editEid    = null;   // etapa em edição
-let perdaCid   = null;   // contato aguardando motivo de perda
-let atvCid     = null;   // contato para atividade
-let motivoSel  = '';
-let dragId     = null;
+let funilAtivo='d2c';
+let filtroC='todos';
+let filtroAtv='todos';
+let periodo='30';
+let periodoCustom={ativo:false,de:null,ate:null};
+let userAtivo='todos';
+let editCid=null;
+let editFid=null;
+let editEfid=null;
+let editEid=null;
+let perdaCid=null;
+let atvCid=null;
+let motivoSel='';
+let dragId=null;
 
-const CANAL_LABEL = {instagram:'Instagram',story:'Story',anuncio:'Anúncio',indicacao:'Indicação',atelie:'Ateliê',busca:'Google',whatsapp:'WhatsApp',outro:'Outro'};
+const CANAL_LABEL={instagram:'Instagram',story:'Story',anuncio:'Anúncio',indicacao:'Indicação',atelie:'Ateliê',busca:'Google',whatsapp:'WhatsApp',outro:'Outro'};
 
-// ── SYNC STATUS ────────────────────────────────────────
-function ss(s, m) {
-  document.getElementById('sdot').className = 'sdot' + (s==='ld'?' ld': s==='er'?' er':'');
-  document.getElementById('stxt').textContent = m;
+// ── HELPERS ──────────────────────────────────────────────
+function ss(s,m){document.getElementById('sdot').className='sdot'+(s==='ld'?' ld':s==='er'?' er':'');document.getElementById('stxt').textContent=m;}
+function getFunil(id){return cfg.funis.find(f=>f.id===id);}
+function getEtapa(fid,eid){const f=getFunil(fid);return f?f.etapas.find(e=>e.id===eid):null;}
+function fmtD(iso){try{return new Date(iso).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});}catch(e){return '';}}
+function isGanho(fid,eid){const e=getEtapa(fid,eid);return e&&e.nome.toLowerCase().includes('fechado');}
+function isPerdido(fid,eid){const e=getEtapa(fid,eid);return e&&e.nome.toLowerCase().includes('perdido');}
+function isNegociacao(fid,eid){const e=getEtapa(fid,eid);return e&&e.nome.toLowerCase().includes('negociação comercial');}
+
+function normDate(d){
+  if(!d||d.trim()==='')return'';
+  if(/^\d{4}-\d{2}-\d{2}$/.test(d))return d;
+  if(/^\d{2}\/\d{2}\/\d{4}$/.test(d)){const[dd,mm,yyyy]=d.split('/');return`${yyyy}-${mm}-${dd}`;}
+  const dt=new Date(d);if(!isNaN(dt))return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+  return'';
+}
+function hojeISO(){const h=new Date();return h.getFullYear()+'-'+String(h.getMonth()+1).padStart(2,'0')+'-'+String(h.getDate()).padStart(2,'0');}
+function diasAtras(iso){
+  if(!iso)return null;
+  const d=new Date(iso);const hj=new Date();hj.setHours(0,0,0,0);
+  return Math.floor((hj-d)/(1000*60*60*24));
 }
 
-// ── CONFIG PERSIST ─────────────────────────────────────
-async function loadCfg() {
-  try {
-    const r = await apiPost({action:'getConfig'});
-    // A API retorna o conteúdo da célula A1 da aba config
-    // Pode ser: objeto já parseado, string JSON, ou array [["{...}"]]
-    let parsed = null;
-    if (Array.isArray(r) && r.length > 0) {
-      // formato [[valor]]
-      const val = Array.isArray(r[0]) ? r[0][0] : r[0];
-      if (typeof val === 'string' && val.startsWith('{')) {
-        try { parsed = JSON.parse(val); } catch(e2) {}
-      } else if (typeof val === 'object' && val.funis) {
-        parsed = val;
-      }
-    } else if (r && typeof r === 'object' && r.funis) {
-      parsed = r;
-    } else if (typeof r === 'string' && r.startsWith('{')) {
-      try { parsed = JSON.parse(r); } catch(e2) {}
-    }
-    if (parsed && parsed.funis && parsed.funis.length > 0) {
-      cfg = parsed;
-      // Atualizar localStorage como cache
-      try { localStorage.setItem('psn_cfg3', JSON.stringify(cfg)); } catch(e) {}
-      return;
-    }
-  } catch(e) {
-    console.warn('loadCfg error:', e);
+function atvStatus(c){
+  const d=normDate(c.atv_data);if(!d)return'sem';
+  const hj=hojeISO();if(d<hj)return'atrasada';if(d===hj)return'hoje';return'agendada';
+}
+function atvDotHtml(c){
+  const s=atvStatus(c);
+  const cls={sem:'atv-vermelho',hoje:'atv-verde',atrasada:'atv-amarelo',agendada:'atv-cinza'};
+  const tip={sem:'Sem atividade — clique para agendar',hoje:`Hoje: ${c.atv_desc||'atividade agendada'}`,atrasada:`Atrasada (${fmtD(c.atv_data)}): ${c.atv_desc||''}`,agendada:`${fmtD(c.atv_data)}: ${c.atv_desc||''}`};
+  return`<div class="atv-dot ${cls[s]}" title="${tip[s]}" onclick="openAtv('${c.id}')"></div>`;
+}
+
+// ── HISTÓRICO DE NEGOCIAÇÃO ───────────────────────────────
+// neg_hist: JSON string de array [{r:'ganho'|'perda', d:'YYYY-MM-DD', m:'motivo'}]
+function parseNegHist(c){
+  try{if(c.neg_hist&&c.neg_hist!=='')return JSON.parse(c.neg_hist);}catch(e){}
+  // migrar campo resultado antigo se existir
+  if(c.resultado==='ganho'||c.resultado==='perda'){
+    return [{r:c.resultado,d:hojeISO(),m:c.motivo_perda||''}];
   }
-  // Fallback: localStorage
-  try { const s = localStorage.getItem('psn_cfg3'); if(s) { const p=JSON.parse(s); if(p&&p.funis) cfg=p; } } catch(e) {}
+  return[];
 }
 
-async function saveCfg() {
-  try { await apiPost({action:'saveConfig', config: cfg}); } catch(e) { console.warn('saveCfg error:', e); }
-  try { localStorage.setItem('psn_cfg3', JSON.stringify(cfg)); } catch(e) {}
+function ultimaCompraHtml(c){
+  const hist=parseNegHist(c);
+  const ganhos=hist.filter(h=>h.r==='ganho').sort((a,b)=>b.d.localeCompare(a.d));
+  if(!ganhos.length)return'';
+  const ultima=ganhos[0];
+  const dias=diasAtras(ultima.d);
+  if(dias===null)return'';
+  let cls='ultima-compra';
+  let txt='';
+  if(dias===0)txt='🛍 Comprou hoje';
+  else if(dias===1)txt='🛍 Ontem';
+  else if(dias<=7)txt=`🛍 há ${dias} dias`;
+  else if(dias<=30){cls='ultima-compra alerta';txt=`🛍 há ${dias} dias`;}
+  else{cls='ultima-compra critico';txt=`🛍 há ${dias} dias`;}
+  const nCompras=ganhos.length;
+  return`<div class="${cls}" title="Última compra: ${fmtD(ultima.d)} — ${nCompras} compra${nCompras>1?'s':''} no total">${txt}${nCompras>1?` · ${nCompras}ª compra`:''}</div>`;
 }
 
-// ── API ────────────────────────────────────────────────
-async function apiPost(payload) {
-  const r = await fetch(API, {
-    method: 'POST',
-    body: JSON.stringify(payload)
-  });
-  const text = await r.text();
-  try { return JSON.parse(text); } catch(e) { return {}; }
+// ── CONFIG ──────────────────────────────────────────────
+async function loadCfg(){
+  try{
+    const r=await apiPost({action:'getConfig'});
+    let parsed=null;
+    if(Array.isArray(r)&&r.length>0){const val=Array.isArray(r[0])?r[0][0]:r[0];if(typeof val==='string'&&val.startsWith('{'))try{parsed=JSON.parse(val);}catch(e){}}
+    else if(r&&typeof r==='object'&&r.funis)parsed=r;
+    else if(typeof r==='string'&&r.startsWith('{'))try{parsed=JSON.parse(r);}catch(e){}
+    if(parsed&&parsed.funis&&parsed.funis.length>0){cfg=parsed;try{localStorage.setItem('psn_cfg3',JSON.stringify(cfg));}catch(e){}return;}
+  }catch(e){}
+  try{const s=localStorage.getItem('psn_cfg3');if(s){const p=JSON.parse(s);if(p&&p.funis)cfg=p;}}catch(e){}
+}
+async function saveCfg(){
+  try{await apiPost({action:'saveConfig',config:cfg});}catch(e){}
+  try{localStorage.setItem('psn_cfg3',JSON.stringify(cfg));}catch(e){}
 }
 
-async function doSync() {
+// ── API ──────────────────────────────────────────────────
+async function apiPost(payload){const r=await fetch(API,{method:'POST',body:JSON.stringify(payload)});const text=await r.text();try{return JSON.parse(text);}catch(e){return{};}}
+
+async function doSync(){
   ss('ld','Sincronizando...');
-  try {
-    const rows = await apiPost({action:'getAll'});
-    if (!Array.isArray(rows) || rows.length < 2) {
-      contatos = [];
-    } else {
-      contatos = rows.slice(1)
-        .filter(r => r[0])
-        .map(r => ({
-          id:           String(r[0]  || ''),
-          nome:         String(r[1]  || ''),
-          tel:          String(r[2]  || ''),
-          et:           String(r[3]  || ''),
-          canal:        String(r[4]  || 'outro'),
-          valor:        parseFloat(r[5]) || 0,
-          produto:      String(r[6]  || ''),
-          obs:          String(r[7]  || ''),
-          data:         String(r[8]  || new Date().toISOString()),
-          compras:      parseInt(r[9])  || 0,
-          funil:        String(r[10] || 'd2c'),
-          etapa:        String(r[11] || 'd2c-novo'),
-          usuario:      String(r[12] || ''),
-          followup:     String(r[13] || ''),
-          motivo_perda: String(r[14] || ''),
-          atv_data:     String(r[15] || ''),
-          atv_desc:     String(r[16] || ''),
-          resultado:    String(r[17] || ''),
-          atv_hist:     parseInt(r[18]) || 0
-        }));
+  try{
+    const rows=await apiPost({action:'getAll'});
+    if(!Array.isArray(rows)||rows.length<2){contatos=[];}
+    else{
+      contatos=rows.slice(1).filter(r=>r[0]).map(r=>({
+        id:String(r[0]||''),nome:String(r[1]||''),tel:String(r[2]||''),
+        et:String(r[3]||''),canal:String(r[4]||'outro'),
+        valor:parseFloat(r[5])||0,produto:String(r[6]||''),
+        obs:String(r[7]||''),data:String(r[8]||new Date().toISOString()),
+        compras:parseInt(r[9])||0,funil:String(r[10]||'d2c'),
+        etapa:String(r[11]||'d2c-bv'),usuario:String(r[12]||''),
+        followup:String(r[13]||''),motivo_perda:String(r[14]||''),
+        atv_data:String(r[15]||''),atv_desc:String(r[16]||''),
+        resultado:String(r[17]||''),atv_hist:parseInt(r[18])||0,
+        neg_hist:String(r[19]||'')  // NOVO: histórico de negociações
+      }));
     }
-    // Corrigir etapas órfãs — se o ID da etapa não existe no funil,
-    // mantém o contato mas move para a primeira etapa disponível
-    contatos.forEach(c => {
-      const funil = getFunil(c.funil);
-      if (!funil) {
-        // funil não existe — tenta d2c como fallback
-        const fallback = getFunil('d2c');
-        if (fallback) { c.funil = 'd2c'; c.etapa = fallback.etapas[0].id; }
-        return;
-      }
-      const etapaExiste = funil.etapas.some(e => e.id === c.etapa);
-      if (!etapaExiste) {
-        // Tenta encontrar etapa pelo nome parecido
-        const etapaNome = c.etapa.replace(/^[a-z0-9]+-/, '').toLowerCase();
-        const match = funil.etapas.find(e =>
-          e.nome.toLowerCase().includes(etapaNome) ||
-          e.id.toLowerCase().includes(etapaNome)
-        );
-        c.etapa = match ? match.id : funil.etapas[0].id;
+    // corrigir etapas órfãs
+    contatos.forEach(c=>{
+      const f=getFunil(c.funil);
+      if(!f){const fb=getFunil('d2c');if(fb){c.funil='d2c';c.etapa=fb.etapas[0].id;}return;}
+      if(!f.etapas.some(e=>e.id===c.etapa)){
+        const nm=c.etapa.replace(/^[a-z0-9]+-/,'').toLowerCase();
+        const m=f.etapas.find(e=>e.nome.toLowerCase().includes(nm)||e.id.toLowerCase().includes(nm));
+        c.etapa=m?m.id:f.etapas[0].id;
       }
     });
-    ss('ok', contatos.length + ' contato' + (contatos.length !== 1 ? 's' : ''));
+    ss('ok',contatos.length+' contato'+(contatos.length!==1?'s':''));
     renderAll();
-  } catch(e) {
-    ss('er', 'Erro de conexão');
-    console.error(e);
-  }
+  }catch(e){ss('er','Erro de conexão');console.error(e);}
 }
 
-function contatoPayload(c) {
-  return {
-    id: c.id, nome: c.nome, tel: c.tel, et: c.et,
-    canal: c.canal, valor: c.valor, produto: c.produto,
-    obs: c.obs, data: c.data, compras: c.compras,
-    funil: c.funil, etapa: c.etapa, usuario: c.usuario,
-    followup: c.followup, motivo_perda: c.motivo_perda || '',
-    atv_data: c.atv_data || '', atv_desc: c.atv_desc || '',
-    resultado: c.resultado || '',
-    atv_hist: c.atv_hist || 0
+function contatoPayload(c){
+  return{
+    id:c.id,nome:c.nome,tel:c.tel,et:c.et,canal:c.canal,
+    valor:c.valor,produto:c.produto,obs:c.obs,data:c.data,compras:c.compras,
+    funil:c.funil,etapa:c.etapa,usuario:c.usuario,followup:c.followup||'',
+    motivo_perda:c.motivo_perda||'',atv_data:c.atv_data||'',atv_desc:c.atv_desc||'',
+    resultado:c.resultado||'',atv_hist:c.atv_hist||0,
+    neg_hist:c.neg_hist||''
   };
 }
+async function apiSave(c){return apiPost({action:'save',contato:contatoPayload(c)});}
+async function apiDelete(id){return apiPost({action:'delete',id:String(id)});}
 
-async function apiSave(c)   { return apiPost({action:'save',   contato: contatoPayload(c)}); }
-async function apiDelete(id){ return apiPost({action:'delete', id: String(id)}); }
-
-// ── HELPERS ────────────────────────────────────────────
-function getFunil(id)       { return cfg.funis.find(f => f.id === id); }
-function getEtapa(fid, eid) { const f = getFunil(fid); return f ? f.etapas.find(e => e.id === eid) : null; }
-function fmtD(iso)          { try { return new Date(iso).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}); } catch(e) { return ''; } }
-
-function isGanho(fid, eid) {
-  const e = getEtapa(fid, eid);
-  return e && e.nome.toLowerCase().includes('fechado');
-}
-function isPerdido(fid, eid) {
-  const e = getEtapa(fid, eid);
-  return e && e.nome.toLowerCase().includes('perdido');
-}
-function isBoasVindas(fid, eid) {
-  const e = getEtapa(fid, eid);
-  return e && e.nome.toLowerCase().includes('boas vindas');
-}
-function isNegociacao(fid, eid) {
-  const e = getEtapa(fid, eid);
-  return e && e.nome.toLowerCase().includes('negociação comercial');
-}
-
-function normDate(d) {
-  // Normaliza qualquer formato para YYYY-MM-DD
-  if (!d || d.trim() === '') return '';
-  // Já está em YYYY-MM-DD
-  if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
-  // Formato DD/MM/YYYY
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(d)) {
-    const [dd,mm,yyyy] = d.split('/');
-    return `${yyyy}-${mm}-${dd}`;
-  }
-  // Formato M/D/YYYY ou outros — tenta parse genérico
-  const dt = new Date(d);
-  if (!isNaN(dt)) return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
-  return '';
-}
-
-function hojeISO() {
-  const h = new Date();
-  return h.getFullYear()+'-'+String(h.getMonth()+1).padStart(2,'0')+'-'+String(h.getDate()).padStart(2,'0');
-}
-
-function atvStatus(c) {
-  const d = normDate(c.atv_data);
-  if (!d) return 'sem';
-  const hj = hojeISO();
-  if (d < hj)  return 'atrasada';
-  if (d === hj) return 'hoje';
-  return 'agendada';
-}
-
-function atvDotHtml(c) {
-  const s   = atvStatus(c);
-  const cls = {sem:'atv-vermelho', hoje:'atv-verde', atrasada:'atv-amarelo', agendada:'atv-cinza'};
-  const tip = {sem:'Sem atividade — clique para agendar', hoje:`Hoje: ${c.atv_desc||'atividade agendada'}`, atrasada:`Atrasada (${fmtD(c.atv_data)}): ${c.atv_desc||''}`, agendada:`${fmtD(c.atv_data)}: ${c.atv_desc||''}`};
-  return `<div class="atv-dot ${cls[s]}" title="${tip[s]}" onclick="openAtv('${c.id}')"></div>`;
-}
-
-// ── TABS ───────────────────────────────────────────────
-function showTab(id) {
-  ['funil','contatos','insights','config'].forEach((t,i) => {
-    document.querySelectorAll('.tb')[i].classList.toggle('active', t===id);
-    document.getElementById('pane-'+t).classList.toggle('active', t===id);
+// ── TABS ──────────────────────────────────────────────────
+function showTab(id){
+  ['funil','contatos','insights','config'].forEach((t,i)=>{
+    document.querySelectorAll('.tb')[i].classList.toggle('active',t===id);
+    document.getElementById('pane-'+t).classList.toggle('active',t===id);
   });
-  if (id==='funil')    renderFunil();
-  if (id==='contatos') renderContatos();
-  if (id==='insights') initInsights();
-  if (id==='config')   renderConfig();
+  if(id==='funil')renderFunil();
+  if(id==='contatos')renderContatos();
+  if(id==='insights')initInsights();
+  if(id==='config')renderConfig();
 }
 
-// ── FUNIL BOARD ────────────────────────────────────────
-function renderFunilTabs() {
-  document.getElementById('funil-tabs').innerHTML =
-    cfg.funis.map(f =>
-      `<button class="ft${funilAtivo===f.id?' active':''}" onclick="setFunil('${f.id}')">${f.nome}</button>`
-    ).join('');
+// ── FUNIL ─────────────────────────────────────────────────
+function renderFunilTabs(){
+  document.getElementById('funil-tabs').innerHTML=cfg.funis.map(f=>`<button class="ft${funilAtivo===f.id?' active':''}" onclick="setFunil('${f.id}')">${f.nome}</button>`).join('');
 }
+function setFunil(id){funilAtivo=id;renderFunil();renderUbtns();}
+function limparBuscaFunil(){const el=document.getElementById('funil-busca');if(el){el.value='';el.focus();}renderFunil();}
+function setFiltroAtv(btn,f){document.querySelectorAll('[id^="fatv-"]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');filtroAtv=f;renderFunil();}
 
-function setFunil(id) { funilAtivo = id; renderFunil(); renderUbtns(); }
-
-function limparBuscaFunil() {
-  const el = document.getElementById('funil-busca');
-  if (el) { el.value = ''; el.focus(); }
-  renderFunil();
-}
-
-function setFiltroAtv(btn, f) {
-  document.querySelectorAll('[id^="fatv-"]').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  filtroAtv = f;
-  renderFunil();
-}
-
-function renderFunil() {
+function renderFunil(){
   renderFunilTabs();
-  const funil = getFunil(funilAtivo);
-  const board = document.getElementById('board');
-  board.innerHTML = '';
-  if (!funil) { board.innerHTML = '<div class="empty">Nenhum funil</div>'; return; }
+  const funil=getFunil(funilAtivo);
+  const board=document.getElementById('board');
+  board.innerHTML='';
+  if(!funil){board.innerHTML='<div class="empty">Nenhum funil</div>';return;}
+  const buscaFunil=(document.getElementById('funil-busca')||{value:''}).value.toLowerCase().trim();
+  const clearBtn=document.getElementById('funil-busca-clear');
+  if(clearBtn)clearBtn.style.display=buscaFunil?'inline-flex':'none';
 
-  funil.etapas.forEach(etapa => {
-    // filtra contatos desta coluna
-    const buscaFunil = (document.getElementById('funil-busca') || {value:''}).value.toLowerCase().trim();
-    const cards = contatos.filter(c => {
-      if (c.funil !== funilAtivo) return false;
-      if (c.etapa !== etapa.id)  return false;
-      if (userAtivo !== 'todos' && c.usuario !== userAtivo) return false;
-      if (filtroAtv !== 'todos' && atvStatus(c) !== filtroAtv) return false;
-      if (buscaFunil && !c.nome.toLowerCase().includes(buscaFunil)) return false;
+  funil.etapas.forEach(etapa=>{
+    const cards=contatos.filter(c=>{
+      if(c.funil!==funilAtivo)return false;
+      if(c.etapa!==etapa.id)return false;
+      if(userAtivo!=='todos'&&c.usuario!==userAtivo)return false;
+      if(filtroAtv!=='todos'&&atvStatus(c)!==filtroAtv)return false;
+      if(buscaFunil&&!c.nome.toLowerCase().includes(buscaFunil))return false;
       return true;
     });
-    // Mostrar/esconder botão limpar
-    const clearBtn = document.getElementById('funil-busca-clear');
-    if (clearBtn) clearBtn.style.display = buscaFunil ? 'inline-flex' : 'none';
-
-    const col = document.createElement('div');
-    col.className = 'kcol';
-    col.dataset.etapa = etapa.id;
-
-    const somaValores = cards.reduce((a, c) => a + (c.valor || 0), 0);
-    const somaStr = somaValores > 0
-      ? 'R$' + Math.round(somaValores).toLocaleString('pt-BR')
-      : '';
-    col.innerHTML = `
+    const soma=cards.reduce((a,c)=>a+(c.valor||0),0);
+    const somaStr=soma>0?'R$'+Math.round(soma).toLocaleString('pt-BR'):'';
+    const col=document.createElement('div');
+    col.className='kcol';col.dataset.etapa=etapa.id;
+    col.innerHTML=`
       <div class="kcol-hdr">
         <div style="flex:1;min-width:0">
           <div class="kcol-nome">${etapa.nome}</div>
-          ${somaStr ? `<div style="font-size:11px;font-weight:600;color:var(--L);margin-top:1px">${somaStr}</div>` : ''}
+          ${somaStr?`<div style="font-size:11px;font-weight:600;color:var(--L);margin-top:1px">${somaStr}</div>`:''}
         </div>
         <span class="kcol-cnt">${cards.length}</span>
         <button class="kcol-edit" onclick="openEtapaModal('${funil.id}','${etapa.id}')">✎</button>
       </div>
-      <div class="kcol-body" id="cb-${etapa.id}">
-        ${cards.map(c => kcardHtml(c)).join('')}
-      </div>
-      <div class="kcol-footer">
-        <button class="btn xs full" onclick="openContato(null,'${funil.id}','${etapa.id}')">+ Contato</button>
-      </div>`;
-
-    // drag events on col-body
-    const body = col.querySelector('.kcol-body');
-    body.addEventListener('dragover', e => { e.preventDefault(); col.classList.add('over'); });
-    body.addEventListener('dragleave', e => { if (!col.contains(e.relatedTarget)) col.classList.remove('over'); });
-    body.addEventListener('drop', e => {
-      e.preventDefault();
-      col.classList.remove('over');
-      if (dragId) dropCard(etapa.id);
-    });
-
+      <div class="kcol-body" id="cb-${etapa.id}">${cards.map(c=>kcardHtml(c,buscaFunil)).join('')}</div>
+      <div class="kcol-footer"><button class="btn xs full" onclick="openContato(null,'${funil.id}','${etapa.id}')">+ Contato</button></div>`;
+    const body=col.querySelector('.kcol-body');
+    body.addEventListener('dragover',e=>{e.preventDefault();col.classList.add('over');});
+    body.addEventListener('dragleave',e=>{if(!col.contains(e.relatedTarget))col.classList.remove('over');});
+    body.addEventListener('drop',e=>{e.preventDefault();col.classList.remove('over');if(dragId)dropCard(etapa.id);});
     board.appendChild(col);
   });
-
-  // add col button
-  const addBtn = document.createElement('div');
-  addBtn.className = 'add-col';
-  addBtn.onclick = () => openEtapaModal(funil.id, null);
-  addBtn.innerHTML = '<span style="font-size:22px">+</span><span>Nova etapa</span>';
+  const addBtn=document.createElement('div');addBtn.className='add-col';addBtn.onclick=()=>openEtapaModal(funil.id,null);addBtn.innerHTML='<span style="font-size:22px">+</span><span>Nova etapa</span>';
   board.appendChild(addBtn);
-
-  // bind drag on cards
-  board.querySelectorAll('.kc').forEach(el => {
-    el.addEventListener('dragstart', e => {
-      dragId = el.dataset.id;
-      el.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
-    });
-    el.addEventListener('dragend', () => {
-      el.classList.remove('dragging');
-      document.querySelectorAll('.kcol').forEach(c => c.classList.remove('over'));
-    });
+  board.querySelectorAll('.kc').forEach(el=>{
+    el.addEventListener('dragstart',e=>{dragId=el.dataset.id;el.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
+    el.addEventListener('dragend',()=>{el.classList.remove('dragging');document.querySelectorAll('.kcol').forEach(c=>c.classList.remove('over'));});
   });
 }
 
-function kcardHtml(c) {
-  const usr = cfg.usuarios.find(u => u.id === c.usuario);
-  const vl  = c.valor ? `R$${Math.round(c.valor)}` : '';
-  const res = c.resultado;
-  // Botões ganho/perda — só mostrar se card está em negociação
-  const emNeg = isNegociacao(c.funil, c.etapa);
-  let botoesRes = '';
-  if (res === 'ganho') {
-    botoesRes = `<span class="res-ganho" title="Card fechado — edite para reabrir">✓ Ganho</span>`;
-  } else if (res === 'perda') {
-    botoesRes = `<span class="res-perda" title="Card perdido — edite para reabrir">✗ Perda</span>`;
-  } else if (emNeg) {
-    botoesRes = `<button class="btn-ganho" onclick="setResultado('${c.id}','ganho')">✓ Ganho</button>`
-              + `<button class="btn-perda" onclick="setResultado('${c.id}','perda')">✗ Perda</button>`;
-  }
-  const buscaAtiva = (document.getElementById('funil-busca') || {value:''}).value.toLowerCase().trim();
-  const nomeHtml = buscaAtiva && c.nome.toLowerCase().includes(buscaAtiva)
-    ? c.nome.replace(new RegExp('('+buscaAtiva.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'), '<mark style="background:#F2E618;border-radius:2px;padding:0 1px">$1</mark>')
-    : c.nome;
-  return `<div class="kc" draggable="true" data-id="${c.id}">
+function kcardHtml(c,busca){
+  const usr=cfg.usuarios.find(u=>u.id===c.usuario);
+  const vl=c.valor?`R$${Math.round(c.valor)}`:'';
+  const hist=parseNegHist(c);
+  const ultimaNeg=hist.length?hist[hist.length-1]:null;
+  const emNeg=isNegociacao(c.funil,c.etapa);
+
+  // Resultado atual: usa o último registro do histórico
+  const resAtual=ultimaNeg?ultimaNeg.r:'';
+  let botoesRes='';
+  if(resAtual==='ganho')botoesRes=`<span class="res-ganho" title="Ganho em ${fmtD(ultimaNeg.d)} — edite para reabrir">✓ Ganho</span>`;
+  else if(resAtual==='perda')botoesRes=`<span class="res-perda" title="Perda em ${fmtD(ultimaNeg.d)}: ${ultimaNeg.m||''} — edite para reabrir">✗ Perda</span>`;
+  else if(emNeg)botoesRes=`<button class="btn-ganho" onclick="setResultado('${c.id}','ganho')">✓ Ganho</button><button class="btn-perda" onclick="setResultado('${c.id}','perda')">✗ Perda</button>`;
+
+  // Última compra
+  const ucHtml=ultimaCompraHtml(c);
+
+  // Contagem negociações no histórico
+  const nGanhos=hist.filter(h=>h.r==='ganho').length;
+  const nPerdas=hist.filter(h=>h.r==='perda').length;
+  const histBadge=hist.length>0?`<span class="neg-hist ${nGanhos>0?'neg-hist-g':'neg-hist-p'}" title="${nGanhos} ganho(s), ${nPerdas} perda(s) no histórico">📊 ${hist.length}×</span>`:'';
+
+  const buscaAtiva=(document.getElementById('funil-busca')||{value:''}).value.toLowerCase().trim();
+  const b=buscaAtiva||busca||'';
+  const nomeHtml=b&&c.nome.toLowerCase().includes(b)?c.nome.replace(new RegExp('('+b.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<mark style="background:#F2E618;border-radius:2px;padding:0 1px">$1</mark>'):c.nome;
+
+  return`<div class="kc" draggable="true" data-id="${c.id}">
     <div class="kc-nome">${nomeHtml}</div>
     <div class="kc-sub">
-      ${vl ? `<span>${vl}</span>` : ''}
-      ${c.canal ? `<span>${CANAL_LABEL[c.canal]||c.canal}</span>` : ''}
-      ${usr ? `<span>👤 ${usr.nome}</span>` : ''}
+      ${vl?`<span>${vl}</span>`:''}
+      ${c.canal?`<span>${CANAL_LABEL[c.canal]||c.canal}</span>`:''}
+      ${usr?`<span>👤 ${usr.nome}</span>`:''}
+      ${histBadge}
     </div>
-    ${botoesRes ? `<div style="margin-bottom:5px;display:flex;gap:4px;flex-wrap:wrap">${botoesRes}</div>` : ''}
-    ${c.motivo_perda ? `<div style="font-size:10px;color:var(--VM);margin-bottom:4px">⚠ ${c.motivo_perda}</div>` : ''}
+    ${ucHtml}
+    ${botoesRes?`<div style="margin-bottom:4px;display:flex;gap:4px;flex-wrap:wrap">${botoesRes}</div>`:''}
+    ${c.motivo_perda?`<div style="font-size:10px;color:var(--VM);margin-bottom:4px">⚠ ${c.motivo_perda}</div>`:''}
     <div class="kc-actions">
-      <div class="kc-left" style="flex-wrap:wrap;gap:3px">
-        <button class="btn xs" onclick="openContato('${c.id}')" title="Editar">✎</button>
+      <div class="kc-left">
+        <button class="btn xs" onclick="openContato('${c.id}')">✎</button>
         <button class="btn xs" onclick="duplicarCard('${c.id}')" title="Duplicar para Pissifã">⧉</button>
-        <button class="btn xs danger" onclick="delC('${c.id}')" title="Excluir">✕</button>
+        <button class="btn xs danger" onclick="delC('${c.id}')">✕</button>
       </div>
       ${atvDotHtml(c)}
     </div>
   </div>`;
 }
 
-// ── DRAG & DROP ────────────────────────────────────────
-async function dropCard(etapaId) {
-  if (!dragId) return;
-  const c = contatos.find(x => x.id === dragId);
-  if (!c) return;
+// ── DRAG & DROP ───────────────────────────────────────────
+async function dropCard(etapaId){
+  if(!dragId)return;
+  const c=contatos.find(x=>x.id===dragId);if(!c)return;
+  if(isPerdido(funilAtivo,etapaId)){c.etapa=etapaId;c.et='perdido';perdaCid=dragId;dragId=null;document.getElementById('modal-perda').style.display='flex';return;}
+  c.etapa=etapaId;c.et=isGanho(funilAtivo,etapaId)?'fechado':'atendimento';dragId=null;
+  ss('ld','Movendo...');try{await apiSave(c);await doSync();}catch(ex){ss('er','Erro ao mover');}
+}
 
-  if (isPerdido(funilAtivo, etapaId)) {
-    c.etapa       = etapaId;
-    c.et          = 'perdido';
-    perdaCid      = dragId;
-    dragId        = null;
-    document.getElementById('modal-perda').style.display = 'flex';
-    return;
+// ── PERDA ─────────────────────────────────────────────────
+function selM(btn,m){document.querySelectorAll('.chip').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');motivoSel=m;}
+
+async function confirmPerda(){
+  const outro=document.getElementById('f-motivo').value.trim();
+  const motivo=outro||motivoSel||'Não informado';
+  const c=contatos.find(x=>x.id===perdaCid);if(!c){closeM('modal-perda');return;}
+  // Adicionar ao histórico de negociação
+  const hist=parseNegHist(c);
+  hist.push({r:'perda',d:hojeISO(),m:motivo});
+  c.neg_hist=JSON.stringify(hist);
+  c.motivo_perda=motivo;c.et='perdido';c.resultado='perda';
+  ss('ld','Salvando...');try{await apiSave(c);await doSync();}catch(ex){ss('er','Erro');}
+  closeM('modal-perda');motivoSel='';document.getElementById('f-motivo').value='';
+  document.querySelectorAll('.chip').forEach(b=>b.classList.remove('sel'));perdaCid=null;
+}
+function cancelPerda(){perdaCid=null;closeM('modal-perda');renderFunil();}
+
+// ── RESULTADO (GANHO / PERDA) ─────────────────────────────
+async function setResultado(id,resultado){
+  const c=contatos.find(x=>x.id===id);if(!c)return;
+  if(resultado==='perda'){perdaCid=id;c.resultado='perda';document.getElementById('modal-perda').style.display='flex';return;}
+  // Ganho: adicionar ao histórico
+  const hist=parseNegHist(c);
+  hist.push({r:'ganho',d:hojeISO(),m:''});
+  c.neg_hist=JSON.stringify(hist);
+  c.resultado='ganho';c.et='fechado';c.motivo_perda='';
+  ss('ld','Salvando ganho...');try{await apiSave(c);await doSync();}catch(ex){ss('er','Erro ao salvar');}
+}
+
+// ── DUPLICAR ──────────────────────────────────────────────
+async function duplicarCard(id){
+  const orig=contatos.find(x=>x.id===id);if(!orig)return;
+  const funilPsf=getFunil('pissifa');
+  if(!funilPsf){alert('Funil Pissifã não encontrado.');return;}
+  if(!confirm(`Duplicar "${orig.nome}" para o funil Pissifã?`))return;
+  const novo={id:String(Date.now()),nome:orig.nome,tel:orig.tel,et:'atendimento',canal:orig.canal,valor:orig.valor,produto:orig.produto,obs:orig.obs,data:new Date().toISOString(),compras:orig.compras,funil:'pissifa',etapa:funilPsf.etapas[0].id,usuario:orig.usuario,followup:'',motivo_perda:'',atv_data:'',atv_desc:'',resultado:'',atv_hist:0,neg_hist:''};
+  ss('ld','Duplicando...');try{await apiSave(novo);await doSync();}catch(ex){ss('er','Erro ao duplicar');}
+}
+
+// ── REABRIR CARD ──────────────────────────────────────────
+async function reabrirCard(){
+  if(!editCid)return;const c=contatos.find(x=>x.id===editCid);if(!c)return;
+  if(!confirm('Reabrir card? O resultado atual será removido do histórico mas as negociações anteriores são mantidas.'))return;
+  // Remove apenas o último registro do histórico (que é o atual)
+  const hist=parseNegHist(c);
+  if(hist.length>0)hist.pop();
+  c.neg_hist=JSON.stringify(hist);
+  c.resultado='';c.et='atendimento';c.motivo_perda='';
+  ss('ld','Reabrindo...');try{await apiSave(c);await doSync();closeM('modal-c');}catch(ex){ss('er','Erro');}
+}
+
+// ── ATIVIDADE ─────────────────────────────────────────────
+function openAtv(id){
+  atvCid=id;const c=contatos.find(x=>x.id===id);if(!c)return;
+  document.getElementById('atv-nome').textContent=`Atividade — ${c.nome}`;
+  document.getElementById('f-atv-data').value='';document.getElementById('f-atv-desc').value='';
+  const wrap=document.getElementById('atv-atual-wrap'),divider=document.getElementById('atv-divider');
+  if(c.atv_data&&c.atv_data.trim()!==''){
+    wrap.style.display='block';divider.style.display='block';
+    const s=atvStatus(c);const cores={hoje:'#C8E6C9',atrasada:'#FFCDD2',agendada:'var(--G)'};
+    document.getElementById('atv-atual-card').style.background=cores[s]||'var(--G)';
+    const dn=normDate(c.atv_data);
+    const fmtBR=iso=>{if(!iso)return'';const[y,m,d]=iso.split('-');const dt=new Date(parseInt(y),parseInt(m)-1,parseInt(d));return dt.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});};
+    const labels={hoje:'📅 Hoje — ',atrasada:'⚠ Atrasada desde ',agendada:'📅 '};
+    document.getElementById('atv-atual-data').textContent=(labels[s]||'')+fmtBR(dn);
+    document.getElementById('atv-atual-data').style.color=s==='atrasada'?'var(--VM)':s==='hoje'?'var(--VD)':'var(--K)';
+    document.getElementById('atv-atual-desc').textContent=c.atv_desc||'';
+    document.getElementById('btn-checkpoint').style.display='inline-flex';
+  }else{wrap.style.display='none';divider.style.display='none';}
+  document.getElementById('modal-atv').style.display='flex';
+}
+async function saveAtv(){
+  const c=contatos.find(x=>x.id===atvCid);if(!c)return;
+  const rawData=document.getElementById('f-atv-data').value;
+  c.atv_data=normDate(rawData)||rawData;c.atv_desc=document.getElementById('f-atv-desc').value.trim();
+  ss('ld','Salvando...');try{await apiSave(c);await doSync();}catch(ex){ss('er','Erro');}
+  closeM('modal-atv');atvCid=null;
+}
+async function clearAtv(){
+  const c=contatos.find(x=>x.id===atvCid);if(!c)return;
+  c.atv_data='';c.atv_desc='';
+  ss('ld','Removendo...');try{await apiSave(c);await doSync();}catch(ex){ss('er','Erro');}
+  closeM('modal-atv');atvCid=null;
+}
+async function checkpointAtv(){
+  const c=contatos.find(x=>x.id===atvCid);if(!c)return;
+  const btn=document.getElementById('btn-checkpoint');if(btn){btn.textContent='Salvando...';btn.disabled=true;}
+  c.atv_hist=(c.atv_hist||0)+1;c.atv_data='';c.atv_desc='';
+  ss('ld','Concluída...');try{await apiSave(c);await doSync();closeM('modal-atv');}catch(ex){ss('er','Erro');}
+  if(btn)btn.disabled=false;atvCid=null;
+}
+
+// ── CONTATO MODAL ─────────────────────────────────────────
+function openContato(id=null,fid=null,eid=null){
+  editCid=id;const c=id?contatos.find(x=>x.id===id):null;
+  document.getElementById('mc-title').textContent=id?'Editar contato':'Novo contato';
+  document.getElementById('btn-sc').textContent=id?'Salvar alterações':'Salvar contato';
+  document.getElementById('fb-c').textContent='';document.getElementById('btn-sc').disabled=false;
+  const fs=document.getElementById('f-funil');
+  fs.innerHTML=cfg.funis.map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');
+  fs.value=c?c.funil:(fid||funilAtivo);updEtapas();
+  const us=document.getElementById('f-user');
+  us.innerHTML='<option value="">Nenhum</option>'+cfg.usuarios.map(u=>`<option value="${u.id}">${u.nome}</option>`).join('');
+  if(c){
+    document.getElementById('f-nome').value=c.nome;
+    document.getElementById('f-tel').value=c.tel||'';
+    document.getElementById('f-funil').value=c.funil;updEtapas();
+    setTimeout(()=>{document.getElementById('f-etapa').value=c.etapa;},20);
+    document.getElementById('f-canal').value=c.canal||'instagram';
+    document.getElementById('f-valor').value=c.valor||'';
+    document.getElementById('f-followup').value=c.followup||'';
+    document.getElementById('f-produto').value=c.produto||'';
+    document.getElementById('f-obs').value=c.obs||'';
+    document.getElementById('f-user').value=c.usuario||'';
+  }else{
+    ['f-nome','f-tel','f-valor','f-followup','f-produto','f-obs'].forEach(x=>document.getElementById(x).value='');
+    document.getElementById('f-canal').value='instagram';document.getElementById('f-user').value='';
+    if(eid)setTimeout(()=>{document.getElementById('f-etapa').value=eid;},30);
   }
-
-  c.etapa = etapaId;
-  c.et    = isGanho(funilAtivo, etapaId) ? 'fechado' : 'atendimento';
-  dragId  = null;
-  ss('ld', 'Movendo...');
-  try { await apiSave(c); await doSync(); }
-  catch(ex) { ss('er','Erro ao mover'); console.error(ex); }
-}
-
-// ── PERDA MODAL ────────────────────────────────────────
-function selM(btn, m) {
-  document.querySelectorAll('.chip').forEach(b => b.classList.remove('sel'));
-  btn.classList.add('sel');
-  motivoSel = m;
-}
-
-async function confirmPerda() {
-  const outro  = document.getElementById('f-motivo').value.trim();
-  const motivo = outro || motivoSel || 'Não informado';
-  const c      = contatos.find(x => x.id === perdaCid);
-  if (!c) { closeM('modal-perda'); return; }
-  c.motivo_perda = motivo;
-  c.et           = 'perdido';
-  c.resultado    = 'perda';
-  ss('ld', 'Salvando...');
-  try { await apiSave(c); await doSync(); }
-  catch(ex) { ss('er','Erro'); console.error(ex); }
-  closeM('modal-perda');
-  motivoSel = '';
-  document.getElementById('f-motivo').value = '';
-  document.querySelectorAll('.chip').forEach(b => b.classList.remove('sel'));
-  perdaCid = null;
-}
-
-function cancelPerda() {
-  // reverter etapa — refaz render sem salvar
-  perdaCid = null;
-  closeM('modal-perda');
-  renderFunil();
-}
-
-// ── RESULTADO (GANHO / PERDA) ─────────────────────────
-async function setResultado(id, resultado) {
-  const c = contatos.find(x => x.id === id);
-  if (!c) return;
-  if (resultado === 'perda') {
-    perdaCid = id;
-    c.resultado = 'perda';
-    document.getElementById('modal-perda').style.display = 'flex';
-    return;
+  // Mostrar reabrir se há histórico com resultado
+  const hist=c?parseNegHist(c):[];
+  const ultimaNeg=hist.length?hist[hist.length-1]:null;
+  const rw=document.getElementById('reabrir-wrap');
+  if(rw){
+    rw.style.display=(ultimaNeg)?'block':'none';
+    const rb=document.getElementById('reabrir-badge');
+    if(rb&&ultimaNeg){rb.className=ultimaNeg.r==='ganho'?'res-ganho':'res-perda';rb.textContent=ultimaNeg.r==='ganho'?'✓ Ganho':'✗ Perda';}
   }
-  // ganho direto
-  c.resultado    = 'ganho';
-  c.et           = 'fechado';
-  c.motivo_perda = '';
-  ss('ld','Salvando ganho...');
-  try { await apiSave(c); await doSync(); }
-  catch(ex) { ss('er','Erro ao salvar'); console.error(ex); }
+  document.getElementById('modal-c').style.display='flex';
+}
+function updEtapas(){const funil=getFunil(document.getElementById('f-funil').value);document.getElementById('f-etapa').innerHTML=funil?funil.etapas.map(e=>`<option value="${e.id}">${e.nome}</option>`).join(''):'';}
+
+async function saveContato(){
+  const nome=document.getElementById('f-nome').value.trim();
+  if(!nome){setFb('fb-c','Nome obrigatório','er');return;}
+  setFb('fb-c','Salvando...','info');document.getElementById('btn-sc').disabled=true;
+  const prev=editCid?(contatos.find(x=>x.id===editCid)||{}):{};
+  const fid=document.getElementById('f-funil').value;const eid=document.getElementById('f-etapa').value;
+  const c={id:editCid||String(Date.now()),nome,tel:document.getElementById('f-tel').value.trim(),
+    et:isGanho(fid,eid)?'fechado':isPerdido(fid,eid)?'perdido':'atendimento',
+    canal:document.getElementById('f-canal').value,valor:parseFloat(document.getElementById('f-valor').value)||0,
+    produto:document.getElementById('f-produto').value.trim(),obs:document.getElementById('f-obs').value.trim(),
+    data:prev.data||new Date().toISOString(),compras:prev.compras||0,funil:fid,etapa:eid,
+    usuario:document.getElementById('f-user').value,followup:document.getElementById('f-followup').value,
+    motivo_perda:prev.motivo_perda||'',atv_data:prev.atv_data||'',atv_desc:prev.atv_desc||'',
+    resultado:prev.resultado||'',atv_hist:prev.atv_hist||0,neg_hist:prev.neg_hist||''};
+  try{await apiSave(c);setFb('fb-c','Salvo!','ok');closeM('modal-c');await doSync();}
+  catch(ex){setFb('fb-c','Erro ao salvar','er');}
+  document.getElementById('btn-sc').disabled=false;
 }
 
-// ── DUPLICAR CARD → PISSIFÃ ────────────────────────────
-async function duplicarCard(id) {
-  const orig = contatos.find(x => x.id === id);
-  if (!orig) return;
-  const funilPsf = getFunil('pissifa');
-  if (!funilPsf) {
-    alert('Funil Pissifã não encontrado. Crie um funil chamado "Pissifã" primeiro.');
-    return;
-  }
-  const primeiraEtapa = funilPsf.etapas[0];
-  if (!confirm(`Duplicar "${orig.nome}" para o funil Pissifã?`)) return;
-  const novo = {
-    id:           String(Date.now()),
-    nome:         orig.nome,
-    tel:          orig.tel,
-    et:           'atendimento',
-    canal:        orig.canal,
-    valor:        orig.valor,
-    produto:      orig.produto,
-    obs:          orig.obs,
-    data:         new Date().toISOString(),
-    compras:      orig.compras,
-    funil:        'pissifa',
-    etapa:        primeiraEtapa.id,
-    usuario:      orig.usuario,
-    followup:     '',
-    motivo_perda: '',
-    atv_data:     '',
-    atv_desc:     '',
-    resultado:    ''
-  };
-  ss('ld','Duplicando...');
-  try { await apiSave(novo); await doSync(); }
-  catch(ex) { ss('er','Erro ao duplicar'); console.error(ex); }
-}
-
-// ── REABRIR CARD ──────────────────────────────────────
-async function reabrirCard() {
-  if (!editCid) return;
-  const c = contatos.find(x => x.id === editCid);
-  if (!c) return;
-  if (!confirm('Reabrir card? O resultado (ganho/perda) será removido.')) return;
-  c.resultado    = '';
-  c.et           = 'atendimento';
-  c.motivo_perda = '';
-  ss('ld','Reabrindo...');
-  try {
-    await apiSave(c);
-    await doSync();
-    closeM('modal-c');
-  } catch(ex) { ss('er','Erro'); console.error(ex); }
-}
-
-// ── ATIVIDADE ──────────────────────────────────────────
-function openAtv(id) {
-  atvCid = id;
-  const c = contatos.find(x => x.id === id);
-  if (!c) return;
-  document.getElementById('atv-nome').textContent = `Atividade — ${c.nome}`;
-  document.getElementById('f-atv-data').value = '';
-  document.getElementById('f-atv-desc').value = '';
-
-  // Mostrar atividade atual se existir
-  const wrap    = document.getElementById('atv-atual-wrap');
-  const divider = document.getElementById('atv-divider');
-  if (c.atv_data && c.atv_data.trim() !== '') {
-    wrap.style.display    = 'block';
-    divider.style.display = 'block';
-    const s = atvStatus(c);
-    const cores = {hoje:'#C8E6C9', atrasada:'#FFCDD2', agendada:' var(--G)'};
-    const card  = document.getElementById('atv-atual-card');
-    card.style.background = cores[s] || 'var(--G)';
-    const dn = normDate(c.atv_data);
-    const fmtBR = iso => {
-      if (!iso) return '';
-      const [y,m,d] = iso.split('-');
-      const dt = new Date(parseInt(y), parseInt(m)-1, parseInt(d));
-      return dt.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
-    };
-    const labels = {hoje:'📅 Hoje — ', atrasada:'⚠ Atrasada desde ', agendada:'📅 '};
-    document.getElementById('atv-atual-data').textContent = (labels[s]||'') + fmtBR(dn);
-    document.getElementById('atv-atual-data').style.color = s==='atrasada'?'var(--VM)':s==='hoje'?'var(--VD)':'var(--K)';
-    document.getElementById('atv-atual-desc').textContent = c.atv_desc || '';
-    // Botão check
-    const btn = document.getElementById('btn-checkpoint');
-    btn.style.display = 'inline-flex';
-  } else {
-    wrap.style.display    = 'none';
-    divider.style.display = 'none';
-  }
-  document.getElementById('modal-atv').style.display = 'flex';
-}
-
-async function saveAtv() {
-  const c = contatos.find(x => x.id === atvCid);
-  if (!c) return;
-  const rawData = document.getElementById('f-atv-data').value;
-  c.atv_data = normDate(rawData) || rawData; // garante ISO
-  c.atv_desc = document.getElementById('f-atv-desc').value.trim();
-  ss('ld','Salvando atividade...');
-  try { await apiSave(c); await doSync(); }
-  catch(ex) { ss('er','Erro'); console.error(ex); }
-  closeM('modal-atv');
-  atvCid = null;
-}
-
-async function clearAtv() {
-  const c = contatos.find(x => x.id === atvCid);
-  if (!c) return;
-  c.atv_data = '';
-  c.atv_desc = '';
-  ss('ld','Removendo atividade...');
-  try { await apiSave(c); await doSync(); }
-  catch(ex) { ss('er','Erro'); console.error(ex); }
-  closeM('modal-atv');
-  atvCid = null;
-}
-
-// ── CHECKPOINT ATIVIDADE ──────────────────────────────
-async function checkpointAtv() {
-  const c = contatos.find(x => x.id === atvCid);
-  if (!c) return;
-  const btn = document.getElementById('btn-checkpoint');
-  if (btn) { btn.textContent = 'Salvando...'; btn.disabled = true; }
-  // Incrementar contador histórico + limpar atividade atual
-  c.atv_hist = (c.atv_hist || 0) + 1;
-  c.atv_data = '';
-  c.atv_desc = '';
-  ss('ld','Atividade concluída...');
-  try {
-    await apiSave(c);
-    await doSync();
-    closeM('modal-atv');
-  } catch(ex) { ss('er','Erro'); console.error(ex); }
-  if (btn) { btn.disabled = false; }
-  atvCid = null;
-}
-
-// ── CONTATO MODAL ──────────────────────────────────────
-function openContato(id = null, fid = null, eid = null) {
-  editCid = id;
-  const c = id ? contatos.find(x => x.id === id) : null;
-
-  document.getElementById('mc-title').textContent  = id ? 'Editar contato' : 'Novo contato';
-  document.getElementById('btn-sc').textContent    = id ? 'Salvar alterações' : 'Salvar contato';
-  document.getElementById('fb-c').textContent      = '';
-  document.getElementById('btn-sc').disabled       = false;
-
-  // preencher funis
-  const fs = document.getElementById('f-funil');
-  fs.innerHTML = cfg.funis.map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
-  fs.value = c ? c.funil : (fid || funilAtivo);
-  updEtapas();
-
-  // preencher usuários
-  const us = document.getElementById('f-user');
-  us.innerHTML = '<option value="">Nenhum</option>' +
-    cfg.usuarios.map(u => `<option value="${u.id}">${u.nome}</option>`).join('');
-
-  if (c) {
-    document.getElementById('f-nome').value    = c.nome;
-    document.getElementById('f-tel').value     = c.tel     || '';
-    document.getElementById('f-funil').value   = c.funil;
-    updEtapas();
-    setTimeout(() => { document.getElementById('f-etapa').value = c.etapa; }, 20);
-    document.getElementById('f-canal').value   = c.canal   || 'instagram';
-    document.getElementById('f-valor').value   = c.valor   || '';
-    document.getElementById('f-followup').value= c.followup|| '';
-    document.getElementById('f-produto').value = c.produto || '';
-    document.getElementById('f-obs').value     = c.obs     || '';
-    document.getElementById('f-user').value    = c.usuario || '';
-  } else {
-    ['f-nome','f-tel','f-valor','f-followup','f-produto','f-obs'].forEach(x => document.getElementById(x).value = '');
-    document.getElementById('f-canal').value = 'instagram';
-    document.getElementById('f-user').value  = '';
-    if (eid) setTimeout(() => { document.getElementById('f-etapa').value = eid; }, 30);
-  }
-
-  // Mostrar botão reabrir se card tem resultado definido
-  const rw = document.getElementById('reabrir-wrap');
-  if (rw) {
-    rw.style.display = (c && c.resultado) ? 'block' : 'none';
-    const rb = document.getElementById('reabrir-badge');
-    if (rb && c && c.resultado) {
-      rb.className = c.resultado === 'ganho' ? 'res-ganho' : 'res-perda';
-      rb.textContent = c.resultado === 'ganho' ? '✓ Ganho' : '✗ Perda';
-    }
-  }
-  document.getElementById('modal-c').style.display = 'flex';
-}
-
-function updEtapas() {
-  const funil = getFunil(document.getElementById('f-funil').value);
-  document.getElementById('f-etapa').innerHTML =
-    funil ? funil.etapas.map(e => `<option value="${e.id}">${e.nome}</option>`).join('') : '';
-}
-
-async function saveContato() {
-  const nome = document.getElementById('f-nome').value.trim();
-  if (!nome) { setFb('fb-c','Nome obrigatório','er'); return; }
-
-  setFb('fb-c','Salvando...','info');
-  document.getElementById('btn-sc').disabled = true;
-
-  const prev = editCid ? (contatos.find(x => x.id === editCid) || {}) : {};
-  const fid  = document.getElementById('f-funil').value;
-  const eid  = document.getElementById('f-etapa').value;
-
-  const c = {
-    id:           editCid || String(Date.now()),
-    nome,
-    tel:          document.getElementById('f-tel').value.trim(),
-    et:           isGanho(fid,eid) ? 'fechado' : isPerdido(fid,eid) ? 'perdido' : 'atendimento',
-    canal:        document.getElementById('f-canal').value,
-    valor:        parseFloat(document.getElementById('f-valor').value) || 0,
-    produto:      document.getElementById('f-produto').value.trim(),
-    obs:          document.getElementById('f-obs').value.trim(),
-    data:         prev.data         || new Date().toISOString(),
-    compras:      prev.compras      || 0,
-    funil:        fid,
-    etapa:        eid,
-    usuario:      document.getElementById('f-user').value,
-    followup:     document.getElementById('f-followup').value,
-    motivo_perda: prev.motivo_perda || '',
-    atv_data:     prev.atv_data     || '',
-    atv_desc:     prev.atv_desc     || ''
-  };
-
-  try {
-    await apiSave(c);
-    setFb('fb-c','Salvo!','ok');
-    closeM('modal-c');
-    await doSync();
-  } catch(ex) {
-    setFb('fb-c','Erro ao salvar','er');
-    console.error(ex);
-  }
-  document.getElementById('btn-sc').disabled = false;
-}
-
-// DELETE — função global, chamada pelo onclick do card
-window.delC = async function(id) {
-  if (!confirm('Remover este contato?')) return;
-  ss('ld','Removendo...');
-  try {
-    await apiDelete(id);
-    // remove localmente enquanto sync não volta
-    contatos = contatos.filter(c => c.id !== id);
-    renderFunil();
-    renderContatos();
-    await doSync();
-  } catch(ex) {
-    ss('er','Erro ao remover');
-    console.error(ex);
-  }
+window.delC=async function(id){
+  if(!confirm('Remover este contato?'))return;ss('ld','Removendo...');
+  try{await apiDelete(id);contatos=contatos.filter(c=>c.id!==id);renderFunil();renderContatos();await doSync();}
+  catch(ex){ss('er','Erro ao remover');}
 };
 
-// ── CONTATOS LIST ──────────────────────────────────────
-function renderContatos() {
-  const funil = getFunil(funilAtivo);
-  const fc = document.getElementById('filtros-c');
-  fc.innerHTML = `<button class="filtro${filtroC==='todos'?' active':''}" onclick="setFiltroC(this,'todos')">Todos</button>`;
-  if (funil) funil.etapas.forEach(e => {
-    fc.innerHTML += `<button class="filtro${filtroC===e.id?' active':''}" onclick="setFiltroC(this,'${e.id}')">${e.nome}</button>`;
-  });
-
-  const busca = (document.getElementById('busca')||{value:''}).value.toLowerCase();
-  const lista = contatos.filter(c =>
-    (filtroC==='todos' || c.etapa===filtroC) &&
-    (!busca || c.nome.toLowerCase().includes(busca)) &&
-    (userAtivo==='todos' || c.usuario===userAtivo)
-  );
-
-  const el = document.getElementById('lista-c');
-  if (!lista.length) {
-    el.innerHTML = `<div class="empty">${contatos.length ? 'Nenhum encontrado' : 'Nenhum contato ainda'}</div>`;
-    return;
-  }
-
-  el.innerHTML = lista.map(c => {
-    const f = getFunil(c.funil);
-    const e = f ? f.etapas.find(x => x.id === c.etapa) : null;
-    const u = cfg.usuarios.find(x => x.id === c.usuario);
-    const s = atvStatus(c);
-    const atvCls = {sem:'atv-vermelho',hoje:'atv-verde',atrasada:'atv-amarelo',agendada:'atv-cinza'};
-    return `<div class="cc">
+// ── CONTATOS LIST ─────────────────────────────────────────
+function renderContatos(){
+  const funil=getFunil(funilAtivo);
+  const fc=document.getElementById('filtros-c');
+  fc.innerHTML=`<button class="filtro${filtroC==='todos'?' active':''}" onclick="setFiltroC(this,'todos')">Todos</button>`;
+  if(funil)funil.etapas.forEach(e=>{fc.innerHTML+=`<button class="filtro${filtroC===e.id?' active':''}" onclick="setFiltroC(this,'${e.id}')">${e.nome}</button>`;});
+  const busca=(document.getElementById('busca')||{value:''}).value.toLowerCase();
+  const lista=contatos.filter(c=>(filtroC==='todos'||c.etapa===filtroC)&&(!busca||c.nome.toLowerCase().includes(busca))&&(userAtivo==='todos'||c.usuario===userAtivo));
+  const el=document.getElementById('lista-c');
+  if(!lista.length){el.innerHTML=`<div class="empty">${contatos.length?'Nenhum encontrado':'Nenhum contato ainda'}</div>`;return;}
+  el.innerHTML=lista.map(c=>{
+    const f=getFunil(c.funil);const e=f?f.etapas.find(x=>x.id===c.etapa):null;const u=cfg.usuarios.find(x=>x.id===c.usuario);
+    const s=atvStatus(c);const atvCls={sem:'atv-vermelho',hoje:'atv-verde',atrasada:'atv-amarelo',agendada:'atv-cinza'};
+    return`<div class="cc">
       <div class="cc-top">
         <div>
           <div class="cc-nome">${c.nome}</div>
           <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
-            ${f ? `<span class="bdg-canal">${f.nome}</span>` : ''}
-            ${e ? `<span class="bdg-canal">${e.nome}</span>` : ''}
+            ${f?`<span class="bdg-canal">${f.nome}</span>`:''}${e?`<span class="bdg-canal">${e.nome}</span>`:''}
             <span class="bdg-canal">${CANAL_LABEL[c.canal]||c.canal}</span>
-            ${c.valor ? `<span class="bdg-canal">R$${Math.round(c.valor)}</span>` : ''}
-            ${u ? `<span class="bdg-canal">👤 ${u.nome}</span>` : ''}
+            ${c.valor?`<span class="bdg-canal">R$${Math.round(c.valor)}</span>`:''}
+            ${u?`<span class="bdg-canal">👤 ${u.nome}</span>`:''}
           </div>
         </div>
         <div style="display:flex;gap:6px;align-items:center">
@@ -1223,294 +843,135 @@ function renderContatos() {
         </div>
       </div>
       <div class="cc-info">
-        ${c.tel     ? `📞 ${c.tel} &nbsp;` : ''}
-        ${c.produto ? `👕 ${c.produto} &nbsp;` : ''}
-        📅 ${fmtD(c.data)}
-        ${c.motivo_perda ? `<div style="color:var(--VM);margin-top:2px">⚠ Perda: ${c.motivo_perda}</div>` : ''}
-        ${c.obs ? `<div style="font-style:italic;margin-top:2px">"${c.obs}"</div>` : ''}
+        ${c.tel?`📞 ${c.tel} &nbsp;`:''}${c.produto?`👕 ${c.produto} &nbsp;`:''}📅 ${fmtD(c.data)}
+        ${ultimaCompraHtml(c)}
+        ${c.motivo_perda?`<div style="color:var(--VM);margin-top:2px">⚠ Perda: ${c.motivo_perda}</div>`:''}
+        ${c.obs?`<div style="font-style:italic;margin-top:2px">"${c.obs}"</div>`:''}
       </div>
     </div>`;
   }).join('');
 }
+function setFiltroC(btn,f){document.querySelectorAll('#filtros-c .filtro').forEach(b=>b.classList.remove('active'));btn.classList.add('active');filtroC=f;renderContatos();}
 
-function setFiltroC(btn, f) {
-  document.querySelectorAll('#filtros-c .filtro').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  filtroC = f;
-  renderContatos();
+// ── INSIGHTS ──────────────────────────────────────────────
+function setPer(btn,p){document.querySelectorAll('.pb').forEach(b=>b.classList.remove('active'));btn.classList.add('active');periodo=p;periodoCustom.ativo=false;const w=document.getElementById('custom-per-wrap');if(w)w.style.display='none';renderInsights();}
+function toggleCustomPer(){const w=document.getElementById('custom-per-wrap');if(!w)return;const ab=w.style.display==='flex';w.style.display=ab?'none':'flex';if(!ab){const hj=hojeISO();const de=document.getElementById('per-de');const ate=document.getElementById('per-ate');if(de&&!de.value)de.value=hj.slice(0,7)+'-01';if(ate&&!ate.value)ate.value=hj;aplicarCustomPer();}}
+function setCustomPreset(tipo){
+  const hj=new Date();const fmt=d=>d.toISOString().slice(0,10);let de,ate;
+  if(tipo==='hoje'){de=ate=fmt(hj);}else if(tipo==='ontem'){const o=new Date(hj);o.setDate(hj.getDate()-1);de=ate=fmt(o);}
+  else if(tipo==='semana'){const s=new Date(hj);s.setDate(hj.getDate()-((hj.getDay()+6)%7));de=fmt(s);ate=fmt(hj);}
+  else if(tipo==='mes'){de=fmt(new Date(hj.getFullYear(),hj.getMonth(),1));ate=fmt(hj);}
+  else if(tipo==='mes_passado'){const pm=new Date(hj.getFullYear(),hj.getMonth()-1,1);const fim=new Date(hj.getFullYear(),hj.getMonth(),0);de=fmt(pm);ate=fmt(fim);}
+  const deEl=document.getElementById('per-de');const ateEl=document.getElementById('per-ate');if(deEl)deEl.value=de;if(ateEl)ateEl.value=ate;aplicarCustomPer();
 }
-
-// ── INSIGHTS ───────────────────────────────────────────
-function setPer(btn, p) {
-  document.querySelectorAll('.pb').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  periodo = p;
-  periodoCustom.ativo = false;
-  // Esconder painel custom
-  const wrap = document.getElementById('custom-per-wrap');
-  if (wrap) wrap.style.display = 'none';
+function aplicarCustomPer(){
+  const de=document.getElementById('per-de')?document.getElementById('per-de').value:'';
+  const ate=document.getElementById('per-ate')?document.getElementById('per-ate').value:'';
+  if(!de||!ate)return;periodoCustom={ativo:true,de,ate};
+  document.querySelectorAll('.pb').forEach(b=>b.classList.remove('active'));const pb=document.getElementById('pb-custom');if(pb)pb.classList.add('active');
+  const lbl=document.getElementById('custom-per-label');if(lbl){const fmtBR=s=>new Date(s+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});lbl.textContent=de===ate?fmtBR(de):fmtBR(de)+' → '+fmtBR(ate);}
   renderInsights();
 }
-
-function toggleCustomPer() {
-  const wrap = document.getElementById('custom-per-wrap');
-  if (!wrap) return;
-  const aberto = wrap.style.display === 'flex';
-  wrap.style.display = aberto ? 'none' : 'flex';
-  if (!aberto) {
-    // Preencher datas com o mês atual como padrão
-    const hoje = new Date();
-    const anoMes = hoje.toISOString().slice(0,7);
-    const de  = document.getElementById('per-de');
-    const ate = document.getElementById('per-ate');
-    if (de  && !de.value)  de.value  = anoMes + '-01';
-    if (ate && !ate.value) ate.value = hoje.toISOString().slice(0,10);
-    aplicarCustomPer();
-  }
-}
-
-function setCustomPreset(tipo) {
-  const hoje = new Date();
-  const fmt  = d => d.toISOString().slice(0,10);
-  let de, ate;
-  if (tipo === 'hoje') {
-    de = ate = fmt(hoje);
-  } else if (tipo === 'ontem') {
-    const ontem = new Date(hoje); ontem.setDate(hoje.getDate()-1);
-    de = ate = fmt(ontem);
-  } else if (tipo === 'semana') {
-    const seg = new Date(hoje);
-    seg.setDate(hoje.getDate() - ((hoje.getDay()+6)%7));
-    de = fmt(seg); ate = fmt(hoje);
-  } else if (tipo === 'mes') {
-    de = fmt(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
-    ate = fmt(hoje);
-  } else if (tipo === 'mes_passado') {
-    const pm = new Date(hoje.getFullYear(), hoje.getMonth()-1, 1);
-    const fim = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
-    de = fmt(pm); ate = fmt(fim);
-  }
-  const deEl  = document.getElementById('per-de');
-  const ateEl = document.getElementById('per-ate');
-  if (deEl)  deEl.value  = de;
-  if (ateEl) ateEl.value = ate;
-  aplicarCustomPer();
-}
-
-function aplicarCustomPer() {
-  const de  = document.getElementById('per-de')  ? document.getElementById('per-de').value  : '';
-  const ate = document.getElementById('per-ate') ? document.getElementById('per-ate').value : '';
-  if (!de || !ate) return;
-  periodoCustom = {ativo: true, de, ate};
-  // Desativar botões rápidos e ativar "Período"
-  document.querySelectorAll('.pb').forEach(b => b.classList.remove('active'));
-  const pb = document.getElementById('pb-custom');
-  if (pb) pb.classList.add('active');
-  // Mostrar label do período
-  const lbl = document.getElementById('custom-per-label');
-  if (lbl) {
-    const fmtBR = s => new Date(s+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
-    lbl.textContent = de === ate ? fmtBR(de) : fmtBR(de) + ' → ' + fmtBR(ate);
-  }
+function initInsights(){
+  const su=document.getElementById('ins-user');if(su){su.innerHTML='<option value="todos">Todos usuários</option>'+cfg.usuarios.map(u=>`<option value="${u.id}">${u.nome}</option>`).join('');if(userAtivo!=='todos')su.value=userAtivo;}
+  const sf=document.getElementById('ins-funil');if(sf){const pv=sf.value;sf.innerHTML='<option value="todos">Todos funis</option>'+cfg.funis.map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');if(pv)sf.value=pv;}
   renderInsights();
 }
-
-// Garantir que ao entrar na aba insights os selects estejam atualizados
-function initInsights() {
-  const su = document.getElementById('ins-user');
-  if (su) {
-    su.innerHTML = '<option value="todos">Todos usuários</option>' +
-      cfg.usuarios.map(u => `<option value="${u.id}">${u.nome}</option>`).join('');
-    if (userAtivo !== 'todos') su.value = userAtivo;
-  }
-  const sf = document.getElementById('ins-funil');
-  if (sf) {
-    const prevF2 = sf.value;
-    sf.innerHTML = '<option value="todos">Todos funis</option>' +
-      cfg.funis.map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
-    if (prevF2) sf.value = prevF2;
-  }
-  // canal não precisa de rebuild — opções são fixas, só preservar valor
-  // Garantir que o botão 30d aparece ativo se não há custom
-  if (!periodoCustom.ativo) {
-    document.querySelectorAll('.pb').forEach(b => {
-      b.classList.toggle('active', b.textContent.trim() === '30d' && periodo === '30');
-    });
-  }
-  renderInsights();
+function filtPer(lista){
+  if(periodoCustom.ativo&&periodoCustom.de&&periodoCustom.ate){const de=new Date(periodoCustom.de+'T00:00:00');const ate=new Date(periodoCustom.ate+'T23:59:59');return lista.filter(c=>{const d=new Date(c.data);return d>=de&&d<=ate;});}
+  if(periodo==='0')return lista;
+  if(periodo==='1'){const hj=new Date();hj.setHours(0,0,0,0);return lista.filter(c=>new Date(c.data)>=hj);}
+  const d=new Date();d.setDate(d.getDate()-parseInt(periodo));return lista.filter(c=>new Date(c.data)>=d);
 }
 
-function filtPer(lista) {
-  if (periodoCustom.ativo && periodoCustom.de && periodoCustom.ate) {
-    const de  = new Date(periodoCustom.de  + 'T00:00:00');
-    const ate = new Date(periodoCustom.ate + 'T23:59:59');
-    return lista.filter(c => { const d = new Date(c.data); return d >= de && d <= ate; });
-  }
-  if (periodo === '0') return lista;
-  if (periodo === '1') {
-    // Hoje
-    const hoje = new Date(); hoje.setHours(0,0,0,0);
-    return lista.filter(c => new Date(c.data) >= hoje);
-  }
-  const d = new Date(); d.setDate(d.getDate() - parseInt(periodo));
-  return lista.filter(c => new Date(c.data) >= d);
-}
+function renderInsights(){
+  const su=document.getElementById('ins-user');if(su){const pv=su.value;su.innerHTML='<option value="todos">Todos usuários</option>'+cfg.usuarios.map(u=>`<option value="${u.id}">${u.nome}</option>`).join('');if(pv)su.value=pv;}
+  const sf=document.getElementById('ins-funil');if(sf){const pv=sf.value;sf.innerHTML='<option value="todos">Todos funis</option>'+cfg.funis.map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');if(pv)sf.value=pv;}
+  const iUser=(document.getElementById('ins-user')||{value:'todos'}).value;
+  const iFunil=(document.getElementById('ins-funil')||{value:'todos'}).value;
+  const iCanal=(document.getElementById('ins-canal')||{value:'todos'}).value;
+  let lista=filtPer(contatos);
+  const filtroUser=iUser!=='todos'?iUser:(userAtivo!=='todos'?userAtivo:'todos');
+  if(filtroUser!=='todos')lista=lista.filter(c=>c.usuario===filtroUser);
+  if(iFunil!=='todos')lista=lista.filter(c=>c.funil===iFunil);
+  if(iCanal!=='todos')lista=lista.filter(c=>c.canal===iCanal);
+  if(userAtivo!=='todos'&&iUser==='todos'){const su2=document.getElementById('ins-user');if(su2)su2.value=userAtivo;}
 
-function renderInsights() {
-  // Popular selects preservando o valor selecionado
-  const su = document.getElementById('ins-user');
-  if (su) {
-    const prevU = su.value;
-    su.innerHTML = '<option value="todos">Todos usuários</option>' +
-      cfg.usuarios.map(u => `<option value="${u.id}">${u.nome}</option>`).join('');
-    if (prevU) su.value = prevU;
-  }
-  const sf = document.getElementById('ins-funil');
-  if (sf) {
-    const prevF = sf.value;
-    sf.innerHTML = '<option value="todos">Todos funis</option>' +
-      cfg.funis.map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
-    if (prevF) sf.value = prevF;
-  }
-
-  const insUserEl  = document.getElementById('ins-user');
-  const insFunilEl = document.getElementById('ins-funil');
-  const iUser      = insUserEl  ? insUserEl.value  : 'todos';
-  const iFunil     = insFunilEl ? insFunilEl.value : 'todos';
-
-  let lista = filtPer(contatos);
-  // Filtro de usuário: select do insights OU botão do header
-  const filtroUser = iUser !== 'todos' ? iUser : (userAtivo !== 'todos' ? userAtivo : 'todos');
-  const iCanal = (document.getElementById('ins-canal') || {value:'todos'}).value;
-  if (filtroUser !== 'todos') lista = lista.filter(c => c.usuario === filtroUser);
-  if (iFunil     !== 'todos') lista = lista.filter(c => c.funil   === iFunil);
-  if (iCanal     !== 'todos') lista = lista.filter(c => c.canal   === iCanal);
-  // Sincronizar select com botão do header se necessário
-  if (userAtivo !== 'todos' && iUser === 'todos') {
-    const su2 = document.getElementById('ins-user');
-    if (su2) su2.value = userAtivo;
-  }
-
-  const total    = lista.length;
-  // Ganhos e perdidos por resultado marcado manualmente
-  const ganhos   = lista.filter(c => c.resultado === 'ganho');
-  const perdidos = lista.filter(c => c.resultado === 'perda');
-  const receita  = ganhos.reduce((a,b) => a + (b.valor||0), 0);
-
-  // Abordados = cards que passaram por "Boas Vindas" (qualquer funil D2C)
-  const abordados = lista.filter(c => {
-    // conta quem está em boas vindas OU já passou (ganho/perda/negociação)
-    const f = getFunil(c.funil);
-    if (!f) return false;
-    // se tem resultado = já foi abordado
-    if (c.resultado) return true;
-    // se está em boas vindas ou além = abordado
-    const etapaIdx = f.etapas.findIndex(e => e.id === c.etapa);
-    const bvIdx    = f.etapas.findIndex(e => e.nome.toLowerCase().includes('boas vindas'));
-    return bvIdx >= 0 && etapaIdx >= bvIdx;
+  // ── NOVA LÓGICA: contar pelo histórico de negociações ──
+  // Cada entrada no neg_hist de cada contato conta como uma negociação individual
+  let todasNegs=[];
+  lista.forEach(c=>{
+    const hist=parseNegHist(c);
+    hist.forEach(h=>todasNegs.push({...h,cid:c.id,usuario:c.usuario,canal:c.canal,valor:c.valor,funil:c.funil}));
   });
 
-  // Base para % = cards que entraram em Negociação Comercial
-  const emNegociacao = lista.filter(c => {
-    const f = getFunil(c.funil);
-    if (!f) return false;
-    if (c.resultado) return true; // já teve resultado = passou por negociação
-    const etapaIdx = f.etapas.findIndex(e => e.id === c.etapa);
-    const negIdx   = f.etapas.findIndex(e => e.nome.toLowerCase().includes('negociação comercial'));
-    return negIdx >= 0 && etapaIdx >= negIdx;
-  });
+  // Filtrar negociações pelo período também (usar data do histórico)
+  if(periodoCustom.ativo&&periodoCustom.de&&periodoCustom.ate){
+    const de=new Date(periodoCustom.de+'T00:00:00');const ate=new Date(periodoCustom.ate+'T23:59:59');
+    todasNegs=todasNegs.filter(h=>{const d=new Date(h.d+'T00:00:00');return d>=de&&d<=ate;});
+  }else if(periodo!=='0'){
+    const dias=periodo==='1'?0:parseInt(periodo);const lim=new Date();lim.setDate(lim.getDate()-dias);lim.setHours(0,0,0,0);
+    todasNegs=todasNegs.filter(h=>new Date(h.d+'T00:00:00')>=lim);
+  }
 
-  const baseConv = emNegociacao.length;
-  const txConv   = baseConv > 0 ? Math.round((ganhos.length   / baseConv) * 100) : 0;
-  const txPerda  = baseConv > 0 ? Math.round((perdidos.length / baseConv) * 100) : 0;
-  const tkMedio  = ganhos.length > 0 ? Math.round(receita / ganhos.length) : 0;
-  const emAberto = lista.filter(c => !c.resultado && !isGanho(c.funil,c.etapa) && !isPerdido(c.funil,c.etapa)).length;
+  const negGanhos=todasNegs.filter(h=>h.r==='ganho');
+  const negPerdas=todasNegs.filter(h=>h.r==='perda');
+  const baseConv=todasNegs.length;
+  const txConv=baseConv>0?Math.round((negGanhos.length/baseConv)*100):0;
+  const txPerda=baseConv>0?Math.round((negPerdas.length/baseConv)*100):0;
 
-  const hoje = new Date(); hoje.setHours(0,0,0,0);
-  const atvH = lista.filter(c => { if(!c.atv_data) return false; const d=new Date(c.atv_data+'T00:00:00'); return d.getTime()===hoje.getTime(); }).length;
-  const atvA = lista.filter(c => { if(!c.atv_data) return false; const d=new Date(c.atv_data+'T00:00:00'); return d<hoje; }).length;
+  // Receita = soma dos valores dos cards que tiveram ganho (sem duplicar)
+  const cidsGanhos=[...new Set(negGanhos.map(h=>h.cid))];
+  const receita=cidsGanhos.reduce((a,cid)=>{const c=contatos.find(x=>x.id===cid);return a+(c?c.valor||0:0);},0);
+  const tkMedio=cidsGanhos.length>0?Math.round(receita/cidsGanhos.length):0;
+  const emAberto=lista.filter(c=>!parseNegHist(c).length&&!isGanho(c.funil,c.etapa)&&!isPerdido(c.funil,c.etapa)).length;
 
-  const mc = {}; perdidos.forEach(c => { if(c.motivo_perda) mc[c.motivo_perda] = (mc[c.motivo_perda]||0)+1; });
-  const topM  = Object.entries(mc).sort((a,b) => b[1]-a[1]);
-  const maxM  = Math.max(1,...Object.values(mc));
+  const hj=new Date();hj.setHours(0,0,0,0);
+  const atvH=lista.filter(c=>{if(!c.atv_data)return false;const d=new Date(c.atv_data+'T00:00:00');return d.getTime()===hj.getTime();}).length;
+  const atvA=lista.filter(c=>{if(!c.atv_data)return false;const d=new Date(c.atv_data+'T00:00:00');return d<hj;}).length;
 
-  const cc = {}; lista.forEach(c => { const k=c.canal||'outro'; cc[k]=(cc[k]||0)+1; });
-  const maxC = Math.max(1,...Object.values(cc));
+  // Motivos de perda do histórico
+  const mc={};negPerdas.forEach(h=>{if(h.m)mc[h.m]=(mc[h.m]||0)+1;});
+  const topM=Object.entries(mc).sort((a,b)=>b[1]-a[1]);const maxM=Math.max(1,...Object.values(mc));
 
-  const fc2 = {}; lista.forEach(c => { const f=getFunil(c.funil); if(f) fc2[f.nome]=(fc2[f.nome]||0)+1; });
-  const maxF2 = Math.max(1,...Object.values(fc2));
+  const cc={};lista.forEach(c=>{const k=c.canal||'outro';cc[k]=(cc[k]||0)+1;});const maxC=Math.max(1,...Object.values(cc));
+  const fc2={};lista.forEach(c=>{const f=getFunil(c.funil);if(f)fc2[f.nome]=(fc2[f.nome]||0)+1;});const maxF2=Math.max(1,...Object.values(fc2));
 
-  document.getElementById('ins-content').innerHTML = `
+  document.getElementById('ins-content').innerHTML=`
     <div style="background:var(--K);border-radius:8px;padding:1rem 1.25rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
       <div style="display:flex;align-items:baseline;gap:.5rem">
         <span style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:2.5rem;color:var(--L);line-height:1">${lista.length}</span>
-        <div>
-          <div style="font-size:13px;font-weight:600;color:var(--W)">SAFRA</div>
-          <div style="font-size:11px;color:rgba(255,255,255,.4)">total de cards no período</div>
-        </div>
+        <div><div style="font-size:13px;font-weight:600;color:var(--W)">SAFRA</div><div style="font-size:11px;color:rgba(255,255,255,.4)">total de cards no período</div></div>
       </div>
-      <div style="font-size:11px;color:rgba(255,255,255,.35);max-width:300px;line-height:1.5">
-        Todos os cards criados — independente da etapa ou funil. Não influencia as taxas de conversão.
-      </div>
+      <div style="font-size:11px;color:rgba(255,255,255,.35);max-width:300px;line-height:1.5">Todos os cards criados — independente da etapa ou funil. Não influencia as taxas.</div>
     </div>
     <div class="mg">
-      <div class="mc"><div class="mc-n">${baseConv}</div><div class="mc-l">Em negociação</div><div class="mc-s a">base das taxas</div></div>
+      <div class="mc"><div class="mc-n">${baseConv}</div><div class="mc-l">Negociações</div><div class="mc-s a">base das taxas</div></div>
       <div class="mc"><div class="mc-n">${emAberto}</div><div class="mc-l">Em aberto</div></div>
-      <div class="mc"><div class="mc-n">${ganhos.length}</div><div class="mc-l">Ganhos</div><div class="mc-s v">✓</div></div>
-      <div class="mc"><div class="mc-n">${perdidos.length}</div><div class="mc-l">Perdidos</div><div class="mc-s r">✗</div></div>
-      <div class="mc"><div class="mc-n">${txConv}%</div><div class="mc-l">Tx. conversão</div>
-        <div class="mc-s ${txConv>=15?'v':txConv>=8?'a':'r'}">${txConv>=15?'Boa':txConv>=8?'Regular':'Baixa'}</div></div>
-      <div class="mc"><div class="mc-n">${txPerda}%</div><div class="mc-l">Tx. perda</div>
-        <div class="mc-s ${txPerda<=30?'v':'r'}">${txPerda<=30?'Ok':'Alta'}</div></div>
+      <div class="mc"><div class="mc-n">${negGanhos.length}</div><div class="mc-l">Ganhos</div><div class="mc-s v">✓</div></div>
+      <div class="mc"><div class="mc-n">${negPerdas.length}</div><div class="mc-l">Perdidos</div><div class="mc-s r">✗</div></div>
+      <div class="mc"><div class="mc-n">${txConv}%</div><div class="mc-l">Tx. conversão</div><div class="mc-s ${txConv>=15?'v':txConv>=8?'a':'r'}">${txConv>=15?'Boa':txConv>=8?'Regular':'Baixa'}</div></div>
+      <div class="mc"><div class="mc-n">${txPerda}%</div><div class="mc-l">Tx. perda</div><div class="mc-s ${txPerda<=30?'v':'r'}">${txPerda<=30?'Ok':'Alta'}</div></div>
       <div class="mc"><div class="mc-n">R$${Math.round(receita).toLocaleString('pt-BR')}</div><div class="mc-l">Receita</div></div>
       <div class="mc"><div class="mc-n">R$${tkMedio.toLocaleString('pt-BR')}</div><div class="mc-l">Ticket médio</div></div>
       <div class="mc"><div class="mc-n">${atvH}</div><div class="mc-l">Ativ. hoje</div><div class="mc-s v">Hoje</div></div>
       <div class="mc"><div class="mc-n">${atvA}</div><div class="mc-l">Atrasadas</div><div class="mc-s ${atvA>0?'r':'v'}">${atvA>0?'Atenção':'Ok'}</div></div>
     </div>
     <div style="background:var(--G);border-radius:6px;padding:.625rem 1rem;font-size:12px;color:var(--G3);margin-bottom:1rem">
-      📊 Taxas calculadas sobre <strong style="color:var(--K)">${baseConv} card${baseConv!==1?'s':''}</strong> em Negociação Comercial — ganho/perda só vale nessa etapa
+      📊 Taxas calculadas sobre <strong style="color:var(--K)">${baseConv} negociação${baseConv!==1?'s':''}</strong> registradas no histórico — cada ganho/perda conta individualmente, inclusive clientes recorrentes
     </div>
     <div class="divider"></div>
     <div class="slbl">Motivos de perda</div>
-    ${topM.length
-      ? topM.slice(0,8).map(([m,n]) => `<div class="bb"><div class="bb-row"><span>${m}</span><span>${n}</span></div><div class="bar"><div class="bar-f" style="width:${Math.round((n/maxM)*100)}%;background:#E24B4A"></div></div></div>`).join('')
-        + (topM[0] ? `<div style="background:var(--VM2);border-radius:6px;padding:.625rem 1rem;font-size:12px;color:var(--VM);margin-top:.5rem">⚠ Principal motivo: <strong>${topM[0][0]}</strong> (${topM[0][1]}x)</div>` : '')
-      : '<div class="empty">Nenhuma perda no período</div>'}
+    ${topM.length?topM.slice(0,8).map(([m,n])=>`<div class="bb"><div class="bb-row"><span>${m}</span><span>${n}</span></div><div class="bar"><div class="bar-f" style="width:${Math.round((n/maxM)*100)}%;background:#E24B4A"></div></div></div>`).join('')+(topM[0]?`<div style="background:var(--VM2);border-radius:6px;padding:.625rem 1rem;font-size:12px;color:var(--VM);margin-top:.5rem">⚠ Principal: <strong>${topM[0][0]}</strong> (${topM[0][1]}x)</div>`:''):'<div class="empty">Nenhuma perda no período</div>'}
     <div class="divider"></div>
     <div class="slbl">Volume de atividade</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:.75rem">
-      <div class="mc">
-        <div class="mc-n">${lista.reduce((a,c)=>a+(c.atv_hist||0),0)}</div>
-        <div class="mc-l">Checkpoints dados</div>
-        <div class="mc-s v">total executado</div>
-      </div>
-      <div class="mc">
-        <div class="mc-n">${lista.filter(c=>atvStatus(c)==='hoje').length}</div>
-        <div class="mc-l">Ativ. para hoje</div>
-        <div class="mc-s v">🟢 Fazer agora</div>
-      </div>
-      <div class="mc">
-        <div class="mc-n">${lista.filter(c=>atvStatus(c)==='agendada').length}</div>
-        <div class="mc-l">Agendadas</div>
-        <div class="mc-s" style="color:var(--G3)">⚫ Futuras</div>
-      </div>
-      <div class="mc">
-        <div class="mc-n">${lista.filter(c=>atvStatus(c)==='atrasada').length}</div>
-        <div class="mc-l">Atrasadas</div>
-        <div class="mc-s a">🟡 Atenção</div>
-      </div>
-      <div class="mc">
-        <div class="mc-n">${lista.filter(c=>atvStatus(c)==='sem').length}</div>
-        <div class="mc-l">Sem atividade</div>
-        <div class="mc-s r">🔴 Agendar</div>
-      </div>
-      <div class="mc">
-        <div class="mc-n">${lista.length > 0 ? Math.round(lista.reduce((a,c)=>a+(c.atv_hist||0),0)/lista.length*10)/10 : 0}</div>
-        <div class="mc-l">Média por card</div>
-        <div class="mc-s" style="color:var(--G3)">checkpoints</div>
-      </div>
+      <div class="mc"><div class="mc-n">${lista.reduce((a,c)=>a+(c.atv_hist||0),0)}</div><div class="mc-l">Checkpoints dados</div><div class="mc-s v">total executado</div></div>
+      <div class="mc"><div class="mc-n">${lista.filter(c=>atvStatus(c)==='hoje').length}</div><div class="mc-l">Ativ. para hoje</div><div class="mc-s v">🟢</div></div>
+      <div class="mc"><div class="mc-n">${lista.filter(c=>atvStatus(c)==='agendada').length}</div><div class="mc-l">Agendadas</div></div>
+      <div class="mc"><div class="mc-n">${lista.filter(c=>atvStatus(c)==='atrasada').length}</div><div class="mc-l">Atrasadas</div><div class="mc-s a">🟡</div></div>
+      <div class="mc"><div class="mc-n">${lista.filter(c=>atvStatus(c)==='sem').length}</div><div class="mc-l">Sem atividade</div><div class="mc-s r">🔴</div></div>
     </div>
-
     <div class="divider"></div>
     <div class="slbl">Por canal</div>
     ${Object.entries(cc).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<div class="bb"><div class="bb-row"><span>${CANAL_LABEL[k]||k}</span><span>${n}</span></div><div class="bar"><div class="bar-f" style="width:${Math.round((n/maxC)*100)}%;background:var(--A)"></div></div></div>`).join('')||'<div class="empty">Sem dados</div>'}
@@ -1520,203 +981,58 @@ function renderInsights() {
   `;
 }
 
-// ── CONFIG ─────────────────────────────────────────────
-function renderConfig() {
-  document.getElementById('cfg-funis').innerHTML = cfg.funis.map(f => `
-    <div class="fcard">
-      <div class="ftitle">
-        <span>${f.nome}</span>
-        <div style="display:flex;gap:6px">
-          <button class="btn sm" onclick="openFunilModal('${f.id}')">Renomear</button>
-          <button class="btn sm danger" onclick="delFunil('${f.id}')">Apagar</button>
-        </div>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px">
-        ${f.etapas.map(e => `
-          <div style="display:flex;align-items:center;gap:4px;background:var(--G);border-radius:6px;padding:4px 8px">
-            <span style="font-size:12px">${e.nome}</span>
-            <button class="btn xs" onclick="openEtapaModal('${f.id}','${e.id}')">✎</button>
-            <button class="btn xs danger" onclick="delEtapa('${f.id}','${e.id}')">✕</button>
-          </div>`).join('')}
-        <button class="btn xs" onclick="openEtapaModal('${f.id}',null)">+ Etapa</button>
-      </div>
-    </div>`).join('');
-
-  document.getElementById('cfg-users').innerHTML = `
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.75rem">
-      ${cfg.usuarios.map(u => `
-        <div style="display:flex;align-items:center;gap:6px;background:var(--G);border-radius:20px;padding:5px 12px">
-          <span style="font-size:12px">👤 ${u.nome}</span>
-          <button class="btn xs danger" onclick="delUser('${u.id}')">✕</button>
-        </div>`).join('')}
-    </div>`;
+// ── CONFIG ─────────────────────────────────────────────────
+function renderConfig(){
+  document.getElementById('cfg-funis').innerHTML=cfg.funis.map(f=>`
+    <div class="fcard"><div class="ftitle"><span>${f.nome}</span><div style="display:flex;gap:6px"><button class="btn sm" onclick="openFunilModal('${f.id}')">Renomear</button><button class="btn sm danger" onclick="delFunil('${f.id}')">Apagar</button></div></div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+      ${f.etapas.map(e=>`<div style="display:flex;align-items:center;gap:4px;background:var(--G);border-radius:6px;padding:4px 8px"><span style="font-size:12px">${e.nome}</span><button class="btn xs" onclick="openEtapaModal('${f.id}','${e.id}')">✎</button><button class="btn xs danger" onclick="delEtapa('${f.id}','${e.id}')">✕</button></div>`).join('')}
+      <button class="btn xs" onclick="openEtapaModal('${f.id}',null)">+ Etapa</button>
+    </div></div>`).join('');
+  document.getElementById('cfg-users').innerHTML=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.75rem">${cfg.usuarios.map(u=>`<div style="display:flex;align-items:center;gap:6px;background:var(--G);border-radius:20px;padding:5px 12px"><span style="font-size:12px">👤 ${u.nome}</span><button class="btn xs danger" onclick="delUser('${u.id}')">✕</button></div>`).join('')}</div>`;
 }
-
-// ── FORCE SAVE CONFIG ─────────────────────────────────
-async function forceSaveConfig() {
-  const btn = event.target;
-  btn.textContent = 'Salvando...';
-  btn.disabled = true;
-  try {
-    await apiPost({action:'saveConfig', config: cfg});
-    btn.textContent = '✓ Salvo!';
-    btn.style.background = '#4CAF50';
-    setTimeout(() => {
-      btn.textContent = 'Salvar na nuvem agora';
-      btn.style.background = '';
-      btn.disabled = false;
-    }, 2000);
-  } catch(ex) {
-    btn.textContent = 'Erro — tente novamente';
-    btn.disabled = false;
-    console.error(ex);
-  }
+async function forceSaveConfig(){
+  const btn=event.target;btn.textContent='Salvando...';btn.disabled=true;
+  try{await apiPost({action:'saveConfig',config:cfg});btn.textContent='✓ Salvo!';btn.style.background='#4CAF50';setTimeout(()=>{btn.textContent='Salvar na nuvem agora';btn.style.background='';btn.disabled=false;},2000);}
+  catch(ex){btn.textContent='Erro — tente novamente';btn.disabled=false;}
 }
-
-// ── FUNIL / ETAPA / USER MODALS ────────────────────────
-function openFunilModal(fid = null) {
-  editFid = fid;
-  const f = fid ? getFunil(fid) : null;
-  document.getElementById('mf-title').textContent  = fid ? 'Renomear funil' : 'Novo funil';
-  document.getElementById('f-funil-nome').value     = f ? f.nome : '';
-  document.getElementById('fb-f').textContent       = '';
-  document.getElementById('modal-funil').style.display = 'flex';
+function openFunilModal(fid=null){editFid=fid;const f=fid?getFunil(fid):null;document.getElementById('mf-title').textContent=fid?'Renomear funil':'Novo funil';document.getElementById('f-funil-nome').value=f?f.nome:'';document.getElementById('fb-f').textContent='';document.getElementById('modal-funil').style.display='flex';}
+async function saveFunil(){
+  const nome=document.getElementById('f-funil-nome').value.trim();if(!nome){document.getElementById('fb-f').textContent='Nome obrigatório';return;}
+  if(editFid){const f=getFunil(editFid);if(f)f.nome=nome;}
+  else{const id='f'+Date.now();cfg.funis.push({id,nome,etapas:[{id:'e'+Date.now(),nome:'Novo contato'},{id:'e'+(Date.now()+1),nome:'Fechado'},{id:'e'+(Date.now()+2),nome:'Perdido'}]});funilAtivo=id;}
+  await saveCfg();closeM('modal-funil');renderAll();
 }
-
-async function saveFunil() {
-  const nome = document.getElementById('f-funil-nome').value.trim();
-  if (!nome) { document.getElementById('fb-f').textContent = 'Nome obrigatório'; return; }
-  if (editFid) {
-    const f = getFunil(editFid); if (f) f.nome = nome;
-  } else {
-    const id = 'f' + Date.now();
-    cfg.funis.push({id, nome, etapas:[
-      {id:'e'+Date.now(),     nome:'Novo contato'},
-      {id:'e'+(Date.now()+1), nome:'Fechado'},
-      {id:'e'+(Date.now()+2), nome:'Perdido'}
-    ]});
-    funilAtivo = id;
-  }
-  await saveCfg();
-  closeM('modal-funil');
-  renderAll();
+function openEtapaModal(fid,eid=null){editEfid=fid;editEid=eid;const e=eid?getEtapa(fid,eid):null;document.getElementById('me-title').textContent=eid?'Editar etapa':'Nova etapa';document.getElementById('f-etapa-nome').value=e?e.nome:'';document.getElementById('modal-etapa').style.display='flex';}
+async function saveEtapa(){
+  const nome=document.getElementById('f-etapa-nome').value.trim();if(!nome)return;
+  const funil=getFunil(editEfid);if(!funil)return;
+  if(editEid){const e=funil.etapas.find(x=>x.id===editEid);if(e)e.nome=nome;}
+  else funil.etapas.push({id:'e'+Date.now(),nome});
+  await saveCfg();closeM('modal-etapa');renderFunil();
 }
+function openUserModal(){document.getElementById('f-user-nome').value='';document.getElementById('modal-user').style.display='flex';}
+async function saveUser(){const nome=document.getElementById('f-user-nome').value.trim();if(!nome)return;cfg.usuarios.push({id:'u'+Date.now(),nome});await saveCfg();closeM('modal-user');renderConfig();renderUbtns();}
+async function delFunil(id){if(!confirm('Apagar funil?'))return;cfg.funis=cfg.funis.filter(f=>f.id!==id);if(funilAtivo===id&&cfg.funis.length)funilAtivo=cfg.funis[0].id;await saveCfg();renderAll();}
+async function delEtapa(fid,eid){if(!confirm('Apagar etapa?'))return;const f=getFunil(fid);if(f)f.etapas=f.etapas.filter(e=>e.id!==eid);await saveCfg();renderAll();}
+async function delUser(id){if(!confirm('Remover usuário?'))return;cfg.usuarios=cfg.usuarios.filter(u=>u.id!==id);await saveCfg();renderConfig();renderUbtns();}
 
-function openEtapaModal(fid, eid = null) {
-  editEfid = fid;
-  editEid  = eid;
-  const e  = eid ? getEtapa(fid, eid) : null;
-  document.getElementById('me-title').textContent  = eid ? 'Editar etapa' : 'Nova etapa';
-  document.getElementById('f-etapa-nome').value    = e ? e.nome : '';
-  document.getElementById('modal-etapa').style.display = 'flex';
+function renderUbtns(){
+  const totalFunil=contatos.filter(c=>c.funil===funilAtivo&&(userAtivo==='todos'||c.usuario===userAtivo)).length;
+  const totalGeral=contatos.filter(c=>userAtivo==='todos'||c.usuario===userAtivo).length;
+  const funil=cfg.funis.find(f=>f.id===funilAtivo);
+  document.getElementById('ubtns').innerHTML=`<button class="hdr-ubtn${userAtivo==='todos'?' on':''}" onclick="setUser('todos')">Todos</button>`+cfg.usuarios.map(u=>`<button class="hdr-ubtn${userAtivo===u.id?' on':''}" onclick="setUser('${u.id}')">${u.nome}</button>`).join('');
+  const stxt=document.getElementById('stxt');if(stxt&&contatos.length>0)stxt.textContent=`${totalFunil} card${totalFunil!==1?'s':''} em ${funil?funil.nome:''} · ${totalGeral} total`;
 }
+function setUser(id){userAtivo=id;renderUbtns();renderAll();const insPane=document.getElementById('pane-insights');if(insPane&&insPane.classList.contains('active'))renderInsights();}
 
-async function saveEtapa() {
-  const nome  = document.getElementById('f-etapa-nome').value.trim();
-  if (!nome) return;
-  const funil = getFunil(editEfid);
-  if (!funil) return;
-  if (editEid) {
-    const e = funil.etapas.find(x => x.id === editEid); if (e) e.nome = nome;
-  } else {
-    funil.etapas.push({id:'e'+Date.now(), nome});
-  }
-  await saveCfg();
-  closeM('modal-etapa');
-  renderFunil();
-}
+function closeM(id){document.getElementById(id).style.display='none';}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.overlay').forEach(o=>o.style.display='none');});
+function setFb(id,msg,type){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='fb '+type;}}
+function renderAll(){renderFunil();renderContatos();renderUbtns();}
 
-function openUserModal() {
-  document.getElementById('f-user-nome').value = '';
-  document.getElementById('modal-user').style.display = 'flex';
-}
-
-async function saveUser() {
-  const nome = document.getElementById('f-user-nome').value.trim();
-  if (!nome) return;
-  cfg.usuarios.push({id:'u'+Date.now(), nome});
-  await saveCfg();
-  closeM('modal-user');
-  renderConfig();
-  renderUbtns();
-}
-
-async function delFunil(id) {
-  if (!confirm('Apagar funil? Contatos associados ficarão sem funil.')) return;
-  cfg.funis = cfg.funis.filter(f => f.id !== id);
-  if (funilAtivo === id && cfg.funis.length) funilAtivo = cfg.funis[0].id;
-  await saveCfg(); renderAll();
-}
-
-async function delEtapa(fid, eid) {
-  if (!confirm('Apagar etapa?')) return;
-  const f = getFunil(fid); if (f) f.etapas = f.etapas.filter(e => e.id !== eid);
-  await saveCfg(); renderAll();
-}
-
-async function delUser(id) {
-  if (!confirm('Remover usuário?')) return;
-  cfg.usuarios = cfg.usuarios.filter(u => u.id !== id);
-  await saveCfg(); renderConfig(); renderUbtns();
-}
-
-// ── HEADER USER BTNS ───────────────────────────────────
-function renderUbtns() {
-  // Calcular total do funil ativo (respeitando filtro de usuário)
-  const totalFunil = contatos.filter(c =>
-    c.funil === funilAtivo &&
-    (userAtivo === 'todos' || c.usuario === userAtivo)
-  ).length;
-  const totalGeral = contatos.filter(c =>
-    userAtivo === 'todos' || c.usuario === userAtivo
-  ).length;
-  const funil = cfg.funis.find(f => f.id === funilAtivo);
-  const labelFunil = funil ? funil.nome : '';
-
-  document.getElementById('ubtns').innerHTML =
-    `<button class="hdr-ubtn${userAtivo==='todos'?' on':''}" onclick="setUser('todos')">Todos</button>` +
-    cfg.usuarios.map(u =>
-      `<button class="hdr-ubtn${userAtivo===u.id?' on':''}" onclick="setUser('${u.id}')">${u.nome}</button>`
-    ).join('');
-
-  // Atualizar contador — mostra total do funil ativo
-  const stxt = document.getElementById('stxt');
-  if (stxt && contatos.length > 0) {
-    stxt.textContent = `${totalFunil} card${totalFunil!==1?'s':''} em ${labelFunil} · ${totalGeral} total`;
-  }
-}
-
-function setUser(id) {
-  userAtivo = id;
-  renderUbtns();
-  renderAll();
-  // Se estiver na aba insights, re-renderizar com o filtro do header
-  const insPane = document.getElementById('pane-insights');
-  if (insPane && insPane.classList.contains('active')) renderInsights();
-}
-
-// ── MODAL HELPERS ──────────────────────────────────────
-function closeM(id) { document.getElementById(id).style.display = 'none'; }
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape')
-    document.querySelectorAll('.overlay').forEach(o => o.style.display = 'none');
-});
-
-function setFb(id, msg, type) {
-  const el = document.getElementById(id);
-  if (el) { el.textContent = msg; el.className = 'fb ' + type; }
-}
-
-// ── RENDER ALL ─────────────────────────────────────────
-function renderAll() {
-  renderFunil();
-  renderContatos();
-  renderUbtns();
-}
-
-// ── INIT ───────────────────────────────────────────────
-(async function() {
-  ss('ld', 'Carregando configuração...');
+(async function(){
+  ss('ld','Carregando...');
   await loadCfg();
   renderUbtns();
   await doSync();
