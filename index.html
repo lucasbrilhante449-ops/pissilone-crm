@@ -340,7 +340,7 @@ textarea.fi{resize:vertical;min-height:60px}
       </select>
     </div>
     <div><label class="flbl">Valor (R$)</label><input class="fi" type="number" id="f-valor" placeholder="120"></div>
-    <div><label class="flbl">Follow-up</label><input class="fi" type="date" id="f-followup"></div>
+    <div><label class="flbl">Criado em</label><input class="fi" id="f-criado" readonly style="background:var(--G);color:var(--G3);cursor:default" placeholder="Data de criação"></div>
   </div>
   <div class="fg fg1">
     <div><label class="flbl">Produto</label><input class="fi" id="f-produto" placeholder="Kit Nordeste Vivo..."></div>
@@ -579,7 +579,7 @@ async function doSync() {
           funil:        String(r[10] || 'd2c'),
           etapa:        String(r[11] || 'd2c-novo'),
           usuario:      String(r[12] || ''),
-          followup:     String(r[13] || ''),
+          followup:     normDate(String(r[13] || '')),
           motivo_perda: String(r[14] || ''),
           atv_data:     String(r[15] || ''),
           atv_desc:     String(r[16] || ''),
@@ -831,6 +831,7 @@ function kcardHtml(c) {
       ${vl ? `<span>${vl}</span>` : ''}
       ${c.canal ? `<span>${CANAL_LABEL[c.canal]||c.canal}</span>` : ''}
       ${usr ? `<span>👤 ${usr.nome}</span>` : ''}
+      ${c.data ? `<span style="color:var(--G3);font-size:10px">📅 ${fmtD(c.data)}</span>` : ''}
     </div>
     ${botoesRes ? `<div style="margin-bottom:5px;display:flex;gap:4px;flex-wrap:wrap">${botoesRes}</div>` : ''}
     ${c.motivo_perda ? `<div style="font-size:10px;color:var(--VM);margin-bottom:4px">⚠ ${c.motivo_perda}</div>` : ''}
@@ -1087,6 +1088,8 @@ function openContato(id = null, fid = null, eid = null) {
     document.getElementById('f-canal').value   = c.canal   || 'instagram';
     document.getElementById('f-valor').value   = c.valor   || '';
     document.getElementById('f-followup').value= c.followup|| '';
+    const criadoEl = document.getElementById('f-criado');
+    if (criadoEl) criadoEl.value = c.data ? new Date(c.data).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
     document.getElementById('f-produto').value = c.produto || '';
     document.getElementById('f-obs').value     = c.obs     || '';
     document.getElementById('f-user').value    = c.usuario || '';
@@ -1141,7 +1144,7 @@ async function saveContato() {
     funil:        fid,
     etapa:        eid,
     usuario:      document.getElementById('f-user').value,
-    followup:     document.getElementById('f-followup').value,
+    followup:     normDate(document.getElementById('f-followup').value) || document.getElementById('f-followup').value,
     motivo_perda: prev.motivo_perda || '',
     atv_data:     prev.atv_data     || '',
     atv_desc:     prev.atv_desc     || ''
