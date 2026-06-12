@@ -1741,6 +1741,40 @@ function renderAll() {
   renderUbtns();
   await doSync();
 })();
+
+// ── EXPOR FUNÇÕES NO ESCOPO GLOBAL (necessário para onclick em HTML dinâmico)
+window.openContato    = openContato;
+window.duplicarCard   = duplicarCard;
+window.setResultado   = setResultado;
+window.openAtv        = openAtv;
+window.openEtapaModal = openEtapaModal;
+window.openFunilModal = openFunilModal;
+window.setFunil       = setFunil;
+window.setFiltroAtv   = setFiltroAtv;
+window.setUser        = setUser;
+window.setPer         = setPer;
+window.toggleCustomPer   = toggleCustomPer;
+window.setCustomPreset   = setCustomPreset;
+window.aplicarCustomPer  = aplicarCustomPer;
+window.forceSaveConfig   = forceSaveConfig;
+window.reabrirCard       = reabrirCard;
+window.checkpointAtv     = checkpointAtv;
+window.confirmPerda      = confirmPerda;
+window.cancelPerda       = cancelPerda;
+window.saveContato       = saveContato;
+window.saveAtv           = saveAtv;
+window.clearAtv          = clearAtv;
+window.saveFunil         = saveFunil;
+window.saveEtapa         = saveEtapa;
+window.saveUser          = saveUser;
+window.delFunil          = delFunil;
+window.delEtapa          = delEtapa;
+window.delUser           = delUser;
+window.closeM            = closeM;
+window.limparBuscaFunil  = limparBuscaFunil;
+window.setFiltroC        = setFiltroC;
+window.showTab           = showTab;
+window.doSync            = doSync;
 </script>
 </body>
 </html>
