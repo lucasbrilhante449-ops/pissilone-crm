@@ -795,6 +795,12 @@ function renderFunil() {
   // bind drag on cards
   board.querySelectorAll('.kc').forEach(el => {
     el.addEventListener('dragstart', e => {
+      // Não iniciar drag se o clique foi em botão ou dot
+      if (e.target.closest('button') || e.target.closest('.atv-dot') || e.target.closest('.btn-ganho') || e.target.closest('.btn-perda') || e.target.closest('.res-ganho') || e.target.closest('.res-perda')) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
       dragId = el.dataset.id;
       el.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'move';
@@ -825,7 +831,7 @@ function kcardHtml(c) {
   const nomeHtml = buscaAtiva && c.nome.toLowerCase().includes(buscaAtiva)
     ? c.nome.replace(new RegExp('('+buscaAtiva.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'), '<mark style="background:#F2E618;border-radius:2px;padding:0 1px">$1</mark>')
     : c.nome;
-  return `<div class="kc" draggable="true" data-id="${c.id}" ondragstart="if(event.target.closest('button,.atv-dot')){event.preventDefault();return;}">
+  return `<div class="kc" draggable="true" data-id="${c.id}">
     <div class="kc-nome">${nomeHtml}</div>
     <div class="kc-sub">
       ${vl ? `<span>${vl}</span>` : ''}
@@ -835,7 +841,7 @@ function kcardHtml(c) {
     </div>
     ${botoesRes ? `<div style="margin-bottom:5px;display:flex;gap:4px;flex-wrap:wrap">${botoesRes}</div>` : ''}
     ${c.motivo_perda ? `<div style="font-size:10px;color:var(--VM);margin-bottom:4px">⚠ ${c.motivo_perda}</div>` : ''}
-    <div class="kc-actions" ondragstart="event.stopPropagation()">
+    <div class="kc-actions">
       <div class="kc-left" style="flex-wrap:wrap;gap:3px">
         <button class="btn xs" onclick="event.stopPropagation();openContato('${c.id}')" title="Editar">✎</button>
         <button class="btn xs" onclick="event.stopPropagation();duplicarCard('${c.id}')" title="Duplicar para Pissifã">⧉</button>
