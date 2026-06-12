@@ -898,20 +898,31 @@ function renderInsights(){
   if(userAtivo!=='todos'&&iUser==='todos'){const su2=document.getElementById('ins-user');if(su2)su2.value=userAtivo;}
 
   // ── NOVA LÓGICA: contar pelo histórico de negociações ──
-  // Cada entrada no neg_hist de cada contato conta como uma negociação individual
+  // Usa TODOS os contatos (sem filtro de funil) para não perder histórico
+  // quando o card é movido para outro funil após ganho/perda
+  // Aplica filtro de usuário e canal no contato-base
+  let baseContatos = contatos;
+  if(filtroUser!=='todos') baseContatos=baseContatos.filter(c=>c.usuario===filtroUser);
+  if(iCanal!=='todos')     baseContatos=baseContatos.filter(c=>c.canal===iCanal);
+
   let todasNegs=[];
-  lista.forEach(c=>{
+  baseContatos.forEach(c=>{
     const hist=parseNegHist(c);
     hist.forEach(h=>todasNegs.push({...h,cid:c.id,usuario:c.usuario,canal:c.canal,valor:c.valor,funil:c.funil}));
   });
 
-  // Filtrar negociações pelo período também (usar data do histórico)
+  // Filtrar negociações pelo período usando a data do registro (não do card)
   if(periodoCustom.ativo&&periodoCustom.de&&periodoCustom.ate){
     const de=new Date(periodoCustom.de+'T00:00:00');const ate=new Date(periodoCustom.ate+'T23:59:59');
     todasNegs=todasNegs.filter(h=>{const d=new Date(h.d+'T00:00:00');return d>=de&&d<=ate;});
   }else if(periodo!=='0'){
     const dias=periodo==='1'?0:parseInt(periodo);const lim=new Date();lim.setDate(lim.getDate()-dias);lim.setHours(0,0,0,0);
     todasNegs=todasNegs.filter(h=>new Date(h.d+'T00:00:00')>=lim);
+  }
+  // Se filtro de funil ativo, filtrar também pelas negociações daquele funil
+  // (funil registrado no momento da negociação)
+  if(iFunil!=='todos'){
+    todasNegs=todasNegs.filter(h=>h.funil===iFunil);
   }
 
   const negGanhos=todasNegs.filter(h=>h.r==='ganho');
