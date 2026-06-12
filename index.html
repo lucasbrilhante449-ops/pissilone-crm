@@ -688,7 +688,7 @@ function atvDotHtml(c) {
   const s   = atvStatus(c);
   const cls = {sem:'atv-vermelho', hoje:'atv-verde', atrasada:'atv-amarelo', agendada:'atv-cinza'};
   const tip = {sem:'Sem atividade — clique para agendar', hoje:`Hoje: ${c.atv_desc||'atividade agendada'}`, atrasada:`Atrasada (${fmtD(c.atv_data)}): ${c.atv_desc||''}`, agendada:`${fmtD(c.atv_data)}: ${c.atv_desc||''}`};
-  return `<div class="atv-dot ${cls[s]}" title="${tip[s]}" onclick="openAtv('${c.id}')"></div>`;
+  return `<div class="atv-dot ${cls[s]}" title="${tip[s]}" onclick="event.stopPropagation();openAtv('${c.id}')"></div>`;
 }
 
 // ── TABS ───────────────────────────────────────────────
@@ -818,14 +818,14 @@ function kcardHtml(c) {
   } else if (res === 'perda') {
     botoesRes = `<span class="res-perda" title="Card perdido — edite para reabrir">✗ Perda</span>`;
   } else if (emNeg) {
-    botoesRes = `<button class="btn-ganho" onclick="setResultado('${c.id}','ganho')">✓ Ganho</button>`
-              + `<button class="btn-perda" onclick="setResultado('${c.id}','perda')">✗ Perda</button>`;
+    botoesRes = `<button class="btn-ganho" onclick="event.stopPropagation();setResultado('${c.id}','ganho')">✓ Ganho</button>`
+              + `<button class="btn-perda" onclick="event.stopPropagation();setResultado('${c.id}','perda')">✗ Perda</button>`;
   }
   const buscaAtiva = (document.getElementById('funil-busca') || {value:''}).value.toLowerCase().trim();
   const nomeHtml = buscaAtiva && c.nome.toLowerCase().includes(buscaAtiva)
     ? c.nome.replace(new RegExp('('+buscaAtiva.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'), '<mark style="background:#F2E618;border-radius:2px;padding:0 1px">$1</mark>')
     : c.nome;
-  return `<div class="kc" draggable="true" data-id="${c.id}">
+  return `<div class="kc" draggable="true" data-id="${c.id}" ondragstart="if(event.target.closest('button,.atv-dot')){event.preventDefault();return;}">
     <div class="kc-nome">${nomeHtml}</div>
     <div class="kc-sub">
       ${vl ? `<span>${vl}</span>` : ''}
@@ -835,11 +835,11 @@ function kcardHtml(c) {
     </div>
     ${botoesRes ? `<div style="margin-bottom:5px;display:flex;gap:4px;flex-wrap:wrap">${botoesRes}</div>` : ''}
     ${c.motivo_perda ? `<div style="font-size:10px;color:var(--VM);margin-bottom:4px">⚠ ${c.motivo_perda}</div>` : ''}
-    <div class="kc-actions">
+    <div class="kc-actions" ondragstart="event.stopPropagation()">
       <div class="kc-left" style="flex-wrap:wrap;gap:3px">
-        <button class="btn xs" onclick="openContato('${c.id}')" title="Editar">✎</button>
-        <button class="btn xs" onclick="duplicarCard('${c.id}')" title="Duplicar para Pissifã">⧉</button>
-        <button class="btn xs danger" onclick="delC('${c.id}')" title="Excluir">✕</button>
+        <button class="btn xs" onclick="event.stopPropagation();openContato('${c.id}')" title="Editar">✎</button>
+        <button class="btn xs" onclick="event.stopPropagation();duplicarCard('${c.id}')" title="Duplicar para Pissifã">⧉</button>
+        <button class="btn xs danger" onclick="event.stopPropagation();delC('${c.id}')" title="Excluir">✕</button>
       </div>
       ${atvDotHtml(c)}
     </div>
