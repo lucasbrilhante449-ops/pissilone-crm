@@ -584,8 +584,16 @@ async function doSync(){
         funil:String(r[10]||''),   // pode estar vazio/deslocado
         etapa:String(r[11]||''),
         usuario:String(r[12]||''),
-        followup:String(r[13]||''),motivo_perda:String(r[14]||''),
-        atv_data:String(r[15]||''),atv_desc:String(r[16]||''),
+        followup:String(r[13]||''),motivo_perda:(function(){ const v=String(r[14]||''); return /^[0-9]{4}-[0-9]{2}-[0-9]{2}/.test(v)?'':v; })(),
+        atv_data:(function(){
+          const v=String(r[15]||'');
+          // Rejeitar timestamps ISO completos que parecem datas de criação (não de atividade)
+          // Atividade legítima vem como YYYY-MM-DD, não como ISO timestamp
+          if(/^\d{4}-\d{2}-\d{2}T/.test(v)) return '';
+          if(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(v)) return '';
+          return v;
+        })(),
+        atv_desc:String(r[16]||''),
         resultado:String(r[17]||''),atv_hist:parseInt(r[18])||0,
         neg_hist:String(r[19]||'')
       }));
@@ -749,7 +757,7 @@ function kcardHtml(c,busca){
     </div>
     ${ucHtml}
     ${botoesRes?`<div style="margin-bottom:4px;display:flex;gap:4px;flex-wrap:wrap">${botoesRes}</div>`:''}
-    ${c.motivo_perda?`<div style="font-size:10px;color:var(--VM);margin-bottom:4px">⚠ ${c.motivo_perda}</div>`:''}
+    ${(c.motivo_perda&&!/^\d{4}-\d{2}-\d{2}/.test(c.motivo_perda))?`<div style="font-size:10px;color:var(--VM);margin-bottom:4px">⚠ ${c.motivo_perda}</div>`:''}
     <div class="kc-actions">
       <div class="kc-left">
         <button class="btn xs" onclick="openContato('${c.id}')">✎</button>
