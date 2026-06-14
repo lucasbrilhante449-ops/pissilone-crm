@@ -455,10 +455,25 @@ function fmtD(iso){try{return new Date(iso).toLocaleDateString('pt-BR',{day:'2-d
 function isGanho(fid,eid){const e=getEtapa(fid,eid);return e&&e.nome.toLowerCase().includes('fechado');}
 function isPerdido(fid,eid){const e=getEtapa(fid,eid);return e&&e.nome.toLowerCase().includes('perdido');}
 function isNegociacao(fid,eid){
+  // Verificar pelo ID da etapa diretamente (mais robusto)
+  if(eid==='psf-neg')return true;
+  if(eid==='d2c-neg')return true;
+  if(eid==='b2b-neg')return true;
+  // Fallback: verificar pelo nome
   const e=getEtapa(fid,eid);
-  if(!e)return false;
+  if(!e){
+    // Se etapa não encontrada no funil informado, buscar em todos os funis
+    for(const f of cfg.funis){
+      const found=f.etapas.find(x=>x.id===eid);
+      if(found){
+        const n=found.nome.toLowerCase();
+        return n.includes('negociação comercial')||n.includes('negociando');
+      }
+    }
+    return false;
+  }
   const n=e.nome.toLowerCase();
-  return n.includes('negociação comercial') || n.includes('negociando');
+  return n.includes('negociação comercial')||n.includes('negociando');
 }
 
 function normDate(d){
