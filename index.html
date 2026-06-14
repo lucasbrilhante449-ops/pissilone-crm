@@ -436,6 +436,20 @@ const CANAL_LABEL={instagram:'Instagram',story:'Story',anuncio:'Anúncio',indica
 // ── HELPERS ──────────────────────────────────────────────
 function ss(s,m){document.getElementById('sdot').className='sdot'+(s==='ld'?' ld':s==='er'?' er':'');document.getElementById('stxt').textContent=m;}
 function getFunil(id){return cfg.funis.find(f=>f.id===id);}
+
+// Deriva o funil correto a partir do ID da etapa (ex: 'd2c-bv' → 'd2c')
+function funiDaEtapa(etapaId){
+  if(!etapaId) return 'd2c';
+  const p = etapaId.split('-')[0];
+  if(p==='d2c') return 'd2c';
+  if(p==='b2b') return 'b2b';
+  if(p==='psf') return 'pissifa';
+  // Buscar nas etapas configuradas
+  for(const f of cfg.funis){
+    if(f.etapas.some(e=>e.id===etapaId)) return f.id;
+  }
+  return 'd2c';
+}
 function getEtapa(fid,eid){const f=getFunil(fid);return f?f.etapas.find(e=>e.id===eid):null;}
 function fmtD(iso){try{return new Date(iso).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});}catch(e){return '';}}
 function isGanho(fid,eid){const e=getEtapa(fid,eid);return e&&e.nome.toLowerCase().includes('fechado');}
@@ -547,22 +561,37 @@ async function doSync(){
         et:String(r[3]||''),canal:String(r[4]||'outro'),
         valor:parseFloat(r[5])||0,produto:String(r[6]||''),
         obs:String(r[7]||''),data:String(r[8]||new Date().toISOString()),
-        compras:parseInt(r[9])||0,funil:String(r[10]||'d2c'),
-        etapa:String(r[11]||'d2c-bv'),usuario:String(r[12]||''),
+        compras:parseInt(r[9])||0,
+        funil:String(r[10]||''),   // pode estar vazio/deslocado
+        etapa:String(r[11]||''),
+        usuario:String(r[12]||''),
         followup:String(r[13]||''),motivo_perda:String(r[14]||''),
         atv_data:String(r[15]||''),atv_desc:String(r[16]||''),
         resultado:String(r[17]||''),atv_hist:parseInt(r[18])||0,
-        neg_hist:String(r[19]||'')  // NOVO: histórico de negociações
+        neg_hist:String(r[19]||'')
       }));
     }
-    // corrigir etapas órfãs
+    // Corrigir funil e etapas
     contatos.forEach(c=>{
+      // 1. Se funil está vazio ou inválido, derivar da etapa
+      if(!c.funil || !getFunil(c.funil)){
+        c.funil = funiDaEtapa(c.etapa);
+      }
+      // 2. Se etapa não existe no funil, tentar corrigir
       const f=getFunil(c.funil);
-      if(!f){const fb=getFunil('d2c');if(fb){c.funil='d2c';c.etapa=fb.etapas[0].id;}return;}
+      if(!f){c.funil='d2c';c.etapa='d2c-bv';return;}
       if(!f.etapas.some(e=>e.id===c.etapa)){
-        const nm=c.etapa.replace(/^[a-z0-9]+-/,'').toLowerCase();
-        const m=f.etapas.find(e=>e.nome.toLowerCase().includes(nm)||e.id.toLowerCase().includes(nm));
-        c.etapa=m?m.id:f.etapas[0].id;
+        // Pode ser que etapa e funil estejam trocados (deslocamento de coluna)
+        // Tentar derivar funil da etapa novamente
+        const funilCerto = funiDaEtapa(c.etapa);
+        const fCerto = getFunil(funilCerto);
+        if(fCerto && fCerto.etapas.some(e=>e.id===c.etapa)){
+          c.funil = funilCerto;
+        } else {
+          const nm=c.etapa.replace(/^[a-z0-9]+-/,'').toLowerCase();
+          const m=f.etapas.find(e=>e.nome.toLowerCase().includes(nm)||e.id.toLowerCase().includes(nm));
+          c.etapa=m?m.id:f.etapas[0].id;
+        }
       }
     });
     ss('ok',contatos.length+' contato'+(contatos.length!==1?'s':''));
