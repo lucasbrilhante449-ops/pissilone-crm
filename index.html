@@ -1078,6 +1078,16 @@ function renderAll(){renderFunil();renderContatos();renderUbtns();}
   await loadCfg();
   renderUbtns();
   await doSync();
+
+  // Auto-save da config a cada 60 segundos (silencioso)
+  setInterval(async function(){
+    try{ await apiPost({action:'saveConfig', config: cfg}); }catch(e){}
+  }, 60000);
+
+  // Auto-sync dos contatos a cada 2 minutos
+  setInterval(async function(){
+    try{ await doSync(); }catch(e){}
+  }, 120000);
 })();
 </script>
 </body>
