@@ -522,7 +522,19 @@ async function saveCfg(){
 }
 
 // ── API ──────────────────────────────────────────────────
-async function apiPost(payload){const r=await fetch(API,{method:'POST',body:JSON.stringify(payload)});const text=await r.text();try{return JSON.parse(text);}catch(e){return{};}}
+async function apiPost(payload){
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),15000); // 15s timeout
+  try{
+    const r=await fetch(API,{method:'POST',body:JSON.stringify(payload),signal:controller.signal});
+    clearTimeout(timer);
+    const text=await r.text();
+    try{return JSON.parse(text);}catch(e){return{};}
+  }catch(e){
+    clearTimeout(timer);
+    throw e;
+  }
+}
 
 async function doSync(){
   ss('ld','Sincronizando...');
@@ -1159,10 +1171,11 @@ function setFb(id,msg,type){const el=document.getElementById(id);if(el){el.textC
 function renderAll(){renderFunil();renderContatos();renderUbtns();}
 
 (async function(){
-  ss('ld','Carregando...');
-  await loadCfg();
+  ss('ld','Carregando configuração...');
+  try{ await loadCfg(); }catch(e){ console.warn('loadCfg falhou, usando padrão'); }
   renderUbtns();
-  await doSync();
+  ss('ld','Carregando contatos...');
+  try{ await doSync(); }catch(e){ ss('er','Erro ao conectar — clique ↻ para tentar novamente'); }
 
   // Auto-save da config a cada 5 minutos (silencioso, não bloqueia)
   setInterval(function(){
