@@ -299,6 +299,22 @@ textarea.fi{resize:vertical;min-height:60px}
 </div>
 </div>
 
+<!-- MODAL VALOR NEGOCIAÇÃO -->
+<div class="overlay" id="modal-valor-neg" style="display:none">
+<div class="modal" style="max-width:380px">
+  <div class="mtitle"><span>Confirmar negociação</span><button class="mcl" onclick="closeM('modal-valor-neg')">✕</button></div>
+  <p style="font-size:12px;color:var(--G3);margin-bottom:1rem">Qual o valor desta negociação? Será registrado no histórico separadamente.</p>
+  <div class="fg fg1" style="margin-bottom:.5rem">
+    <div><label class="flbl">Valor (R$)</label><input class="fi" type="number" id="f-neg-valor" placeholder="0"></div>
+  </div>
+  <div id="f-neg-hist-preview" style="font-size:11px;color:var(--G3);margin-bottom:1rem;min-height:16px"></div>
+  <div style="display:flex;gap:8px">
+    <button class="btn primary full" onclick="confirmarGanho()">✓ Confirmar ganho</button>
+    <button class="btn full" onclick="closeM('modal-valor-neg')">Cancelar</button>
+  </div>
+</div>
+</div>
+
 <!-- MODAL PERDA -->
 <div class="overlay" id="modal-perda" style="display:none">
 <div class="modal">
@@ -390,8 +406,10 @@ let cfg={
       {id:'b2b-neg',nome:'Negociação'},{id:'b2b-fech',nome:'Fechado'},{id:'b2b-perd',nome:'Perdido'}
     ]},
     {id:'pissifa',nome:'Pissifã',etapas:[
-      {id:'psf-ativo',nome:'Ativo'},{id:'psf-contato',nome:'Em contato'},
-      {id:'psf-recompra',nome:'Recompra'},{id:'psf-inativo',nome:'Inativo'}
+      {id:'psf-ativo',    nome:'Ativo 🟢'},
+      {id:'psf-contato',  nome:'Em contato 📞'},
+      {id:'psf-neg',      nome:'Negociando 🤑'},
+      {id:'psf-inativo',  nome:'Inativo 😴'}
     ]}
   ],
   usuarios:[{id:'lucas',nome:'Lucas'},{id:'ana',nome:'Ana'}]
@@ -411,6 +429,7 @@ let perdaCid=null;
 let atvCid=null;
 let motivoSel='';
 let dragId=null;
+let ganhoCid=null;  // card aguardando confirmação de valor para ganho
 
 const CANAL_LABEL={instagram:'Instagram',story:'Story',anuncio:'Anúncio',indicacao:'Indicação',atelie:'Ateliê',busca:'Google',whatsapp:'WhatsApp',outro:'Outro'};
 
@@ -421,7 +440,12 @@ function getEtapa(fid,eid){const f=getFunil(fid);return f?f.etapas.find(e=>e.id=
 function fmtD(iso){try{return new Date(iso).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});}catch(e){return '';}}
 function isGanho(fid,eid){const e=getEtapa(fid,eid);return e&&e.nome.toLowerCase().includes('fechado');}
 function isPerdido(fid,eid){const e=getEtapa(fid,eid);return e&&e.nome.toLowerCase().includes('perdido');}
-function isNegociacao(fid,eid){const e=getEtapa(fid,eid);return e&&e.nome.toLowerCase().includes('negociação comercial');}
+function isNegociacao(fid,eid){
+  const e=getEtapa(fid,eid);
+  if(!e)return false;
+  const n=e.nome.toLowerCase();
+  return n.includes('negociação comercial') || n.includes('negociando');
+}
 
 function normDate(d){
   if(!d||d.trim()==='')return'';
@@ -474,7 +498,10 @@ function ultimaCompraHtml(c){
   else if(dias<=30){cls='ultima-compra alerta';txt=`🛍 há ${dias} dias`;}
   else{cls='ultima-compra critico';txt=`🛍 há ${dias} dias`;}
   const nCompras=ganhos.length;
-  return`<div class="${cls}" title="Última compra: ${fmtD(ultima.d)} — ${nCompras} compra${nCompras>1?'s':''} no total">${txt}${nCompras>1?` · ${nCompras}ª compra`:''}</div>`;
+  const totalGasto=ganhos.reduce((a,h)=>a+(h.v||0),0);
+  const totalStr=totalGasto>0?` · 💰 R$${totalGasto.toLocaleString('pt-BR')} total`:'';
+  const vipStr=totalGasto>=300||nCompras>=3?' ⭐':'';
+  return`<div class="${cls}" title="Última compra: ${fmtD(ultima.d)} — ${nCompras} compra${nCompras>1?'s':''} · Total gasto: R$${totalGasto}">${txt}${nCompras>1?` · ${nCompras}ª compra`:''}${totalStr}${vipStr}</div>`;
 }
 
 // ── CONFIG ──────────────────────────────────────────────
@@ -690,6 +717,11 @@ async function confirmPerda(){
   hist.push({r:'perda',d:hojeISO(),m:motivo});
   c.neg_hist=JSON.stringify(hist);
   c.motivo_perda=motivo;c.et='perdido';c.resultado='perda';
+  // Se for pissifã, mover para Inativo após perda
+  if(c.funil==='pissifa'){
+    c.etapa='psf-inativo';
+    c.resultado=''; // reabrir para próxima negociação
+  }
   ss('ld','Salvando...');try{await apiSave(c);await doSync();}catch(ex){ss('er','Erro');}
   closeM('modal-perda');motivoSel='';document.getElementById('f-motivo').value='';
   document.querySelectorAll('.chip').forEach(b=>b.classList.remove('sel'));perdaCid=null;
@@ -697,15 +729,47 @@ async function confirmPerda(){
 function cancelPerda(){perdaCid=null;closeM('modal-perda');renderFunil();}
 
 // ── RESULTADO (GANHO / PERDA) ─────────────────────────────
-async function setResultado(id,resultado){
+function setResultado(id,resultado){
   const c=contatos.find(x=>x.id===id);if(!c)return;
   if(resultado==='perda'){perdaCid=id;c.resultado='perda';document.getElementById('modal-perda').style.display='flex';return;}
-  // Ganho: adicionar ao histórico
+  // Ganho: abrir modal de confirmação de valor
+  ganhoCid=id;
+  const el=document.getElementById('f-neg-valor');
+  if(el)el.value=c.valor||'';
+  // Mostrar histórico anterior
   const hist=parseNegHist(c);
-  hist.push({r:'ganho',d:hojeISO(),m:''});
+  const ganhoAnts=hist.filter(h=>h.r==='ganho');
+  const prev=document.getElementById('f-neg-hist-preview');
+  if(prev){
+    if(ganhoAnts.length>0){
+      const total=ganhoAnts.reduce((a,h)=>a+(h.v||0),0);
+      prev.innerHTML=`<span style="color:var(--VD)">✓ ${ganhoAnts.length} compra${ganhoAnts.length>1?'s':''} anteriore${ganhoAnts.length>1?'s':''} · Total acumulado: R$${total.toLocaleString('pt-BR')}</span>`;
+    }else{
+      prev.innerHTML='<span style="color:var(--G3)">Primeira negociação deste cliente</span>';
+    }
+  }
+  document.getElementById('modal-valor-neg').style.display='flex';
+}
+
+async function confirmarGanho(){
+  const c=contatos.find(x=>x.id===ganhoCid);if(!c)return;
+  const valorNeg=parseFloat(document.getElementById('f-neg-valor').value)||0;
+  // Adicionar ao histórico com valor próprio
+  const hist=parseNegHist(c);
+  hist.push({r:'ganho',d:hojeISO(),m:'',v:valorNeg});
   c.neg_hist=JSON.stringify(hist);
   c.resultado='ganho';c.et='fechado';c.motivo_perda='';
-  ss('ld','Salvando ganho...');try{await apiSave(c);await doSync();}catch(ex){ss('er','Erro ao salvar');}
+  // Atualizar valor do card para o valor desta negociação
+  c.valor=valorNeg;
+  // Se for pissifã, voltar para Ativo após ganho
+  if(c.funil==='pissifa'){
+    c.etapa='psf-ativo';
+    c.resultado=''; // reabrir para próxima negociação
+  }
+  closeM('modal-valor-neg');
+  ss('ld','Salvando ganho...');
+  try{await apiSave(c);await doSync();}catch(ex){ss('er','Erro ao salvar');}
+  ganhoCid=null;
 }
 
 // ── DUPLICAR ──────────────────────────────────────────────
@@ -963,9 +1027,9 @@ function renderInsights(){
   const txPerda=baseConv>0?Math.round((negPerdas.length/baseConv)*100):0;
 
   // Receita = soma dos valores dos cards que tiveram ganho (sem duplicar)
-  const cidsGanhos=[...new Set(negGanhos.map(h=>h.cid))];
-  const receita=cidsGanhos.reduce((a,cid)=>{const c=contatos.find(x=>x.id===cid);return a+(c?c.valor||0:0);},0);
-  const tkMedio=cidsGanhos.length>0?Math.round(receita/cidsGanhos.length):0;
+  // Receita soma o valor de cada negociação (h.v) — correto por compra
+  const receita=negGanhos.reduce((a,h)=>a+(h.v||0),0);
+  const tkMedio=negGanhos.length>0?Math.round(receita/negGanhos.length):0;
   const emAberto=lista.filter(c=>!parseNegHist(c).length&&!isGanho(c.funil,c.etapa)&&!isPerdido(c.funil,c.etapa)).length;
 
   const hj=new Date();hj.setHours(0,0,0,0);
@@ -1014,6 +1078,27 @@ function renderInsights(){
       <div class="mc"><div class="mc-n">${lista.filter(c=>atvStatus(c)==='atrasada').length}</div><div class="mc-l">Atrasadas</div><div class="mc-s a">🟡</div></div>
       <div class="mc"><div class="mc-n">${lista.filter(c=>atvStatus(c)==='sem').length}</div><div class="mc-l">Sem atividade</div><div class="mc-s r">🔴</div></div>
     </div>
+    <div class="divider"></div>
+    <div class="slbl">Pissifã — clientes recorrentes</div>
+    ${(()=>{
+      const psf=contatos.filter(c=>c.funil==='pissifa');
+      if(!psf.length)return'<div class="empty">Nenhum cliente no Pissifã ainda</div>';
+      const histPsf=[];psf.forEach(c=>{const h=parseNegHist(c);h.forEach(x=>histPsf.push({...x,cid:c.id,valor:c.valor}));});
+      const ganhosPsf=histPsf.filter(h=>h.r==='ganho');
+      const receitaPsf=ganhosPsf.reduce((a,h)=>a+(h.v||0),0);
+      const tkPsf=ganhosPsf.length>0?Math.round(receitaPsf/ganhosPsf.length):0;
+      const vips=psf.filter(c=>{const g=parseNegHist(c).filter(h=>h.r==='ganho');const tot=g.reduce((a,h)=>a+(h.v||0),0);return tot>=300||g.length>=3;});
+      const mediaDias=psf.filter(c=>{const g=parseNegHist(c).filter(h=>h.r==='ganho').sort((a,b)=>b.d.localeCompare(a.d));return g.length>=2;}).map(c=>{const g=parseNegHist(c).filter(h=>h.r==='ganho').sort((a,b)=>b.d.localeCompare(a.d));const d1=new Date(g[0].d);const d2=new Date(g[1].d);return Math.abs(Math.floor((d1-d2)/(1000*60*60*24)));});
+      const freqMedia=mediaDias.length>0?Math.round(mediaDias.reduce((a,b)=>a+b,0)/mediaDias.length):null;
+      return\`<div class="mg" style="margin-bottom:.5rem">
+        <div class="mc"><div class="mc-n">\${psf.length}</div><div class="mc-l">Pissifãs</div></div>
+        <div class="mc"><div class="mc-n">\${ganhosPsf.length}</div><div class="mc-l">Recompras</div><div class="mc-s v">✓</div></div>
+        <div class="mc"><div class="mc-n">R\$\${Math.round(receitaPsf).toLocaleString('pt-BR')}</div><div class="mc-l">Receita recorrente</div></div>
+        <div class="mc"><div class="mc-n">R\$\${tkPsf.toLocaleString('pt-BR')}</div><div class="mc-l">Ticket médio</div></div>
+        <div class="mc"><div class="mc-n">\${vips.length}</div><div class="mc-l">⭐ VIPs</div><div class="mc-s v">≥R\$300 ou 3+</div></div>
+        <div class="mc"><div class="mc-n">\${freqMedia?freqMedia+'d':'—'}</div><div class="mc-l">Freq. recompra</div><div class="mc-s" style="color:var(--G3)">média entre compras</div></div>
+      </div>\`;
+    })()}
     <div class="divider"></div>
     <div class="slbl">Por canal</div>
     ${Object.entries(cc).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<div class="bb"><div class="bb-row"><span>${CANAL_LABEL[k]||k}</span><span>${n}</span></div><div class="bar"><div class="bar-f" style="width:${Math.round((n/maxC)*100)}%;background:var(--A)"></div></div></div>`).join('')||'<div class="empty">Sem dados</div>'}
