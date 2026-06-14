@@ -287,6 +287,10 @@ textarea.fi{resize:vertical;min-height:60px}
   <div class="fg fg1"><div><label class="flbl">Produto</label><input class="fi" id="f-produto" placeholder="Kit Nordeste Vivo..."></div></div>
   <div class="fg fg1"><div><label class="flbl">Descrição da atividade</label><input class="fi" id="f-atv-desc-modal" placeholder="Ex: Ligar, enviar proposta..." onchange="sincronizarAtividade()"></div></div>
   <div class="fg fg1"><div><label class="flbl">Observação</label><textarea class="fi" id="f-obs"></textarea></div></div>
+  <div id="neg-hist-wrap" style="display:none;margin-bottom:.75rem">
+    <div class="flbl" style="margin-bottom:.5rem">Histórico de negociações</div>
+    <div id="neg-hist-lista" style="background:var(--G);border-radius:8px;padding:.75rem;font-size:12px;max-height:160px;overflow-y:auto"></div>
+  </div>
   <div id="reabrir-wrap" style="display:none;margin-bottom:.75rem">
     <div style="background:var(--AM2);border-radius:8px;padding:.75rem 1rem;display:flex;align-items:center;gap:10px">
       <span id="reabrir-badge"></span>
@@ -711,12 +715,17 @@ function kcardHtml(c,busca){
   const ultimaNeg=hist.length?hist[hist.length-1]:null;
   const emNeg=isNegociacao(c.funil,c.etapa);
 
-  // Resultado atual: usa o último registro do histórico
-  const resAtual=ultimaNeg?ultimaNeg.r:'';
+  // Se está em etapa de negociação → SEMPRE mostrar botões, independente do histórico
   let botoesRes='';
-  if(resAtual==='ganho')botoesRes=`<span class="res-ganho" title="Ganho em ${fmtD(ultimaNeg.d)} — edite para reabrir">✓ Ganho</span>`;
-  else if(resAtual==='perda')botoesRes=`<span class="res-perda" title="Perda em ${fmtD(ultimaNeg.d)}: ${ultimaNeg.m||''} — edite para reabrir">✗ Perda</span>`;
-  else if(emNeg)botoesRes=`<button class="btn-ganho" onclick="setResultado('${c.id}','ganho')">✓ Ganho</button><button class="btn-perda" onclick="setResultado('${c.id}','perda')">✗ Perda</button>`;
+  if(emNeg){
+    // Está negociando agora: mostra botões sempre
+    botoesRes=`<button class="btn-ganho" onclick="setResultado('${c.id}','ganho')">✓ Ganho</button><button class="btn-perda" onclick="setResultado('${c.id}','perda')">✗ Perda</button>`;
+  } else {
+    // Fora da etapa de negociação: mostra resultado do último registro
+    const resAtual=ultimaNeg?ultimaNeg.r:'';
+    if(resAtual==='ganho')botoesRes=`<span class="res-ganho" title="Último ganho em ${ultimaNeg?fmtD(ultimaNeg.d):''}">✓ Ganho</span>`;
+    else if(resAtual==='perda')botoesRes=`<span class="res-perda" title="Última perda em ${ultimaNeg?fmtD(ultimaNeg.d):''}">✗ Perda</span>`;
+  }
 
   // Última compra
   const ucHtml=ultimaCompraHtml(c);
@@ -919,12 +928,41 @@ function openContato(id=null,fid=null,eid=null){
     document.getElementById('f-canal').value='instagram';document.getElementById('f-user').value='';
     if(eid)setTimeout(()=>{document.getElementById('f-etapa').value=eid;},30);
   }
-  // Mostrar reabrir se há histórico com resultado
+  // Mostrar histórico de negociações
   const hist=c?parseNegHist(c):[];
   const ultimaNeg=hist.length?hist[hist.length-1]:null;
+
+  const hw=document.getElementById('neg-hist-wrap');
+  const hl=document.getElementById('neg-hist-lista');
+  if(hw&&hl){
+    if(hist.length>0){
+      hw.style.display='block';
+      const totalGasto=hist.filter(h=>h.r==='ganho').reduce((a,h)=>a+(h.v||0),0);
+      hl.innerHTML=hist.slice().reverse().map((h,i)=>{
+        const cor=h.r==='ganho'?'var(--VD)':'var(--VM)';
+        const icone=h.r==='ganho'?'✓':'✗';
+        const vlStr=h.v?` — R$${Number(h.v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}`:'';
+        const mStr=h.m?` · ${h.m}`:'';
+        return`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--G2);${i===hist.length-1?'border:none':''}">
+          <span style="color:${cor};font-weight:600;font-size:13px">${icone}</span>
+          <div style="flex:1">
+            <span style="font-weight:600;color:var(--K)">${h.v?'R$'+Number(h.v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):vlStr?vlStr:'—'}</span>
+            <span style="color:var(--G3)">${mStr}</span>
+          </div>
+          <span style="color:var(--G3);white-space:nowrap">${h.d?new Date(h.d+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}):''}</span>
+        </div>`;
+      }).join('')
+      +(totalGasto>0?`<div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--G2);display:flex;justify-content:space-between;font-weight:600"><span style="color:var(--G3)">Total gasto</span><span style="color:var(--VD)">R$${totalGasto.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>`:'');
+    }else{
+      hw.style.display='none';
+    }
+  }
+
+  // Mostrar reabrir APENAS se card está fora de negociação E tem resultado
   const rw=document.getElementById('reabrir-wrap');
+  const estaEmNeg=isNegociacao(c?c.funil:'',c?c.etapa:'');
   if(rw){
-    rw.style.display=(ultimaNeg)?'block':'none';
+    rw.style.display=(ultimaNeg&&!estaEmNeg)?'block':'none';
     const rb=document.getElementById('reabrir-badge');
     if(rb&&ultimaNeg){rb.className=ultimaNeg.r==='ganho'?'res-ganho':'res-perda';rb.textContent=ultimaNeg.r==='ganho'?'✓ Ganho':'✗ Perda';}
   }
