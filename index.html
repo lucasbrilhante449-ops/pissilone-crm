@@ -190,6 +190,19 @@ textarea.fi{resize:vertical;min-height:60px}
     <button class="filtro" id="fatv-atrasada" onclick="setFiltroAtv(this,'atrasada')"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#FDD835;margin-right:4px"></span>Atrasada</button>
     <button class="filtro" id="fatv-sem" onclick="setFiltroAtv(this,'sem')"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#E53935;margin-right:4px"></span>Sem atividade</button>
   </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.75rem;align-items:center">
+    <span style="font-size:11px;color:var(--G3);font-weight:500;text-transform:uppercase;letter-spacing:.06em">Resultado:</span>
+    <button class="filtro active" id="fres-todos" onclick="setFiltroRes(this,'todos')">Todos</button>
+    <button class="filtro" id="fres-ganho" onclick="setFiltroRes(this,'ganho')" style="border-color:#A5D6A7;color:#2E7D32">
+      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4CAF50;margin-right:4px"></span>Ganhos
+    </button>
+    <button class="filtro" id="fres-perda" onclick="setFiltroRes(this,'perda')" style="border-color:#EF9A9A;color:#C62828">
+      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#E53935;margin-right:4px"></span>Perdidos
+    </button>
+    <button class="filtro" id="fres-aberto" onclick="setFiltroRes(this,'aberto')">
+      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--G2);margin-right:4px"></span>Em aberto
+    </button>
+  </div>
   <div class="board-wrap"><div class="board" id="board"></div></div>
 </div>
 <div id="pane-contatos" class="pane">
@@ -269,9 +282,10 @@ textarea.fi{resize:vertical;min-height:60px}
       </select>
     </div>
     <div><label class="flbl">Valor (R$)</label><input class="fi" type="number" id="f-valor" placeholder="120"></div>
-    <div><label class="flbl">Follow-up</label><input class="fi" type="date" id="f-followup"></div>
+    <div><label class="flbl">Próx. atividade</label><input class="fi" type="date" id="f-followup" onchange="sincronizarAtividade()"></div>
   </div>
   <div class="fg fg1"><div><label class="flbl">Produto</label><input class="fi" id="f-produto" placeholder="Kit Nordeste Vivo..."></div></div>
+  <div class="fg fg1"><div><label class="flbl">Descrição da atividade</label><input class="fi" id="f-atv-desc-modal" placeholder="Ex: Ligar, enviar proposta..." onchange="sincronizarAtividade()"></div></div>
   <div class="fg fg1"><div><label class="flbl">Observação</label><textarea class="fi" id="f-obs"></textarea></div></div>
   <div id="reabrir-wrap" style="display:none;margin-bottom:.75rem">
     <div style="background:var(--AM2);border-radius:8px;padding:.75rem 1rem;display:flex;align-items:center;gap:10px">
@@ -385,6 +399,7 @@ let cfg={
 let funilAtivo='d2c';
 let filtroC='todos';
 let filtroAtv='todos';
+let filtroRes='todos';
 let periodo='30';
 let periodoCustom={ativo:false,de:null,ate:null};
 let userAtivo='todos';
@@ -548,6 +563,7 @@ function renderFunilTabs(){
 function setFunil(id){funilAtivo=id;renderFunil();renderUbtns();}
 function limparBuscaFunil(){const el=document.getElementById('funil-busca');if(el){el.value='';el.focus();}renderFunil();}
 function setFiltroAtv(btn,f){document.querySelectorAll('[id^="fatv-"]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');filtroAtv=f;renderFunil();}
+function setFiltroRes(btn,f){document.querySelectorAll('[id^="fres-"]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');filtroRes=f;renderFunil();}
 
 function renderFunil(){
   renderFunilTabs();
@@ -565,6 +581,14 @@ function renderFunil(){
       if(c.etapa!==etapa.id)return false;
       if(userAtivo!=='todos'&&c.usuario!==userAtivo)return false;
       if(filtroAtv!=='todos'&&atvStatus(c)!==filtroAtv)return false;
+      if(filtroRes!=='todos'){
+        const hist=parseNegHist(c);
+        const ultimaNeg=hist.length?hist[hist.length-1]:null;
+        const resAtual=ultimaNeg?ultimaNeg.r:'';
+        if(filtroRes==='ganho'&&resAtual!=='ganho')return false;
+        if(filtroRes==='perda'&&resAtual!=='perda')return false;
+        if(filtroRes==='aberto'&&(resAtual==='ganho'||resAtual==='perda'))return false;
+      }
       if(buscaFunil&&!c.nome.toLowerCase().includes(buscaFunil))return false;
       return true;
     });
@@ -765,12 +789,13 @@ function openContato(id=null,fid=null,eid=null){
     setTimeout(()=>{document.getElementById('f-etapa').value=c.etapa;},20);
     document.getElementById('f-canal').value=c.canal||'instagram';
     document.getElementById('f-valor').value=c.valor||'';
-    document.getElementById('f-followup').value=c.followup||'';
+    document.getElementById('f-followup').value=c.atv_data||c.followup||'';
+    document.getElementById('f-atv-desc-modal').value=c.atv_desc||'';
     document.getElementById('f-produto').value=c.produto||'';
     document.getElementById('f-obs').value=c.obs||'';
     document.getElementById('f-user').value=c.usuario||'';
   }else{
-    ['f-nome','f-tel','f-valor','f-followup','f-produto','f-obs'].forEach(x=>document.getElementById(x).value='');
+    ['f-nome','f-tel','f-valor','f-followup','f-produto','f-obs','f-atv-desc-modal'].forEach(x=>document.getElementById(x).value='');
     document.getElementById('f-canal').value='instagram';document.getElementById('f-user').value='';
     if(eid)setTimeout(()=>{document.getElementById('f-etapa').value=eid;},30);
   }
@@ -787,6 +812,10 @@ function openContato(id=null,fid=null,eid=null){
 }
 function updEtapas(){const funil=getFunil(document.getElementById('f-funil').value);document.getElementById('f-etapa').innerHTML=funil?funil.etapas.map(e=>`<option value="${e.id}">${e.nome}</option>`).join(''):'';}
 
+function sincronizarAtividade(){
+  // Feedback visual — nada extra necessário, saveContato já lê os campos
+}
+
 async function saveContato(){
   const nome=document.getElementById('f-nome').value.trim();
   if(!nome){setFb('fb-c','Nome obrigatório','er');return;}
@@ -799,7 +828,9 @@ async function saveContato(){
     produto:document.getElementById('f-produto').value.trim(),obs:document.getElementById('f-obs').value.trim(),
     data:prev.data||new Date().toISOString(),compras:prev.compras||0,funil:fid,etapa:eid,
     usuario:document.getElementById('f-user').value,followup:document.getElementById('f-followup').value,
-    motivo_perda:prev.motivo_perda||'',atv_data:prev.atv_data||'',atv_desc:prev.atv_desc||'',
+    motivo_perda:prev.motivo_perda||'',
+    atv_data: document.getElementById('f-followup').value || prev.atv_data || '',
+    atv_desc: document.getElementById('f-atv-desc-modal').value.trim() || prev.atv_desc || '',
     resultado:prev.resultado||'',atv_hist:prev.atv_hist||0,neg_hist:prev.neg_hist||''};
   try{await apiSave(c);setFb('fb-c','Salvo!','ok');closeM('modal-c');await doSync();}
   catch(ex){setFb('fb-c','Erro ao salvar','er');}
