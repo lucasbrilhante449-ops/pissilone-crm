@@ -1092,25 +1092,7 @@ function renderInsights(){
     </div>
     <div class="divider"></div>
     <div class="slbl">Pissifã — clientes recorrentes</div>
-    ${(()=>{
-      const psf=contatos.filter(c=>c.funil==='pissifa');
-      if(!psf.length)return'<div class="empty">Nenhum cliente no Pissifã ainda</div>';
-      const histPsf=[];psf.forEach(c=>{const h=parseNegHist(c);h.forEach(x=>histPsf.push({...x,cid:c.id,valor:c.valor}));});
-      const ganhosPsf=histPsf.filter(h=>h.r==='ganho');
-      const receitaPsf=ganhosPsf.reduce((a,h)=>a+(h.v||0),0);
-      const tkPsf=ganhosPsf.length>0?Math.round(receitaPsf/ganhosPsf.length):0;
-      const vips=psf.filter(c=>{const g=parseNegHist(c).filter(h=>h.r==='ganho');const tot=g.reduce((a,h)=>a+(h.v||0),0);return tot>=300||g.length>=3;});
-      const mediaDias=psf.filter(c=>{const g=parseNegHist(c).filter(h=>h.r==='ganho').sort((a,b)=>b.d.localeCompare(a.d));return g.length>=2;}).map(c=>{const g=parseNegHist(c).filter(h=>h.r==='ganho').sort((a,b)=>b.d.localeCompare(a.d));const d1=new Date(g[0].d);const d2=new Date(g[1].d);return Math.abs(Math.floor((d1-d2)/(1000*60*60*24)));});
-      const freqMedia=mediaDias.length>0?Math.round(mediaDias.reduce((a,b)=>a+b,0)/mediaDias.length):null;
-      return\`<div class="mg" style="margin-bottom:.5rem">
-        <div class="mc"><div class="mc-n">\${psf.length}</div><div class="mc-l">Pissifãs</div></div>
-        <div class="mc"><div class="mc-n">\${ganhosPsf.length}</div><div class="mc-l">Recompras</div><div class="mc-s v">✓</div></div>
-        <div class="mc"><div class="mc-n">R\$\${Math.round(receitaPsf).toLocaleString('pt-BR')}</div><div class="mc-l">Receita recorrente</div></div>
-        <div class="mc"><div class="mc-n">R\$\${tkPsf.toLocaleString('pt-BR')}</div><div class="mc-l">Ticket médio</div></div>
-        <div class="mc"><div class="mc-n">\${vips.length}</div><div class="mc-l">⭐ VIPs</div><div class="mc-s v">≥R\$300 ou 3+</div></div>
-        <div class="mc"><div class="mc-n">\${freqMedia?freqMedia+'d':'—'}</div><div class="mc-l">Freq. recompra</div><div class="mc-s" style="color:var(--G3)">média entre compras</div></div>
-      </div>\`;
-    })()}
+    <div id="ins-pissifa-bloco"></div>
     <div class="divider"></div>
     <div class="slbl">Por canal</div>
     ${Object.entries(cc).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<div class="bb"><div class="bb-row"><span>${CANAL_LABEL[k]||k}</span><span>${n}</span></div><div class="bar"><div class="bar-f" style="width:${Math.round((n/maxC)*100)}%;background:var(--A)"></div></div></div>`).join('')||'<div class="empty">Sem dados</div>'}
@@ -1118,6 +1100,42 @@ function renderInsights(){
     <div class="slbl">Por funil</div>
     ${Object.entries(fc2).map(([nome,n])=>`<div class="bb"><div class="bb-row"><span>${nome}</span><span>${n}</span></div><div class="bar"><div class="bar-f" style="width:${Math.round((n/maxF2)*100)}%;background:var(--L)"></div></div></div>`).join('')||'<div class="empty">Sem dados</div>'}
   `;
+
+  // Renderizar bloco Pissifã separadamente (evita template literal aninhado)
+  renderInsightsPissifa();
+}
+
+function renderInsightsPissifa(){
+  const el = document.getElementById('ins-pissifa-bloco');
+  if(!el) return;
+  const psf = contatos.filter(c => c.funil === 'pissifa');
+  if(!psf.length){ el.innerHTML = '<div class="empty">Nenhum cliente no Pissifã ainda</div>'; return; }
+  const histPsf = [];
+  psf.forEach(c => { const h = parseNegHist(c); h.forEach(x => histPsf.push({...x, cid:c.id})); });
+  const ganhosPsf = histPsf.filter(h => h.r === 'ganho');
+  const receitaPsf = ganhosPsf.reduce((a,h) => a + (h.v||0), 0);
+  const tkPsf = ganhosPsf.length > 0 ? Math.round(receitaPsf / ganhosPsf.length) : 0;
+  const vips = psf.filter(c => {
+    const g = parseNegHist(c).filter(h => h.r === 'ganho');
+    const tot = g.reduce((a,h) => a + (h.v||0), 0);
+    return tot >= 300 || g.length >= 3;
+  });
+  const mediaDias = psf
+    .filter(c => parseNegHist(c).filter(h=>h.r==='ganho').length >= 2)
+    .map(c => {
+      const g = parseNegHist(c).filter(h=>h.r==='ganho').sort((a,b)=>b.d.localeCompare(a.d));
+      return Math.abs(Math.floor((new Date(g[0].d) - new Date(g[1].d)) / (1000*60*60*24)));
+    });
+  const freqMedia = mediaDias.length > 0 ? Math.round(mediaDias.reduce((a,b)=>a+b,0)/mediaDias.length) : null;
+
+  el.innerHTML = '<div class="mg">'
+    + '<div class="mc"><div class="mc-n">'+psf.length+'</div><div class="mc-l">Pissifãs</div></div>'
+    + '<div class="mc"><div class="mc-n">'+ganhosPsf.length+'</div><div class="mc-l">Recompras</div><div class="mc-s v">✓</div></div>'
+    + '<div class="mc"><div class="mc-n">R$'+Math.round(receitaPsf).toLocaleString('pt-BR')+'</div><div class="mc-l">Receita recorrente</div></div>'
+    + '<div class="mc"><div class="mc-n">R$'+tkPsf.toLocaleString('pt-BR')+'</div><div class="mc-l">Ticket médio</div></div>'
+    + '<div class="mc"><div class="mc-n">'+vips.length+'</div><div class="mc-l">⭐ VIPs</div><div class="mc-s v">≥R$300 ou 3+</div></div>'
+    + '<div class="mc"><div class="mc-n">'+(freqMedia?freqMedia+'d':'—')+'</div><div class="mc-l">Freq. recompra</div><div class="mc-s" style="color:var(--G3)">média entre compras</div></div>'
+    + '</div>';
 }
 
 // ── CONFIG ─────────────────────────────────────────────────
