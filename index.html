@@ -1171,11 +1171,25 @@ function setFb(id,msg,type){const el=document.getElementById(id);if(el){el.textC
 function renderAll(){renderFunil();renderContatos();renderUbtns();}
 
 (async function(){
+  console.log('[CRM] Iniciando...');
   ss('ld','Carregando configuração...');
-  try{ await loadCfg(); }catch(e){ console.warn('loadCfg falhou, usando padrão'); }
+  try{
+    console.log('[CRM] loadCfg start');
+    await loadCfg();
+    console.log('[CRM] loadCfg OK');
+  }catch(e){
+    console.warn('[CRM] loadCfg falhou:', e);
+  }
   renderUbtns();
   ss('ld','Carregando contatos...');
-  try{ await doSync(); }catch(e){ ss('er','Erro ao conectar — clique ↻ para tentar novamente'); }
+  try{
+    console.log('[CRM] doSync start');
+    await doSync();
+    console.log('[CRM] doSync OK');
+  }catch(e){
+    console.error('[CRM] doSync falhou:', e);
+    ss('er','Erro ao conectar — clique ↻ para tentar novamente');
+  }
 
   // Auto-save da config a cada 5 minutos (silencioso, não bloqueia)
   setInterval(function(){
