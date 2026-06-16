@@ -584,15 +584,8 @@ async function doSync(){
         funil:String(r[10]||''),   // pode estar vazio/deslocado
         etapa:String(r[11]||''),
         usuario:String(r[12]||''),
-        followup:String(r[13]||''),motivo_perda:(function(){ const v=String(r[14]||''); return /^[0-9]{4}-[0-9]{2}-[0-9]{2}/.test(v)?'':v; })(),
-        atv_data:(function(){
-          const v=String(r[15]||'');
-          // Rejeitar timestamps ISO completos que parecem datas de criação (não de atividade)
-          // Atividade legítima vem como YYYY-MM-DD, não como ISO timestamp
-          if(/^\d{4}-\d{2}-\d{2}T/.test(v)) return '';
-          if(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(v)) return '';
-          return v;
-        })(),
+        followup:String(r[13]||''),motivo_perda:(function(){ const v=String(r[14]||''); return /^[0-9]{4}-[0-9]{2}-[0-9]{2}[T ]/.test(v)?'':v; })(),
+        atv_data:normDate(String(r[15]||'')),
         atv_desc:String(r[16]||''),
         resultado:String(r[17]||''),atv_hist:parseInt(r[18])||0,
         neg_hist:String(r[19]||'')
