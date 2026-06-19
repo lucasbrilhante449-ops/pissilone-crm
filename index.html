@@ -971,6 +971,7 @@ function renderInsights(){
   if(iFunil!=='todos')lista=lista.filter(c=>c.funil===iFunil);
   if(iCanal!=='todos')lista=lista.filter(c=>c.canal===iCanal);
 
+  // Histórico de negociações
   let baseContatos=contatos;
   if(filtroUser!=='todos')baseContatos=baseContatos.filter(c=>c.usuario===filtroUser);
   if(iCanal!=='todos')baseContatos=baseContatos.filter(c=>c.canal===iCanal);
@@ -987,59 +988,202 @@ function renderInsights(){
   const txPerda=baseConv>0?Math.round((negPerdas.length/baseConv)*100):0;
   const receita=negGanhos.reduce((a,h)=>a+(h.v||0),0);
   const tkMedio=negGanhos.length>0?Math.round(receita/negGanhos.length):0;
-  const emAberto=lista.filter(c=>!parseNegHist(c).length&&!isGanho(c.funil,c.etapa)&&!isPerdido(c.funil,c.etapa)).length;
+  const emAberto=lista.filter(c=>!parseNegHist(c).length).length;
   const hj=new Date();hj.setHours(0,0,0,0);
   const atvH=lista.filter(c=>{const d=normDate(c.atv_data);if(!d)return false;return new Date(d+'T00:00:00').getTime()===hj.getTime();}).length;
   const atvA=lista.filter(c=>{const d=normDate(c.atv_data);if(!d)return false;return new Date(d+'T00:00:00')<hj;}).length;
+  const semAtv=lista.filter(c=>!normDate(c.atv_data)).length;
+
+  // Por canal
+  const cc={};lista.forEach(c=>{const k=c.canal||'outro';cc[k]=(cc[k]||0)+1;});
+  const maxC=Math.max(1,...Object.values(cc));
+
+  // Por usuário (negociações)
+  const porUser={};
+  cfg.usuarios.forEach(u=>{porUser[u.id]={nome:u.nome,ganhos:0,perdas:0,receita:0};});
+  todasNegs.forEach(h=>{
+    const c=contatos.find(x=>x.id===h.cid);
+    const uid=c?c.usuario:'';
+    if(!porUser[uid])porUser[uid]={nome:uid,ganhos:0,perdas:0,receita:0};
+    if(h.r==='ganho'){porUser[uid].ganhos++;porUser[uid].receita+=(h.v||0);}
+    else if(h.r==='perda')porUser[uid].perdas++;
+  });
+
+  // Motivos de perda
   const mc={};negPerdas.forEach(h=>{if(h.m)mc[h.m]=(mc[h.m]||0)+1;});
-  const topM=Object.entries(mc).sort((a,b)=>b[1]-a[1]);const maxM=Math.max(1,...Object.values(mc));
-  const cc={};lista.forEach(c=>{const k=c.canal||'outro';cc[k]=(cc[k]||0)+1;});const maxC=Math.max(1,...Object.values(cc));
-  const fc2={};lista.forEach(c=>{const f=getFunil(c.funil);if(f)fc2[f.nome]=(fc2[f.nome]||0)+1;});const maxF2=Math.max(1,...Object.values(fc2));
+  const topM=Object.entries(mc).sort((a,b)=>b[1]-a[1]);
+  const maxM=Math.max(1,...Object.values(mc));
+
+  // Taxa conversão por canal
+  const canalNegs={};
+  todasNegs.forEach(h=>{
+    const c=contatos.find(x=>x.id===h.cid);
+    const k=c?c.canal:'outro';
+    if(!canalNegs[k])canalNegs[k]={ganhos:0,total:0};
+    canalNegs[k].total++;
+    if(h.r==='ganho')canalNegs[k].ganhos++;
+  });
+
+  function barChart(items, colorFn, labelFn, valFn, maxVal){
+    if(!items.length)return'<div class="empty">Sem dados</div>';
+    return items.map(item=>{
+      const pct=Math.round((valFn(item)/maxVal)*100);
+      return`<div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+          <span style="color:var(--K);font-weight:500">${labelFn(item)}</span>
+          <span style="color:var(--G3)">${valFn(item)}</span>
+        </div>
+        <div style="background:var(--G2);border-radius:4px;height:8px;overflow:hidden">
+          <div style="width:${pct}%;height:100%;border-radius:4px;background:${colorFn(item)};transition:width .4s"></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function metricCard(valor, label, sub, subCor){
+    return`<div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem;text-align:center">
+      <div style="font-size:28px;font-weight:700;color:var(--K);line-height:1.1;font-family:'Barlow Condensed',sans-serif">${valor}</div>
+      <div style="font-size:12px;color:var(--G3);margin-top:4px">${label}</div>
+      ${sub?`<div style="font-size:11px;font-weight:600;margin-top:4px;color:${subCor||'var(--G3)'}">` + sub + `</div>`:''}
+    </div>`;
+  }
+
+  const usuariosRows=Object.entries(porUser).filter(([,v])=>v.ganhos+v.perdas>0)
+    .sort((a,b)=>b[1].receita-a[1].receita);
+  const maxUserReceita=Math.max(1,...usuariosRows.map(([,v])=>v.receita));
 
   document.getElementById('ins-content').innerHTML=`
-    <div style="background:var(--K);border-radius:8px;padding:1rem 1.25rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
-      <div style="display:flex;align-items:baseline;gap:.5rem">
-        <span style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:2.5rem;color:var(--L);line-height:1">${lista.length}</span>
-        <div><div style="font-size:13px;font-weight:600;color:var(--W)">SAFRA</div><div style="font-size:11px;color:rgba(255,255,255,.4)">total de cards no período</div></div>
+    <!-- SAFRA -->
+    <div style="background:var(--K);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+      <div style="display:flex;align-items:baseline;gap:.625rem">
+        <span style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:3rem;color:var(--L);line-height:1">${lista.length}</span>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--W);letter-spacing:.05em">SAFRA</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.4)">cards criados no período</div>
+        </div>
       </div>
-      <div style="font-size:11px;color:rgba(255,255,255,.35);max-width:300px;line-height:1.5">Todos os cards criados — não influencia as taxas.</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <div style="text-align:center">
+          <div style="font-size:22px;font-weight:700;color:#C8E6C9;font-family:'Barlow Condensed',sans-serif">${negGanhos.length}</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.4)">Ganhos</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:22px;font-weight:700;color:#FFCDD2;font-family:'Barlow Condensed',sans-serif">${negPerdas.length}</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.4)">Perdidos</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:22px;font-weight:700;color:var(--Y);font-family:'Barlow Condensed',sans-serif">${baseConv}</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.4)">Negociações</div>
+        </div>
+      </div>
     </div>
-    <div class="mg">
-      <div class="mc"><div class="mc-n">${baseConv}</div><div class="mc-l">Negociações</div><div class="mc-s a">base das taxas</div></div>
-      <div class="mc"><div class="mc-n">${emAberto}</div><div class="mc-l">Em aberto</div></div>
-      <div class="mc"><div class="mc-n">${negGanhos.length}</div><div class="mc-l">Ganhos</div><div class="mc-s v">✓</div></div>
-      <div class="mc"><div class="mc-n">${negPerdas.length}</div><div class="mc-l">Perdidos</div><div class="mc-s r">✗</div></div>
-      <div class="mc"><div class="mc-n">${txConv}%</div><div class="mc-l">Tx. conversão</div><div class="mc-s ${txConv>=15?'v':txConv>=8?'a':'r'}">${txConv>=15?'Boa':txConv>=8?'Regular':'Baixa'}</div></div>
-      <div class="mc"><div class="mc-n">${txPerda}%</div><div class="mc-l">Tx. perda</div><div class="mc-s ${txPerda<=30?'v':'r'}">${txPerda<=30?'Ok':'Alta'}</div></div>
-      <div class="mc"><div class="mc-n">R$${Math.round(receita).toLocaleString('pt-BR')}</div><div class="mc-l">Receita</div></div>
-      <div class="mc"><div class="mc-n">R$${tkMedio.toLocaleString('pt-BR')}</div><div class="mc-l">Ticket médio</div></div>
-      <div class="mc"><div class="mc-n">${atvH}</div><div class="mc-l">Ativ. hoje</div><div class="mc-s v">Hoje</div></div>
-      <div class="mc"><div class="mc-n">${atvA}</div><div class="mc-l">Atrasadas</div><div class="mc-s ${atvA>0?'r':'v'}">${atvA>0?'Atenção':'Ok'}</div></div>
+
+    <!-- MÉTRICAS PRINCIPAIS -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:1.25rem">
+      ${metricCard('R$'+Math.round(receita).toLocaleString('pt-BR'),'Receita total','base: '+negGanhos.length+' ganhos','var(--VD)')}
+      ${metricCard('R$'+tkMedio.toLocaleString('pt-BR'),'Ticket médio','por negociação','')}
+      ${metricCard(txConv+'%','Tx. conversão',txConv>=15?'Boa ✓':txConv>=8?'Regular':'Baixa',txConv>=15?'var(--VD)':txConv>=8?'var(--AM)':'var(--VM)')}
+      ${metricCard(txPerda+'%','Tx. perda',txPerda<=30?'Ok':'Alta',txPerda<=30?'var(--VD)':'var(--VM)')}
+      ${metricCard(emAberto.toString(),'Em aberto','sem negociação','var(--G3)')}
     </div>
-    <div style="background:var(--G);border-radius:6px;padding:.625rem 1rem;font-size:12px;color:var(--G3);margin-bottom:1rem">
-      📊 Taxas calculadas sobre <strong style="color:var(--K)">${baseConv} negociação${baseConv!==1?'s':''}</strong> no histórico — clientes recorrentes contam por negociação
+
+    <!-- ATIVIDADES -->
+    <div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem;margin-bottom:1.25rem">
+      <div style="font-size:12px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem">Atividades</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px">
+        <div style="text-align:center;padding:.875rem;background:var(--VD2);border-radius:8px">
+          <div style="font-size:24px;font-weight:700;color:var(--VD);font-family:'Barlow Condensed',sans-serif">${atvH}</div>
+          <div style="font-size:11px;color:var(--VD);margin-top:2px">Para hoje 🟢</div>
+        </div>
+        <div style="text-align:center;padding:.875rem;background:var(--AM2);border-radius:8px">
+          <div style="font-size:24px;font-weight:700;color:var(--AM);font-family:'Barlow Condensed',sans-serif">${atvA}</div>
+          <div style="font-size:11px;color:var(--AM);margin-top:2px">Atrasadas 🟡</div>
+        </div>
+        <div style="text-align:center;padding:.875rem;background:var(--G);border-radius:8px">
+          <div style="font-size:24px;font-weight:700;color:var(--G3);font-family:'Barlow Condensed',sans-serif">${lista.filter(c=>atvStatus(c)==='agendada').length}</div>
+          <div style="font-size:11px;color:var(--G3);margin-top:2px">Agendadas ⚫</div>
+        </div>
+        <div style="text-align:center;padding:.875rem;background:var(--VM2);border-radius:8px">
+          <div style="font-size:24px;font-weight:700;color:var(--VM);font-family:'Barlow Condensed',sans-serif">${semAtv}</div>
+          <div style="font-size:11px;color:var(--VM);margin-top:2px">Sem atividade 🔴</div>
+        </div>
+        <div style="text-align:center;padding:.875rem;background:var(--A3);border-radius:8px">
+          <div style="font-size:24px;font-weight:700;color:var(--A2);font-family:'Barlow Condensed',sans-serif">${lista.reduce((a,c)=>a+(c.atv_hist||0),0)}</div>
+          <div style="font-size:11px;color:var(--A2);margin-top:2px">Checkpoints ✓</div>
+        </div>
+      </div>
     </div>
-    <div class="divider"></div>
-    <div class="slbl">Pissifã — clientes recorrentes</div>
-    <div id="ins-pissifa-bloco"></div>
-    <div class="divider"></div>
-    <div class="slbl">Motivos de perda</div>
-    ${topM.length?topM.slice(0,8).map(([m,n])=>`<div class="bb"><div class="bb-row"><span>${m}</span><span>${n}</span></div><div class="bar"><div class="bar-f" style="width:${Math.round((n/maxM)*100)}%;background:#E24B4A"></div></div></div>`).join('')+(topM[0]?`<div style="background:var(--VM2);border-radius:6px;padding:.625rem 1rem;font-size:12px;color:var(--VM);margin-top:.5rem">⚠ Principal: <strong>${topM[0][0]}</strong> (${topM[0][1]}x)</div>`:''):'<div class="empty">Nenhuma perda no período</div>'}
-    <div class="divider"></div>
-    <div class="slbl">Volume de atividade</div>
-    <div class="mg">
-      <div class="mc"><div class="mc-n">${lista.reduce((a,c)=>a+(c.atv_hist||0),0)}</div><div class="mc-l">Checkpoints</div><div class="mc-s v">executados</div></div>
-      <div class="mc"><div class="mc-n">${lista.filter(c=>atvStatus(c)==='hoje').length}</div><div class="mc-l">Para hoje</div><div class="mc-s v">🟢</div></div>
-      <div class="mc"><div class="mc-n">${lista.filter(c=>atvStatus(c)==='agendada').length}</div><div class="mc-l">Agendadas</div></div>
-      <div class="mc"><div class="mc-n">${lista.filter(c=>atvStatus(c)==='atrasada').length}</div><div class="mc-l">Atrasadas</div><div class="mc-s a">🟡</div></div>
-      <div class="mc"><div class="mc-n">${lista.filter(c=>atvStatus(c)==='sem').length}</div><div class="mc-l">Sem atividade</div><div class="mc-s r">🔴</div></div>
+
+    <!-- DOIS BLOCOS LADO A LADO -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.25rem">
+      <!-- POR USUÁRIO -->
+      <div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem">
+        <div style="font-size:12px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem">Resultado por responsável</div>
+        ${usuariosRows.length?usuariosRows.map(([uid,v])=>{
+          const pct=Math.round((v.receita/maxUserReceita)*100);
+          const tx=v.ganhos+v.perdas>0?Math.round((v.ganhos/(v.ganhos+v.perdas))*100):0;
+          return`<div style="margin-bottom:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <span style="font-size:12px;font-weight:600;color:var(--K)">${v.nome||uid}</span>
+              <div style="display:flex;gap:8px;font-size:11px">
+                <span style="color:var(--VD)">✓ ${v.ganhos}</span>
+                <span style="color:var(--VM)">✗ ${v.perdas}</span>
+                <span style="color:var(--G3)">R$${Math.round(v.receita).toLocaleString('pt-BR')}</span>
+              </div>
+            </div>
+            <div style="background:var(--G2);border-radius:4px;height:8px;overflow:hidden">
+              <div style="width:${pct}%;height:100%;border-radius:4px;background:var(--L);transition:width .4s"></div>
+            </div>
+          </div>`;
+        }).join(''):'<div class="empty">Sem dados</div>'}
+      </div>
+
+      <!-- POR CANAL -->
+      <div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem">
+        <div style="font-size:12px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem">Tx. conversão por canal</div>
+        ${Object.entries(canalNegs).length?Object.entries(canalNegs).sort((a,b)=>b[1].ganhos-a[1].ganhos).map(([k,v])=>{
+          const tx=v.total>0?Math.round((v.ganhos/v.total)*100):0;
+          return`<div style="margin-bottom:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <span style="font-size:12px;font-weight:600;color:var(--K)">${CANAL_LABEL[k]||k}</span>
+              <div style="display:flex;gap:8px;font-size:11px">
+                <span style="color:var(--G3)">${v.ganhos}/${v.total}</span>
+                <span style="color:${tx>=50?'var(--VD)':tx>=30?'var(--AM)':'var(--VM)'};font-weight:600">${tx}%</span>
+              </div>
+            </div>
+            <div style="background:var(--G2);border-radius:4px;height:8px;overflow:hidden">
+              <div style="width:${tx}%;height:100%;border-radius:4px;background:${tx>=50?'var(--VD)':tx>=30?'var(--L)':'var(--VM)'};transition:width .4s"></div>
+            </div>
+          </div>`;
+        }).join(''):'<div class="empty">Sem dados</div>'}
+      </div>
     </div>
-    <div class="divider"></div>
-    <div class="slbl">Por canal</div>
-    ${Object.entries(cc).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<div class="bb"><div class="bb-row"><span>${CANAL_LABEL[k]||k}</span><span>${n}</span></div><div class="bar"><div class="bar-f" style="width:${Math.round((n/maxC)*100)}%;background:var(--A)"></div></div></div>`).join('')||'<div class="empty">Sem dados</div>'}
-    <div class="divider"></div>
-    <div class="slbl">Por funil</div>
-    ${Object.entries(fc2).map(([nome,n])=>`<div class="bb"><div class="bb-row"><span>${nome}</span><span>${n}</span></div><div class="bar"><div class="bar-f" style="width:${Math.round((n/maxF2)*100)}%;background:var(--L)"></div></div></div>`).join('')||'<div class="empty">Sem dados</div>'}
+
+    <!-- MOTIVOS DE PERDA -->
+    <div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem;margin-bottom:1.25rem">
+      <div style="font-size:12px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem">Motivos de perda</div>
+      ${topM.length?`
+        ${topM[0]?`<div style="background:var(--VM2);border-radius:8px;padding:.875rem 1rem;margin-bottom:.875rem;display:flex;align-items:center;justify-content:space-between">
+          <div><div style="font-size:11px;color:var(--VM);font-weight:600;text-transform:uppercase;letter-spacing:.05em">Principal motivo</div><div style="font-size:15px;font-weight:700;color:var(--VM);margin-top:2px">${topM[0][0]}</div></div>
+          <div style="font-size:28px;font-weight:900;color:var(--VM);font-family:'Barlow Condensed',sans-serif">${topM[0][1]}×</div>
+        </div>`:''}
+        ${topM.slice(1).map(([m,n])=>`<div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+            <span style="color:var(--K);font-weight:500">${m}</span>
+            <span style="color:var(--G3)">${n}×</span>
+          </div>
+          <div style="background:var(--G2);border-radius:4px;height:7px;overflow:hidden">
+            <div style="width:${Math.round((n/maxM)*100)}%;height:100%;border-radius:4px;background:#E24B4A"></div>
+          </div>
+        </div>`).join('')}
+      `:'<div class="empty">Nenhuma perda no período</div>'}
+    </div>
+
+    <!-- PISSIFÃ -->
+    <div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem;margin-bottom:1.25rem">
+      <div style="font-size:12px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem">Pissifã — clientes recorrentes</div>
+      <div id="ins-pissifa-bloco"></div>
+    </div>
   `;
   renderInsightsPissifa();
 }
@@ -1055,16 +1199,15 @@ function renderInsightsPissifa(){
   const vips=psf.filter(c=>{const g=parseNegHist(c).filter(h=>h.r==='ganho');return g.reduce((a,h)=>a+(h.v||0),0)>=300||g.length>=3;});
   const mediaDias=psf.filter(c=>parseNegHist(c).filter(h=>h.r==='ganho').length>=2).map(c=>{const g=parseNegHist(c).filter(h=>h.r==='ganho').sort((a,b)=>b.d.localeCompare(a.d));return Math.abs(Math.floor((new Date(g[0].d)-new Date(g[1].d))/(1000*60*60*24)));});
   const freqMedia=mediaDias.length>0?Math.round(mediaDias.reduce((a,b)=>a+b,0)/mediaDias.length):null;
-  el.innerHTML='<div class="mg">'
-    +'<div class="mc"><div class="mc-n">'+psf.length+'</div><div class="mc-l">Pissifãs</div></div>'
-    +'<div class="mc"><div class="mc-n">'+ganhosPsf.length+'</div><div class="mc-l">Recompras</div><div class="mc-s v">✓</div></div>'
-    +'<div class="mc"><div class="mc-n">R$'+Math.round(receitaPsf).toLocaleString('pt-BR')+'</div><div class="mc-l">Receita recorrente</div></div>'
-    +'<div class="mc"><div class="mc-n">R$'+tkPsf.toLocaleString('pt-BR')+'</div><div class="mc-l">Ticket médio</div></div>'
-    +'<div class="mc"><div class="mc-n">'+vips.length+'</div><div class="mc-l">⭐ VIPs</div><div class="mc-s v">≥R$300 ou 3+</div></div>'
-    +'<div class="mc"><div class="mc-n">'+(freqMedia?freqMedia+'d':'—')+'</div><div class="mc-l">Freq. recompra</div></div>'
+  el.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px">'
+    +'<div style="text-align:center;padding:1rem;background:var(--A3);border-radius:8px"><div style="font-size:26px;font-weight:700;color:var(--A2);font-family:'Barlow Condensed',sans-serif">'+psf.length+'</div><div style="font-size:11px;color:var(--A2);margin-top:3px">Pissifãs</div></div>'
+    +'<div style="text-align:center;padding:1rem;background:var(--VD2);border-radius:8px"><div style="font-size:26px;font-weight:700;color:var(--VD);font-family:'Barlow Condensed',sans-serif">'+ganhosPsf.length+'</div><div style="font-size:11px;color:var(--VD);margin-top:3px">Recompras ✓</div></div>'
+    +'<div style="text-align:center;padding:1rem;background:var(--L3);border-radius:8px"><div style="font-size:26px;font-weight:700;color:var(--L2);font-family:'Barlow Condensed',sans-serif">R$'+Math.round(receitaPsf).toLocaleString('pt-BR')+'</div><div style="font-size:11px;color:var(--L2);margin-top:3px">Receita recorrente</div></div>'
+    +'<div style="text-align:center;padding:1rem;background:var(--G);border-radius:8px"><div style="font-size:26px;font-weight:700;color:var(--K);font-family:'Barlow Condensed',sans-serif">R$'+tkPsf.toLocaleString('pt-BR')+'</div><div style="font-size:11px;color:var(--G3);margin-top:3px">Ticket médio</div></div>'
+    +'<div style="text-align:center;padding:1rem;background:var(--Y3)||'#FEFCE0';border-radius:8px"><div style="font-size:26px;font-weight:700;color:var(--K);font-family:'Barlow Condensed',sans-serif">'+vips.length+'</div><div style="font-size:11px;color:var(--G3);margin-top:3px">⭐ VIPs</div></div>'
+    +'<div style="text-align:center;padding:1rem;background:var(--G);border-radius:8px"><div style="font-size:26px;font-weight:700;color:var(--K);font-family:'Barlow Condensed',sans-serif">'+(freqMedia?freqMedia+'d':'—')+'</div><div style="font-size:11px;color:var(--G3);margin-top:3px">Freq. recompra</div></div>'
     +'</div>';
 }
-
 // ── CONFIG ───────────────────────────────────────────────
 function renderConfig(){
   document.getElementById('cfg-funis').innerHTML=cfg.funis.map(f=>`
