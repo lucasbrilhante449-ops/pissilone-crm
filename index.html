@@ -19,7 +19,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--G);color:var(--K);font-family:'Barlow',sans-serif;min-height:100vh;font-size:14px}
 .hdr{background:var(--L);padding:.75rem 1.25rem;display:flex;align-items:center;gap:.75rem;position:sticky;top:0;z-index:200;flex-wrap:wrap;box-shadow:0 2px 12px rgba(209,117,67,.25)}
-.hdr-logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:1.3rem;color:var(--W);letter-spacing:-.01em;white-space:nowrap}
+.hdr-logo{font-family:&quot;Barlow Condensed&quot;,sans-serif;font-weight:900;font-style:italic;font-size:1.3rem;color:var(--W);letter-spacing:-.01em;white-space:nowrap}
 .hdr-logo span{color:var(--Y)}
 .hdr-right{display:flex;align-items:center;gap:6px;margin-left:auto;flex-wrap:wrap}
 .sdot{width:7px;height:7px;border-radius:50%;background:#C8E6C9;flex-shrink:0}
@@ -497,7 +497,7 @@ function renderInsightsMotivos(topM, maxM){
     html += '<div style="background:var(--VM2);border-radius:8px;padding:.875rem 1rem;margin-bottom:.875rem;display:flex;align-items:center;justify-content:space-between">'
       + '<div><div style="font-size:11px;color:var(--VM);font-weight:600;text-transform:uppercase;letter-spacing:.05em">Principal motivo</div>'
       + '<div style="font-size:15px;font-weight:700;color:var(--VM);margin-top:2px">'+topM[0][0]+'</div></div>'
-      + '<div style="font-size:28px;font-weight:900;color:var(--VM);font-family:'Barlow Condensed',sans-serif">'+topM[0][1]+'×</div>'
+      + '<div style="font-size:28px;font-weight:900;color:var(--VM);font-family:&quot;Barlow Condensed&quot;,sans-serif">'+topM[0][1]+'×</div>'
       + '</div>';
   }
   topM.slice(1).forEach(function(item){
@@ -1069,7 +1069,7 @@ function renderInsights(){
 
   function metricCard(valor, label, sub, subCor){
     return`<div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem;text-align:center">
-      <div style="font-size:28px;font-weight:700;color:var(--K);line-height:1.1;font-family:'Barlow Condensed',sans-serif">${valor}</div>
+      <div style="font-size:28px;font-weight:700;color:var(--K);line-height:1.1;font-family:&quot;Barlow Condensed&quot;,sans-serif">${valor}</div>
       <div style="font-size:12px;color:var(--G3);margin-top:4px">${label}</div>
       ${sub?`<div style="font-size:11px;font-weight:600;margin-top:4px;color:${subCor||'var(--G3)'}">` + sub + `</div>`:''}
     </div>`;
@@ -1083,7 +1083,7 @@ function renderInsights(){
     <!-- SAFRA -->
     <div style="background:var(--K);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
       <div style="display:flex;align-items:baseline;gap:.625rem">
-        <span style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:3rem;color:var(--L);line-height:1">${lista.length}</span>
+        <span style="font-family:&quot;Barlow Condensed&quot;,sans-serif;font-weight:900;font-style:italic;font-size:3rem;color:var(--L);line-height:1">${lista.length}</span>
         <div>
           <div style="font-size:14px;font-weight:700;color:var(--W);letter-spacing:.05em">SAFRA</div>
           <div style="font-size:11px;color:rgba(255,255,255,.4)">cards criados no período</div>
@@ -1091,15 +1091,15 @@ function renderInsights(){
       </div>
       <div style="display:flex;gap:12px;flex-wrap:wrap">
         <div style="text-align:center">
-          <div style="font-size:22px;font-weight:700;color:#C8E6C9;font-family:'Barlow Condensed',sans-serif">${negGanhos.length}</div>
+          <div style="font-size:22px;font-weight:700;color:#C8E6C9;font-family:&quot;Barlow Condensed&quot;,sans-serif">${negGanhos.length}</div>
           <div style="font-size:10px;color:rgba(255,255,255,.4)">Ganhos</div>
         </div>
         <div style="text-align:center">
-          <div style="font-size:22px;font-weight:700;color:#FFCDD2;font-family:'Barlow Condensed',sans-serif">${negPerdas.length}</div>
+          <div style="font-size:22px;font-weight:700;color:#FFCDD2;font-family:&quot;Barlow Condensed&quot;,sans-serif">${negPerdas.length}</div>
           <div style="font-size:10px;color:rgba(255,255,255,.4)">Perdidos</div>
         </div>
         <div style="text-align:center">
-          <div style="font-size:22px;font-weight:700;color:var(--Y);font-family:'Barlow Condensed',sans-serif">${baseConv}</div>
+          <div style="font-size:22px;font-weight:700;color:var(--Y);font-family:&quot;Barlow Condensed&quot;,sans-serif">${baseConv}</div>
           <div style="font-size:10px;color:rgba(255,255,255,.4)">Negociações</div>
         </div>
       </div>
@@ -1119,23 +1119,23 @@ function renderInsights(){
       <div style="font-size:12px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem">Atividades</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px">
         <div style="text-align:center;padding:.875rem;background:var(--VD2);border-radius:8px">
-          <div style="font-size:24px;font-weight:700;color:var(--VD);font-family:'Barlow Condensed',sans-serif">${atvH}</div>
+          <div style="font-size:24px;font-weight:700;color:var(--VD);font-family:&quot;Barlow Condensed&quot;,sans-serif">${atvH}</div>
           <div style="font-size:11px;color:var(--VD);margin-top:2px">Para hoje 🟢</div>
         </div>
         <div style="text-align:center;padding:.875rem;background:var(--AM2);border-radius:8px">
-          <div style="font-size:24px;font-weight:700;color:var(--AM);font-family:'Barlow Condensed',sans-serif">${atvA}</div>
+          <div style="font-size:24px;font-weight:700;color:var(--AM);font-family:&quot;Barlow Condensed&quot;,sans-serif">${atvA}</div>
           <div style="font-size:11px;color:var(--AM);margin-top:2px">Atrasadas 🟡</div>
         </div>
         <div style="text-align:center;padding:.875rem;background:var(--G);border-radius:8px">
-          <div style="font-size:24px;font-weight:700;color:var(--G3);font-family:'Barlow Condensed',sans-serif">${lista.filter(c=>atvStatus(c)==='agendada').length}</div>
+          <div style="font-size:24px;font-weight:700;color:var(--G3);font-family:&quot;Barlow Condensed&quot;,sans-serif">${lista.filter(c=>atvStatus(c)==='agendada').length}</div>
           <div style="font-size:11px;color:var(--G3);margin-top:2px">Agendadas ⚫</div>
         </div>
         <div style="text-align:center;padding:.875rem;background:var(--VM2);border-radius:8px">
-          <div style="font-size:24px;font-weight:700;color:var(--VM);font-family:'Barlow Condensed',sans-serif">${semAtv}</div>
+          <div style="font-size:24px;font-weight:700;color:var(--VM);font-family:&quot;Barlow Condensed&quot;,sans-serif">${semAtv}</div>
           <div style="font-size:11px;color:var(--VM);margin-top:2px">Sem atividade 🔴</div>
         </div>
         <div style="text-align:center;padding:.875rem;background:var(--A3);border-radius:8px">
-          <div style="font-size:24px;font-weight:700;color:var(--A2);font-family:'Barlow Condensed',sans-serif">${lista.reduce((a,c)=>a+(c.atv_hist||0),0)}</div>
+          <div style="font-size:24px;font-weight:700;color:var(--A2);font-family:&quot;Barlow Condensed&quot;,sans-serif">${lista.reduce((a,c)=>a+(c.atv_hist||0),0)}</div>
           <div style="font-size:11px;color:var(--A2);margin-top:2px">Checkpoints ✓</div>
         </div>
       </div>
@@ -1214,12 +1214,12 @@ function renderInsightsPissifa(){
   const mediaDias=psf.filter(c=>parseNegHist(c).filter(h=>h.r==='ganho').length>=2).map(c=>{const g=parseNegHist(c).filter(h=>h.r==='ganho').sort((a,b)=>b.d.localeCompare(a.d));return Math.abs(Math.floor((new Date(g[0].d)-new Date(g[1].d))/(1000*60*60*24)));});
   const freqMedia=mediaDias.length>0?Math.round(mediaDias.reduce((a,b)=>a+b,0)/mediaDias.length):null;
   el.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px">'
-    +'<div style="text-align:center;padding:1rem;background:var(--A3);border-radius:8px"><div style="font-size:26px;font-weight:700;color:var(--A2);font-family:'Barlow Condensed',sans-serif">'+psf.length+'</div><div style="font-size:11px;color:var(--A2);margin-top:3px">Pissifãs</div></div>'
-    +'<div style="text-align:center;padding:1rem;background:var(--VD2);border-radius:8px"><div style="font-size:26px;font-weight:700;color:var(--VD);font-family:'Barlow Condensed',sans-serif">'+ganhosPsf.length+'</div><div style="font-size:11px;color:var(--VD);margin-top:3px">Recompras ✓</div></div>'
-    +'<div style="text-align:center;padding:1rem;background:var(--L3);border-radius:8px"><div style="font-size:26px;font-weight:700;color:var(--L2);font-family:'Barlow Condensed',sans-serif">R$'+Math.round(receitaPsf).toLocaleString('pt-BR')+'</div><div style="font-size:11px;color:var(--L2);margin-top:3px">Receita recorrente</div></div>'
-    +'<div style="text-align:center;padding:1rem;background:var(--G);border-radius:8px"><div style="font-size:26px;font-weight:700;color:var(--K);font-family:'Barlow Condensed',sans-serif">R$'+tkPsf.toLocaleString('pt-BR')+'</div><div style="font-size:11px;color:var(--G3);margin-top:3px">Ticket médio</div></div>'
-    +'<div style="text-align:center;padding:1rem;background:var(--Y3)||'#FEFCE0';border-radius:8px"><div style="font-size:26px;font-weight:700;color:var(--K);font-family:'Barlow Condensed',sans-serif">'+vips.length+'</div><div style="font-size:11px;color:var(--G3);margin-top:3px">⭐ VIPs</div></div>'
-    +'<div style="text-align:center;padding:1rem;background:var(--G);border-radius:8px"><div style="font-size:26px;font-weight:700;color:var(--K);font-family:'Barlow Condensed',sans-serif">'+(freqMedia?freqMedia+'d':'—')+'</div><div style="font-size:11px;color:var(--G3);margin-top:3px">Freq. recompra</div></div>'
+    +'<div style="text-align:center;padding:1rem;background:var(--A3);border-radius:8px"><div style="font-size:26px;font-weight:700;color:var(--A2);font-family:&quot;Barlow Condensed&quot;,sans-serif">'+psf.length+'</div><div style="font-size:11px;color:var(--A2);margin-top:3px">Pissifãs</div></div>'
+    +'<div style="text-align:center;padding:1rem;background:var(--VD2);border-radius:8px"><div style="font-size:26px;font-weight:700;color:var(--VD);font-family:&quot;Barlow Condensed&quot;,sans-serif">'+ganhosPsf.length+'</div><div style="font-size:11px;color:var(--VD);margin-top:3px">Recompras ✓</div></div>'
+    +'<div style="text-align:center;padding:1rem;background:var(--L3);border-radius:8px"><div style="font-size:26px;font-weight:700;color:var(--L2);font-family:&quot;Barlow Condensed&quot;,sans-serif">R$'+Math.round(receitaPsf).toLocaleString('pt-BR')+'</div><div style="font-size:11px;color:var(--L2);margin-top:3px">Receita recorrente</div></div>'
+    +'<div style="text-align:center;padding:1rem;background:var(--G);border-radius:8px"><div style="font-size:26px;font-weight:700;color:var(--K);font-family:&quot;Barlow Condensed&quot;,sans-serif">R$'+tkPsf.toLocaleString('pt-BR')+'</div><div style="font-size:11px;color:var(--G3);margin-top:3px">Ticket médio</div></div>'
+    +'<div style="text-align:center;padding:1rem;background:var(--Y3)||'#FEFCE0';border-radius:8px"><div style="font-size:26px;font-weight:700;color:var(--K);font-family:&quot;Barlow Condensed&quot;,sans-serif">'+vips.length+'</div><div style="font-size:11px;color:var(--G3);margin-top:3px">⭐ VIPs</div></div>'
+    +'<div style="text-align:center;padding:1rem;background:var(--G);border-radius:8px"><div style="font-size:26px;font-weight:700;color:var(--K);font-family:&quot;Barlow Condensed&quot;,sans-serif">'+(freqMedia?freqMedia+'d':'—')+'</div><div style="font-size:11px;color:var(--G3);margin-top:3px">Freq. recompra</div></div>'
     +'</div>';
 }
 // ── CONFIG ───────────────────────────────────────────────
