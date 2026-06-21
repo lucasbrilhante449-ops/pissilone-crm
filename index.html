@@ -141,6 +141,19 @@ textarea.fi{resize:vertical;min-height:60px}
 .empty{text-align:center;padding:2rem 1rem;color:var(--G3);font-size:13px}
 .mc-link{cursor:pointer;transition:border-color .15s,box-shadow .15s}
 .mc-link:hover{border-color:var(--L);box-shadow:0 2px 8px rgba(209,117,67,.15)}
+.det-modal{background:var(--W);border-radius:14px;width:100%;max-width:1100px;height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.det-hdr{padding:.875rem 1.25rem;border-bottom:1px solid var(--G2);display:flex;align-items:center;gap:10px;flex-shrink:0;background:var(--W);flex-wrap:wrap}
+.det-body{display:flex;flex:1;overflow:hidden;min-height:0}
+.det-left{width:260px;flex-shrink:0;border-right:1px solid var(--G2);overflow-y:auto;padding:1rem}
+.det-center{flex:1;overflow-y:auto;padding:1.25rem;min-width:0}
+.det-right{width:230px;flex-shrink:0;border-left:1px solid var(--G2);overflow-y:auto;padding:1rem}
+.det-slbl{font-size:10px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem}
+.det-row{display:flex;align-items:flex-start;gap:6px;margin-bottom:7px;font-size:12px}
+.det-row-lbl{color:var(--G3);min-width:85px;flex-shrink:0;line-height:1.5}
+.det-row-val{color:var(--K);font-weight:500;word-break:break-word;line-height:1.5}
+.kc-nome-link{cursor:pointer}
+.kc-nome-link:hover{color:var(--L)}
+@media(max-width:720px){.det-left{display:none}.det-right{display:none}}
 .fb{font-size:12px;margin-top:6px;min-height:16px}
 .fb.ok{color:var(--VD)}.fb.er{color:var(--VM)}.fb.info{color:var(--G3)}
 .bdg-canal{font-size:10px;padding:2px 7px;border-radius:20px;background:var(--G);color:var(--G3);border:1px solid var(--G2);display:inline-block}
@@ -311,6 +324,14 @@ textarea.fi{resize:vertical;min-height:60px}
   <div class="fg fg1"><div><label class="flbl">Descrição da atividade</label><input class="fi" id="f-atv-desc-modal" placeholder="Ex: Ligar, enviar proposta..."></div></div>
   <div class="fg fg1"><div><label class="flbl">Produto</label><input class="fi" id="f-produto" placeholder="Kit Nordeste Vivo..."></div></div>
   <div class="fg fg1"><div><label class="flbl">Observação</label><textarea class="fi" id="f-obs"></textarea></div></div>
+  <div class="fg fg2">
+    <div><label class="flbl">Email</label><input class="fi" id="f-email" type="email" placeholder="email@exemplo.com"></div>
+    <div><label class="flbl">CPF</label><input class="fi" id="f-cpf" placeholder="000.000.000-00"></div>
+  </div>
+  <div class="fg fg2">
+    <div><label class="flbl">Aniversário</label><input class="fi" type="date" id="f-aniversario"></div>
+    <div><label class="flbl">Endereço</label><input class="fi" id="f-endereco" placeholder="Rua, número, cidade..."></div>
+  </div>
   <div id="neg-hist-wrap" style="display:none;margin-bottom:.75rem">
     <div class="flbl" style="margin-bottom:.5rem">Histórico de negociações</div>
     <div id="neg-hist-lista" style="background:var(--G);border-radius:8px;padding:.75rem;font-size:12px;max-height:160px;overflow-y:auto"></div>
@@ -404,6 +425,53 @@ textarea.fi{resize:vertical;min-height:60px}
 </div>
 </div>
 
+<!-- MODAL DETALHE CONTATO -->
+<div class="overlay" id="modal-detail" style="display:none;padding:.5rem">
+<div class="det-modal">
+  <div class="det-hdr">
+    <div style="flex:1;min-width:0">
+      <div id="det-nome" style="font-size:17px;font-weight:700;color:var(--K);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Cliente</div>
+      <div id="det-sub" style="font-size:11px;color:var(--G3);margin-top:2px"></div>
+    </div>
+    <div id="det-responsavel" style="display:flex;align-items:center;gap:6px;background:var(--G);border-radius:20px;padding:5px 12px;font-size:12px;white-space:nowrap;flex-shrink:0"></div>
+    <button class="btn sm" id="det-edit-btn">&#9998; Editar</button>
+    <button class="mcl" onclick="closeM('modal-detail')">&#10005;</button>
+  </div>
+  <div class="det-body">
+    <div class="det-left">
+      <div class="det-slbl">Dados do cliente</div>
+      <div id="det-info"></div>
+      <div class="divider" style="margin:.875rem 0"></div>
+      <div class="det-slbl">Hist&#243;rico no CRM</div>
+      <div id="det-metrics"></div>
+      <div class="divider" style="margin:.875rem 0"></div>
+      <div class="det-slbl">Personalizados</div>
+      <div id="det-custom">
+        <div style="font-size:11px;color:var(--G3);font-style:italic;margin-bottom:6px">Nenhum campo adicionado</div>
+        <button class="btn xs" style="color:var(--G3)" title="Em breve">+ Adicionar</button>
+      </div>
+    </div>
+    <div class="det-center">
+      <div style="font-size:13px;font-weight:600;color:var(--K);margin-bottom:.75rem;display:flex;align-items:center;justify-content:space-between">
+        Anota&#231;&#245;es
+        <button class="btn xs primary" id="det-nota-save" onclick="saveDetNota()">Salvar</button>
+      </div>
+      <textarea class="fi" id="det-notas-ta" style="min-height:130px;resize:vertical;margin-bottom:1.25rem" placeholder="Observa&#231;&#245;es, hist&#243;rico de conversas, informa&#231;&#245;es importantes..."></textarea>
+      <div class="divider"></div>
+      <div style="font-size:13px;font-weight:600;color:var(--K);margin:.875rem 0 .75rem">Timeline</div>
+      <div id="det-timeline"></div>
+    </div>
+    <div class="det-right">
+      <div style="font-size:13px;font-weight:600;color:var(--K);margin-bottom:.75rem;display:flex;align-items:center;justify-content:space-between">
+        Atividades
+        <button class="btn xs" onclick="openAtvFromDetail()">+ Nova</button>
+      </div>
+      <div id="det-atv-content"></div>
+    </div>
+  </div>
+</div>
+</div>
+
 <!-- MODAL PSF DETAIL -->
 <div class="overlay" id="modal-psf-detail" style="display:none">
 <div class="modal" style="max-width:480px">
@@ -470,7 +538,7 @@ let periodo='30', periodoCustom={ativo:false,de:null,ate:null};
 let userAtivo='todos';
 let editCid=null, editFid=null, editEfid=null, editEid=null;
 let perdaCid=null, ganhoCid=null, atvCid=null;
-let motivoSel='', dragId=null;
+let motivoSel='', dragId=null, currentDetailId=null;
 
 const CANAL_LABEL={instagram:'Instagram',story:'Story',anuncio:'Anúncio',indicacao:'Indicação',atelie:'Ateliê',busca:'Google',whatsapp:'WhatsApp',outro:'Outro'};
 
@@ -559,19 +627,25 @@ async function doSync(){
   ss('ld','Sincronizando...');
   try{
     const rows=await sbGet('contatos','select=*&order=data.asc');
-    contatos=(rows||[]).map(r=>({
-      id:String(r.id||''),nome:String(r.nome||''),tel:String(r.tel||''),
-      et:String(r.et||''),canal:String(r.canal||'outro'),
-      valor:parseFloat(r.valor)||0,produto:String(r.produto||''),
-      obs:String(r.obs||''),data:String(r.data||new Date().toISOString()),
-      compras:parseInt(r.compras)||0,funil:String(r.funil||'d2c'),
-      etapa:String(r.etapa||'d2c-bv'),usuario:String(r.usuario||''),
-      followup:String(r.followup||''),motivo_perda:String(r.motivo_perda||''),
-      atv_data:normDate(String(r.atv_data||'')),
-      atv_desc:String(r.atv_desc||''),
-      resultado:String(r.resultado||''),atv_hist:parseInt(r.atv_hist)||0,
-      neg_hist:String(r.neg_hist||'')
-    }));
+    contatos=(rows||[]).map(r=>{
+      var meta={};try{meta=JSON.parse(r.meta||'{}');}catch(e){}
+      return{
+        id:String(r.id||''),nome:String(r.nome||''),tel:String(r.tel||''),
+        et:String(r.et||''),canal:String(r.canal||'outro'),
+        valor:parseFloat(r.valor)||0,produto:String(r.produto||''),
+        obs:String(r.obs||''),data:String(r.data||new Date().toISOString()),
+        compras:parseInt(r.compras)||0,funil:String(r.funil||'d2c'),
+        etapa:String(r.etapa||'d2c-bv'),usuario:String(r.usuario||''),
+        followup:String(r.followup||''),motivo_perda:String(r.motivo_perda||''),
+        atv_data:normDate(String(r.atv_data||'')),
+        atv_desc:String(r.atv_desc||''),
+        resultado:String(r.resultado||''),atv_hist:parseInt(r.atv_hist)||0,
+        neg_hist:String(r.neg_hist||''),
+        email:String(meta.email||''),cpf:String(meta.cpf||''),
+        endereco:String(meta.endereco||''),aniversario:String(meta.aniversario||''),
+        notas:String(meta.notas||'')
+      };
+    });
     ss('ok',contatos.length+' contato'+(contatos.length!==1?'s':''));
     renderAll();
   }catch(e){ss('er','Erro de conexão');console.error(e);}
@@ -584,7 +658,8 @@ async function apiSave(c){
     funil:c.funil,etapa:c.etapa,usuario:c.usuario,followup:c.followup||'',
     motivo_perda:c.motivo_perda||'',atv_data:c.atv_data||null,
     atv_desc:c.atv_desc||'',resultado:c.resultado||'',
-    atv_hist:c.atv_hist||0,neg_hist:c.neg_hist||''
+    atv_hist:c.atv_hist||0,neg_hist:c.neg_hist||'',
+    meta:JSON.stringify({email:c.email||'',cpf:c.cpf||'',endereco:c.endereco||'',aniversario:c.aniversario||'',notas:c.notas||''})
   });
 }
 
@@ -703,8 +778,8 @@ function kcardHtml(c,busca){
   const nomeHtml=b&&c.nome.toLowerCase().includes(b)?c.nome.replace(new RegExp('('+b.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<mark style="background:#F2E618;border-radius:2px;padding:0 1px">$1</mark>'):c.nome;
   const ucHtml=ultimaCompraHtml(c);
   return`<div class="kc" draggable="true" data-id="${c.id}">
-    <div class="kc-nome">${nomeHtml}</div>
-    <div class="kc-sub">
+    <div class="kc-nome kc-nome-link" onclick="openContatoDetail('${c.id}')">${nomeHtml}</div>
+    <div class="kc-sub" style="cursor:pointer" onclick="openContatoDetail('${c.id}')">
       ${vl?`<span>${vl}</span>`:''}
       ${c.canal?`<span>${CANAL_LABEL[c.canal]||c.canal}</span>`:''}
       ${usr?`<span>👤 ${usr.nome}</span>`:''}
@@ -715,7 +790,7 @@ function kcardHtml(c,busca){
     ${c.motivo_perda?`<div style="font-size:10px;color:var(--VM);margin-bottom:3px">⚠ ${c.motivo_perda}</div>`:''}
     <div class="kc-actions">
       <div class="kc-left">
-        <button class="btn xs" onclick="openContato('${c.id}')">✎</button>
+        <button class="btn xs" onclick="openContatoDetail('${c.id}')">✎</button>
         <button class="btn xs" onclick="duplicarCard('${c.id}')" title="Duplicar para Pissifã">⧉</button>
         <button class="btn xs danger" onclick="delC('${c.id}')">✕</button>
       </div>
@@ -878,6 +953,10 @@ function openContato(id=null,fid=null,eid=null){
     document.getElementById('f-produto').value=c.produto||'';
     document.getElementById('f-obs').value=c.obs||'';
     document.getElementById('f-user').value=c.usuario||'';
+    document.getElementById('f-email').value=c.email||'';
+    document.getElementById('f-cpf').value=c.cpf||'';
+    document.getElementById('f-aniversario').value=c.aniversario||'';
+    document.getElementById('f-endereco').value=c.endereco||'';
     // Histórico
     const hist=parseNegHist(c);
     const hw=document.getElementById('neg-hist-wrap');
@@ -909,8 +988,9 @@ function openContato(id=null,fid=null,eid=null){
       if(rb&&ultimaNeg){rb.className=ultimaNeg.r==='ganho'?'res-ganho':'res-perda';rb.textContent=ultimaNeg.r==='ganho'?'✓ Ganho':'✗ Perda';}
     }
   }else{
-    ['f-nome','f-tel','f-valor','f-atv-data-modal','f-atv-desc-modal','f-produto','f-obs'].forEach(x=>document.getElementById(x).value='');
+    ['f-nome','f-tel','f-valor','f-atv-data-modal','f-atv-desc-modal','f-produto','f-obs','f-email','f-cpf','f-endereco'].forEach(x=>document.getElementById(x).value='');
     document.getElementById('f-canal').value='instagram';document.getElementById('f-user').value='';
+    document.getElementById('f-aniversario').value='';
     const hw=document.getElementById('neg-hist-wrap');if(hw)hw.style.display='none';
     const rw=document.getElementById('reabrir-wrap');if(rw)rw.style.display='none';
     if(eid)setTimeout(()=>{document.getElementById('f-etapa').value=eid;},30);
@@ -943,7 +1023,12 @@ async function saveContato(){
     atv_data:atvDataModal||prev.atv_data||'',
     atv_desc:atvDescModal||prev.atv_desc||'',
     resultado:prev.resultado||'',atv_hist:prev.atv_hist||0,
-    neg_hist:prev.neg_hist||''
+    neg_hist:prev.neg_hist||'',
+    email:document.getElementById('f-email').value.trim(),
+    cpf:document.getElementById('f-cpf').value.trim(),
+    aniversario:normDate(document.getElementById('f-aniversario').value)||'',
+    endereco:document.getElementById('f-endereco').value.trim(),
+    notas:prev.notas||''
   };
   try{await apiSave(c);setFb('fb-c','Salvo!','ok');closeM('modal-c');await doSync();}
   catch(ex){setFb('fb-c','Erro ao salvar','er');console.error(ex);}
@@ -982,7 +1067,7 @@ function renderContatos(){
         </div>
         <div style="display:flex;gap:6px;align-items:center">
           <div class="atv-dot ${atvCls[s]}" onclick="openAtv('${c.id}')" title="Atividade"></div>
-          <button class="btn xs" onclick="openContato('${c.id}')">✎</button>
+          <button class="btn xs" onclick="openContatoDetail('${c.id}')">✎</button>
           <button class="btn xs danger" onclick="window.delC('${c.id}')">✕</button>
         </div>
       </div>
@@ -1316,7 +1401,7 @@ function showPsfDetail(tipo){
       if(u)html+='<span>&#128100; '+u.nome+'</span>';
       if(etapaObj)html+='<span>'+etapaObj.nome+'</span>';
       html+='</div></div>';
-      html+='<button class="btn xs" onclick="closeM(\'modal-psf-detail\');openContato(\''+c.id+'\')">&#9998; Abrir</button>';
+      html+='<button class="btn xs" onclick="closeM(\'modal-psf-detail\');openContatoDetail(\''+c.id+'\')">&#9998; Abrir</button>';
       html+='</div>';
       html+='<div style="display:flex;gap:10px;flex-wrap:wrap;font-size:12px;margin-top:8px">';
       if(ganhos.length>0)html+='<span style="background:var(--VD2);color:var(--VD);border-radius:20px;padding:2px 8px;font-weight:600">&#10003; '+ganhos.length+(ganhos.length===1?' compra':' compras')+'</span>';
@@ -1345,6 +1430,135 @@ function showPsfDetail(tipo){
   }
   document.getElementById('psf-detail-content').innerHTML=html;
   document.getElementById('modal-psf-detail').style.display='flex';
+}
+
+// ── DETALHE CONTATO ──────────────────────────────────────
+function detRow(lbl,val){
+  return'<div class="det-row"><span class="det-row-lbl">'+lbl+'</span><span class="det-row-val">'+val+'</span></div>';
+}
+
+function openContatoDetail(id){
+  if(!id)return;
+  currentDetailId=id;
+  var c=contatos.find(function(x){return x.id===id;});
+  if(!c)return;
+  var funil=getFunil(c.funil);
+  var etapa=funil?funil.etapas.find(function(e){return e.id===c.etapa;}):null;
+  document.getElementById('det-nome').textContent=c.nome;
+  document.getElementById('det-sub').textContent=(funil?funil.nome:'')+(etapa?' · '+etapa.nome:'')+(c.canal?' · '+(CANAL_LABEL[c.canal]||c.canal):'');
+  var u=cfg.usuarios.find(function(x){return x.id===c.usuario;});
+  document.getElementById('det-responsavel').innerHTML=u?'&#128100; '+u.nome:'<span style="color:var(--G3)">Sem responsável</span>';
+  document.getElementById('det-edit-btn').onclick=function(){openContato(id);};
+  // INFO
+  var info='';
+  info+=detRow('Telefone',c.tel?'<a href="tel:'+c.tel+'" style="color:var(--L);text-decoration:none">'+c.tel+'</a>':'&#8212;');
+  info+=detRow('Email',c.email||'&#8212;');
+  info+=detRow('CPF',c.cpf||'&#8212;');
+  info+=detRow('Aniversário',c.aniversario?fmtDFull(c.aniversario):'&#8212;');
+  info+=detRow('Endereço',c.endereco||'&#8212;');
+  info+=detRow('Canal',CANAL_LABEL[c.canal]||c.canal||'&#8212;');
+  info+=detRow('Cadastro',fmtDFull(c.data.slice(0,10)));
+  if(c.produto)info+=detRow('Produto',c.produto);
+  document.getElementById('det-info').innerHTML=info;
+  // METRICS
+  var hist=parseNegHist(c);
+  var ganhos=hist.filter(function(h){return h.r==='ganho';}).sort(function(a,b){return b.d.localeCompare(a.d);});
+  var ltv=ganhos.reduce(function(a,h){return a+(h.v||0);},0);
+  var nCompras=ganhos.length;
+  var isVip=ltv>=500&&nCompras>2;
+  var tkMed=nCompras>0?Math.round(ltv/nCompras):0;
+  var nPerdas=hist.filter(function(h){return h.r==='perda';}).length;
+  var ultimaCompra=ganhos[0]?ganhos[0].d:null;
+  var dias=ultimaCompra?diasAtras(ultimaCompra):null;
+  var diasStr=dias===null?'&#8212;':dias===0?'Hoje':dias===1?'Ontem':'há '+dias+'d';
+  var diasCor=dias===null?'var(--G3)':dias<=30?'var(--VD)':dias<=60?'var(--AM)':'var(--VM)';
+  var metrics='';
+  metrics+='<div style="background:'+(isVip?'var(--AM2)':'var(--G)')+';border-radius:8px;padding:10px;margin-bottom:10px;text-align:center">';
+  metrics+='<div style="font-size:14px;font-weight:800;color:'+(isVip?'var(--AM)':'var(--G3)')+'">'+( isVip?'&#11088; VIP':'Cliente comum')+'</div>';
+  if(isVip)metrics+='<div style="font-size:10px;color:var(--AM);margin-top:2px">LTV ≥ R$500 e 3+ compras</div>';
+  metrics+='</div>';
+  metrics+=detRow('LTV','<strong style="color:var(--VD)">R$'+Math.round(ltv).toLocaleString('pt-BR')+'</strong>');
+  metrics+=detRow('Compras',nCompras+(nCompras===1?' compra':' compras'));
+  metrics+=detRow('Ticket médio',nCompras>0?'R$'+tkMed:'&#8212;');
+  metrics+=detRow('Última compra','<span style="color:'+diasCor+'">'+diasStr+'</span>');
+  if(nPerdas>0)metrics+=detRow('Perdas','<span style="color:var(--VM)">'+nPerdas+'x</span>');
+  metrics+=detRow('Checkpoints',(c.atv_hist||0)+'');
+  if(c.obs)metrics+='<div style="margin-top:8px;font-size:11px;color:var(--G3);font-style:italic;border-top:1px solid var(--G2);padding-top:8px">'+c.obs+'</div>';
+  document.getElementById('det-metrics').innerHTML=metrics;
+  // NOTAS
+  document.getElementById('det-notas-ta').value=c.notas||'';
+  // TIMELINE
+  var events=hist.slice().sort(function(a,b){return b.d.localeCompare(a.d);});
+  var tl='';
+  if(!events.length){tl='<div class="empty" style="padding:.75rem 0">Sem histórico de negociações</div>';}
+  else{
+    events.forEach(function(ev){
+      var isG=ev.r==='ganho';
+      var cor=isG?'var(--VD)':'var(--VM)';
+      var bg=isG?'var(--VD2)':'var(--VM2)';
+      tl+='<div style="display:flex;gap:8px;margin-bottom:10px;align-items:flex-start">';
+      tl+='<div style="width:22px;height:22px;border-radius:50%;background:'+bg+';color:'+cor+';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">'+(isG?'&#10003;':'&#10007;')+'</div>';
+      tl+='<div style="flex:1;min-width:0">';
+      tl+='<div style="font-size:12px;font-weight:600;color:'+cor+'">'+(isG?'Ganho':'Perda')+(ev.v?' — R$'+ev.v:'')+'</div>';
+      if(ev.m)tl+='<div style="font-size:11px;color:var(--G3)">'+ev.m+'</div>';
+      tl+='<div style="font-size:10px;color:var(--G3)">'+fmtDFull(ev.d)+'</div>';
+      tl+='</div></div>';
+    });
+  }
+  document.getElementById('det-timeline').innerHTML=tl;
+  // ATIVIDADES
+  var atvD=normDate(c.atv_data);
+  var atvHtml='';
+  if(atvD){
+    var s=atvStatus(c);
+    var aCores={hoje:'var(--VD)',atrasada:'var(--VM)',agendada:'var(--G3)'};
+    var aBg={hoje:'var(--VD2)',atrasada:'var(--VM2)',agendada:'var(--G)'};
+    var aLbl={hoje:'Hoje',atrasada:'Atrasada',agendada:'Agendada'};
+    atvHtml+='<div style="background:'+(aBg[s]||'var(--G)')+';border-radius:8px;padding:.75rem;margin-bottom:10px">';
+    atvHtml+='<div style="font-size:10px;font-weight:700;color:'+(aCores[s]||'var(--G3)')+';text-transform:uppercase;margin-bottom:4px">'+(aLbl[s]||s)+'</div>';
+    atvHtml+='<div style="font-size:12px;font-weight:600;color:var(--K)">'+fmtDFull(atvD)+'</div>';
+    if(c.atv_desc)atvHtml+='<div style="font-size:11px;color:var(--G3);margin-top:2px">'+c.atv_desc+'</div>';
+    atvHtml+='<div style="display:flex;gap:6px;margin-top:8px">';
+    atvHtml+='<button class="btn xs" onclick="checkpointAtvDetail()">&#10003; Check</button>';
+    atvHtml+='<button class="btn xs" onclick="openAtvFromDetail()">&#9998; Editar</button>';
+    atvHtml+='</div></div>';
+  }else{
+    atvHtml+='<div style="font-size:12px;color:var(--G3);padding:.5rem 0;text-align:center">Nenhuma atividade agendada</div>';
+  }
+  if((c.atv_hist||0)>0){
+    atvHtml+='<div style="font-size:11px;color:var(--G3);margin-top:8px;padding-top:8px;border-top:1px solid var(--G2)">&#10003; '+c.atv_hist+' atividade'+(c.atv_hist>1?'s':'')+' concluída'+(c.atv_hist>1?'s':'')+'</div>';
+  }
+  document.getElementById('det-atv-content').innerHTML=atvHtml;
+  document.getElementById('modal-detail').style.display='flex';
+}
+
+async function saveDetNota(){
+  if(!currentDetailId)return;
+  var c=contatos.find(function(x){return x.id===currentDetailId;});
+  if(!c)return;
+  c.notas=document.getElementById('det-notas-ta').value;
+  var btn=document.getElementById('det-nota-save');
+  if(btn){btn.textContent='Salvando...';btn.disabled=true;}
+  try{
+    await apiSave(c);await doSync();
+    if(btn){btn.textContent='Salvo!';setTimeout(function(){if(btn){btn.textContent='Salvar';btn.disabled=false;}},1500);}
+  }catch(ex){if(btn){btn.textContent='Erro';btn.disabled=false;}}
+}
+
+function openAtvFromDetail(){
+  if(!currentDetailId)return;
+  closeM('modal-detail');
+  openAtv(currentDetailId);
+}
+
+async function checkpointAtvDetail(){
+  if(!currentDetailId)return;
+  var c=contatos.find(function(x){return x.id===currentDetailId;});
+  if(!c||!c.atv_data)return;
+  c.atv_hist=(c.atv_hist||0)+1;c.atv_data='';c.atv_desc='';
+  ss('ld','Concluída...');
+  try{await apiSave(c);await doSync();openContatoDetail(currentDetailId);}
+  catch(ex){ss('er','Erro');}
 }
 
 // ── CONFIG ───────────────────────────────────────────────
