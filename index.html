@@ -31,12 +31,23 @@ body{background:var(--G);color:var(--K);font-family:'Barlow',sans-serif;min-heig
 .hdr-ubtn:hover,.hdr-ubtn.on{background:rgba(255,255,255,.2);color:var(--W);border-color:rgba(255,255,255,.6)}
 .hdr-sync{font-size:16px;padding:3px 8px;cursor:pointer;border-radius:4px;border:1px solid rgba(255,255,255,.3);background:transparent;color:rgba(255,255,255,.8)}
 .hdr-sync:hover{color:var(--W);background:rgba(255,255,255,.15)}
-.tabs-bar{background:var(--A2);border-top:1px solid rgba(255,255,255,.1);padding:0 1.25rem}
-.tabs{display:flex}
-.tb{font-size:12px;font-weight:500;padding:9px 16px;cursor:pointer;border:none;background:none;color:rgba(255,255,255,.6);border-bottom:2px solid transparent;white-space:nowrap;transition:.15s;font-family:'Barlow',sans-serif}
-.tb.active{color:var(--W);border-bottom-color:var(--W)}
-.tb:hover:not(.active){color:var(--W)}
+.app-body{display:flex;height:calc(100vh - 48px)}
+.sidebar{width:58px;background:var(--K2);flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding:8px 0;gap:2px;height:calc(100vh - 48px);position:sticky;top:0;overflow-y:auto}
+.snav{width:46px;height:46px;border:none;background:transparent;color:rgba(255,255,255,.42);cursor:pointer;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:.15s;font-family:'Barlow',sans-serif;padding:0}
+.snav:hover{background:rgba(255,255,255,.08);color:rgba(255,255,255,.82)}
+.snav.active{background:rgba(209,117,67,.22);color:var(--L)}
+.snav-lbl{font-size:8px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;line-height:1}
+.main-wrap{flex:1;overflow-y:auto;height:calc(100vh - 48px)}
 .cnt{padding:1rem;max-width:1300px;margin:0 auto}
+.fd-wrap{position:relative;display:inline-block}
+.fd-btn{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:5px 11px;cursor:pointer;border-radius:6px;border:1px solid var(--G2);background:var(--W);color:var(--K);font-family:'Barlow',sans-serif;transition:.15s;font-weight:500}
+.fd-btn:hover{background:var(--G)}
+.fd-btn.ativo{border-color:var(--L);color:var(--L2);background:var(--L3)}
+.fd-ind{display:none;background:var(--L);color:var(--W);border-radius:20px;font-size:9px;font-weight:700;padding:1px 5px;line-height:1.4}
+.fd-panel{position:absolute;top:calc(100% + 5px);left:0;z-index:300;background:var(--W);border:1px solid var(--G2);border-radius:10px;padding:.875rem 1rem;min-width:270px;box-shadow:0 6px 20px rgba(0,0,0,.13);display:none}
+.fd-panel.open{display:block}
+.fd-slbl{font-size:10px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.fd-opts{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
 .pane{display:none}.pane.active{display:block}
 .btn{font-size:12px;padding:6px 13px;cursor:pointer;border-radius:6px;border:1px solid var(--G2);background:var(--W);color:var(--K);font-family:'Barlow',sans-serif;transition:.15s;font-weight:500;display:inline-flex;align-items:center;gap:4px}
 .btn:hover{background:var(--G)}
@@ -64,8 +75,8 @@ textarea.fi{resize:vertical;min-height:60px}
 .ft.active{background:var(--L);color:var(--W);border-color:var(--L)}
 .ft:hover:not(.active){background:var(--L3);border-color:var(--L4);color:var(--L2)}
 .board-wrap{overflow-x:auto;padding-bottom:.75rem}
-.board{display:flex;gap:10px;align-items:flex-start;min-width:max-content;height:calc(100vh - 240px)}
-.kcol{width:210px;flex-shrink:0;background:var(--W);border:1px solid var(--G2);border-radius:10px;display:flex;flex-direction:column;max-height:calc(100vh - 240px);overflow:hidden}
+.board{display:flex;gap:10px;align-items:flex-start;min-width:max-content;height:calc(100vh - 168px)}
+.kcol{width:210px;flex-shrink:0;background:var(--W);border:1px solid var(--G2);border-radius:10px;display:flex;flex-direction:column;max-height:calc(100vh - 168px);overflow:hidden}
 .kcol.over{border-color:var(--L)}
 .kcol-hdr{padding:.625rem .875rem;border-bottom:1px solid var(--G2);display:flex;align-items:flex-start;justify-content:space-between;gap:6px;flex-shrink:0;background:var(--G);border-radius:10px 10px 0 0}
 .kcol.over .kcol-hdr{background:var(--L3)}
@@ -155,14 +166,26 @@ textarea.fi{resize:vertical;min-height:60px}
     <button class="hdr-sync" onclick="doSync()" title="Sincronizar">↻</button>
   </div>
 </header>
-<div class="tabs-bar">
-  <div class="tabs">
-    <button class="tb active" onclick="showTab('funil')">Funil</button>
-    <button class="tb" onclick="showTab('contatos')">Contatos</button>
-    <button class="tb" onclick="showTab('insights')">Insights</button>
-    <button class="tb" onclick="showTab('config')">Configurar</button>
-  </div>
-</div>
+<div class="app-body">
+<nav class="sidebar">
+  <button class="snav active" id="snav-funil" onclick="showTab('funil')" title="Funil">
+    <svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 19 19"><rect x="1" y="2" width="4.5" height="15" rx="1.2"/><rect x="7.3" y="2" width="4.5" height="10" rx="1.2"/><rect x="13.5" y="2" width="4.5" height="12.5" rx="1.2"/></svg>
+    <span class="snav-lbl">Funil</span>
+  </button>
+  <button class="snav" id="snav-contatos" onclick="showTab('contatos')" title="Contatos">
+    <svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 19 19"><circle cx="9.5" cy="7" r="3.2"/><path d="M2.5 17.5c0-3.9 3.1-7 7-7s7 3.1 7 7" stroke-linecap="round"/></svg>
+    <span class="snav-lbl">Contatos</span>
+  </button>
+  <button class="snav" id="snav-insights" onclick="showTab('insights')" title="Insights">
+    <svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 19 19"><line x1="3" y1="16" x2="3" y2="8" stroke-linecap="round"/><line x1="9.5" y1="16" x2="9.5" y2="4" stroke-linecap="round"/><line x1="16" y1="16" x2="16" y2="1" stroke-linecap="round"/><line x1="1" y1="16" x2="18" y2="16" stroke-linecap="round"/></svg>
+    <span class="snav-lbl">Insights</span>
+  </button>
+  <button class="snav" id="snav-config" onclick="showTab('config')" title="Configurar">
+    <svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 19 19"><circle cx="9.5" cy="9.5" r="2.5"/><path d="M9.5 1.5v2M9.5 15.5v2M1.5 9.5h2M15.5 9.5h2M3.6 3.6l1.4 1.4M14 14l1.4 1.4M3.6 15.4l1.4-1.4M14 5l1.4-1.4" stroke-linecap="round"/></svg>
+    <span class="snav-lbl">Config</span>
+  </button>
+</nav>
+<div class="main-wrap">
 <div class="cnt">
 <div id="pane-funil" class="pane active">
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:.875rem;flex-wrap:wrap">
@@ -173,20 +196,32 @@ textarea.fi{resize:vertical;min-height:60px}
     </div>
     <button class="btn sm laranja" onclick="openFunilModal(null)">+ Funil</button>
   </div>
-  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.5rem;align-items:center">
-    <span style="font-size:11px;color:var(--G3);font-weight:500;text-transform:uppercase;letter-spacing:.06em">Atividade:</span>
-    <button class="filtro active" id="fatv-todos" onclick="setFiltroAtv(this,'todos')">Todos</button>
-    <button class="filtro" id="fatv-hoje" onclick="setFiltroAtv(this,'hoje')"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4CAF50;margin-right:3px"></span>Hoje</button>
-    <button class="filtro" id="fatv-agendada" onclick="setFiltroAtv(this,'agendada')"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9E9E9E;margin-right:3px"></span>Agendada</button>
-    <button class="filtro" id="fatv-atrasada" onclick="setFiltroAtv(this,'atrasada')"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#FDD835;margin-right:3px"></span>Atrasada</button>
-    <button class="filtro" id="fatv-sem" onclick="setFiltroAtv(this,'sem')"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#E53935;margin-right:3px"></span>Sem atividade</button>
-  </div>
-  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.75rem;align-items:center">
-    <span style="font-size:11px;color:var(--G3);font-weight:500;text-transform:uppercase;letter-spacing:.06em">Resultado:</span>
-    <button class="filtro active" id="fres-todos" onclick="setFiltroRes(this,'todos')">Todos</button>
-    <button class="filtro" id="fres-ganho" onclick="setFiltroRes(this,'ganho')" style="border-color:#A5D6A7;color:#2E7D32"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4CAF50;margin-right:3px"></span>Ganhos</button>
-    <button class="filtro" id="fres-perda" onclick="setFiltroRes(this,'perda')" style="border-color:#EF9A9A;color:#C62828"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#E53935;margin-right:3px"></span>Perdidos</button>
-    <button class="filtro" id="fres-aberto" onclick="setFiltroRes(this,'aberto')">Em aberto</button>
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:.75rem">
+    <div class="fd-wrap">
+      <button class="fd-btn" id="btn-filtros" onclick="toggleFiltros()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 13 13"><line x1="1" y1="3" x2="12" y2="3"/><line x1="3" y1="6.5" x2="10" y2="6.5"/><line x1="5" y1="10" x2="8" y2="10"/></svg>
+        Filtros
+        <span class="fd-ind" id="filtro-ind"></span>
+        <span style="font-size:10px;opacity:.6">▾</span>
+      </button>
+      <div class="fd-panel" id="fd-panel">
+        <div class="fd-slbl">Atividade</div>
+        <div class="fd-opts">
+          <button class="filtro active" id="fatv-todos" onclick="setFiltroAtv(this,'todos')">Todos</button>
+          <button class="filtro" id="fatv-hoje" onclick="setFiltroAtv(this,'hoje')"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4CAF50;margin-right:3px;vertical-align:middle"></span>Hoje</button>
+          <button class="filtro" id="fatv-agendada" onclick="setFiltroAtv(this,'agendada')"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9E9E9E;margin-right:3px;vertical-align:middle"></span>Agendada</button>
+          <button class="filtro" id="fatv-atrasada" onclick="setFiltroAtv(this,'atrasada')"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#FDD835;margin-right:3px;vertical-align:middle"></span>Atrasada</button>
+          <button class="filtro" id="fatv-sem" onclick="setFiltroAtv(this,'sem')"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#E53935;margin-right:3px;vertical-align:middle"></span>Sem atividade</button>
+        </div>
+        <div class="fd-slbl">Resultado</div>
+        <div class="fd-opts" style="margin-bottom:0">
+          <button class="filtro active" id="fres-todos" onclick="setFiltroRes(this,'todos')">Todos</button>
+          <button class="filtro" id="fres-ganho" onclick="setFiltroRes(this,'ganho')" style="border-color:#A5D6A7;color:#2E7D32"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4CAF50;margin-right:3px;vertical-align:middle"></span>Ganhos</button>
+          <button class="filtro" id="fres-perda" onclick="setFiltroRes(this,'perda')" style="border-color:#EF9A9A;color:#C62828"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#E53935;margin-right:3px;vertical-align:middle"></span>Perdidos</button>
+          <button class="filtro" id="fres-aberto" onclick="setFiltroRes(this,'aberto')">Em aberto</button>
+        </div>
+      </div>
+    </div>
   </div>
   <div class="board-wrap"><div class="board" id="board"></div></div>
 </div>
@@ -241,6 +276,8 @@ textarea.fi{resize:vertical;min-height:60px}
   <div class="slbl">Usuários</div>
   <div id="cfg-users"></div>
   <button class="btn sm" onclick="openUserModal()">+ Novo usuário</button>
+</div>
+</div>
 </div>
 </div>
 
@@ -543,8 +580,9 @@ async function apiSave(c){
 
 // ── TABS ─────────────────────────────────────────────────
 function showTab(id){
-  ['funil','contatos','insights','config'].forEach((t,i)=>{
-    document.querySelectorAll('.tb')[i].classList.toggle('active',t===id);
+  ['funil','contatos','insights','config'].forEach(t=>{
+    const btn=document.getElementById('snav-'+t);
+    if(btn)btn.classList.toggle('active',t===id);
     document.getElementById('pane-'+t).classList.toggle('active',t===id);
   });
   if(id==='funil')renderFunil();
@@ -553,11 +591,32 @@ function showTab(id){
   if(id==='config')renderConfig();
 }
 
+// ── FILTROS DROPDOWN ─────────────────────────────────────
+function toggleFiltros(){
+  const p=document.getElementById('fd-panel');
+  if(p)p.classList.toggle('open');
+}
+function updFiltroBtn(){
+  const btn=document.getElementById('btn-filtros');
+  const ind=document.getElementById('filtro-ind');
+  const atv=filtroAtv!=='todos';
+  const res=filtroRes!=='todos';
+  const n=(atv?1:0)+(res?1:0);
+  if(btn)btn.classList.toggle('ativo',n>0);
+  if(ind){ind.style.display=n>0?'inline-flex':'none';ind.textContent=n;}
+}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.fd-wrap')){
+    const p=document.getElementById('fd-panel');
+    if(p)p.classList.remove('open');
+  }
+});
+
 // ── FUNIL ────────────────────────────────────────────────
 function renderFunilTabs(){document.getElementById('funil-tabs').innerHTML=cfg.funis.map(f=>`<button class="ft${funilAtivo===f.id?' active':''}" onclick="setFunil('${f.id}')">${f.nome}</button>`).join('');}
 function setFunil(id){funilAtivo=id;renderFunil();renderUbtns();}
-function setFiltroAtv(btn,f){document.querySelectorAll('[id^="fatv-"]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');filtroAtv=f;renderFunil();}
-function setFiltroRes(btn,f){document.querySelectorAll('[id^="fres-"]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');filtroRes=f;renderFunil();}
+function setFiltroAtv(btn,f){document.querySelectorAll('[id^="fatv-"]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');filtroAtv=f;renderFunil();updFiltroBtn();}
+function setFiltroRes(btn,f){document.querySelectorAll('[id^="fres-"]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');filtroRes=f;renderFunil();updFiltroBtn();}
 
 function renderFunil(){
   renderFunilTabs();
@@ -1125,3 +1184,4 @@ function renderAll(){renderFunil();renderContatos();renderUbtns();}
 </script>
 </body>
 </html>
+
