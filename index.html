@@ -1018,88 +1018,200 @@ function filtPer(lista){
   const d=new Date();d.setDate(d.getDate()-parseInt(periodo));return lista.filter(c=>new Date(c.data)>=d);
 }
 
+function varPct(curr,prev){
+  if(prev===0&&curr===0)return'';
+  if(prev===0)return'<span style="color:var(--VD);font-weight:700">&#8593; novo</span>';
+  var p=Math.round(((curr-prev)/Math.abs(prev))*100);
+  var cor=p>=0?'var(--VD)':'var(--VM)';
+  var seta=p>=0?'&#8593; ':'&#8595; ';
+  return'<span style="color:'+cor+';font-weight:700">'+seta+Math.abs(p)+'% vs ant.</span>';
+}
+function filtNegsPer(negs,isPrev){
+  if(periodoCustom.ativo&&periodoCustom.de&&periodoCustom.ate){
+    var cde=new Date(periodoCustom.de+'T00:00:00');
+    var cate=new Date(periodoCustom.ate+'T23:59:59');
+    if(isPrev){var durMs=cate.getTime()-cde.getTime();var pAte=new Date(cde.getTime()-1);var pDe=new Date(pAte.getTime()-durMs);return negs.filter(function(n){var d=new Date(n.d+'T00:00:00');return d>=pDe&&d<=pAte;});}
+    return negs.filter(function(n){var d=new Date(n.d+'T00:00:00');return d>=cde&&d<=cate;});
+  }
+  if(periodo==='0')return isPrev?[]:negs;
+  var dias=periodo==='1'?0:parseInt(periodo);
+  var lim=new Date();lim.setDate(lim.getDate()-dias);lim.setHours(0,0,0,0);
+  if(isPrev){var prevLim=new Date(lim.getTime()-Math.max(dias,1)*86400000);return negs.filter(function(n){var d=new Date(n.d+'T00:00:00');return d>=prevLim&&d<lim;});}
+  return negs.filter(function(n){return new Date(n.d+'T00:00:00')>=lim;});
+}
 function renderInsights(){
-  const su=document.getElementById('ins-user');if(su){const pv=su.value;su.innerHTML='<option value="todos">Todos usuários</option>'+cfg.usuarios.map(u=>`<option value="${u.id}">${u.nome}</option>`).join('');if(pv)su.value=pv;}
-  const sf=document.getElementById('ins-funil');if(sf){const pv=sf.value;sf.innerHTML='<option value="todos">Todos funis</option>'+cfg.funis.map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');if(pv)sf.value=pv;}
-  const iUser=(document.getElementById('ins-user')||{value:'todos'}).value;
-  const iFunil=(document.getElementById('ins-funil')||{value:'todos'}).value;
-  const iCanal=(document.getElementById('ins-canal')||{value:'todos'}).value;
-  let lista=filtPer(contatos);
-  const filtroUser=iUser!=='todos'?iUser:(userAtivo!=='todos'?userAtivo:'todos');
-  if(filtroUser!=='todos')lista=lista.filter(c=>c.usuario===filtroUser);
-  if(iFunil!=='todos')lista=lista.filter(c=>c.funil===iFunil);
-  if(iCanal!=='todos')lista=lista.filter(c=>c.canal===iCanal);
-
-  let baseContatos=contatos;
-  if(filtroUser!=='todos')baseContatos=baseContatos.filter(c=>c.usuario===filtroUser);
-  if(iCanal!=='todos')baseContatos=baseContatos.filter(c=>c.canal===iCanal);
-  let todasNegs=[];
-  baseContatos.forEach(c=>{const h=parseNegHist(c);h.forEach(x=>todasNegs.push({...x,cid:c.id,funil:c.funil}));});
-  if(periodoCustom.ativo&&periodoCustom.de&&periodoCustom.ate){const de=new Date(periodoCustom.de+'T00:00:00');const ate=new Date(periodoCustom.ate+'T23:59:59');todasNegs=todasNegs.filter(h=>{const d=new Date(h.d+'T00:00:00');return d>=de&&d<=ate;});}
-  else if(periodo!=='0'){const dias=periodo==='1'?0:parseInt(periodo);const lim=new Date();lim.setDate(lim.getDate()-dias);lim.setHours(0,0,0,0);todasNegs=todasNegs.filter(h=>new Date(h.d+'T00:00:00')>=lim);}
-  if(iFunil!=='todos')todasNegs=todasNegs.filter(h=>h.funil===iFunil);
-
-  const negGanhos=todasNegs.filter(h=>h.r==='ganho');
-  const negPerdas=todasNegs.filter(h=>h.r==='perda');
-  const baseConv=todasNegs.length;
-  const txConv=baseConv>0?Math.round((negGanhos.length/baseConv)*100):0;
-  const txPerda=baseConv>0?Math.round((negPerdas.length/baseConv)*100):0;
-  const receita=negGanhos.reduce((a,h)=>a+(h.v||0),0);
-  const tkMedio=negGanhos.length>0?Math.round(receita/negGanhos.length):0;
-  const emAberto=lista.filter(c=>!parseNegHist(c).length&&!isGanho(c.funil,c.etapa)&&!isPerdido(c.funil,c.etapa)).length;
-  const hj=new Date();hj.setHours(0,0,0,0);
-  const atvH=lista.filter(c=>{const d=normDate(c.atv_data);if(!d)return false;return new Date(d+'T00:00:00').getTime()===hj.getTime();}).length;
-  const atvA=lista.filter(c=>{const d=normDate(c.atv_data);if(!d)return false;return new Date(d+'T00:00:00')<hj;}).length;
-  const mc={};negPerdas.forEach(h=>{if(h.m)mc[h.m]=(mc[h.m]||0)+1;});
-  const topM=Object.entries(mc).sort((a,b)=>b[1]-a[1]);const maxM=Math.max(1,...Object.values(mc));
-  const cc={};lista.forEach(c=>{const k=c.canal||'outro';cc[k]=(cc[k]||0)+1;});const maxC=Math.max(1,...Object.values(cc));
-  const fc2={};lista.forEach(c=>{const f=getFunil(c.funil);if(f)fc2[f.nome]=(fc2[f.nome]||0)+1;});const maxF2=Math.max(1,...Object.values(fc2));
-
-  document.getElementById('ins-content').innerHTML=`
-    <div style="background:var(--K);border-radius:8px;padding:1rem 1.25rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
-      <div style="display:flex;align-items:baseline;gap:.5rem">
-        <span style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:2.5rem;color:var(--L);line-height:1">${lista.length}</span>
-        <div><div style="font-size:13px;font-weight:600;color:var(--W)">SAFRA</div><div style="font-size:11px;color:rgba(255,255,255,.4)">total de cards no período</div></div>
-      </div>
-      <div style="font-size:11px;color:rgba(255,255,255,.35);max-width:300px;line-height:1.5">Todos os cards criados — não influencia as taxas.</div>
-    </div>
-    <div class="mg">
-      <div class="mc"><div class="mc-n">${baseConv}</div><div class="mc-l">Negociações</div><div class="mc-s a">base das taxas</div></div>
-      <div class="mc"><div class="mc-n">${emAberto}</div><div class="mc-l">Em aberto</div></div>
-      <div class="mc"><div class="mc-n">${negGanhos.length}</div><div class="mc-l">Ganhos</div><div class="mc-s v">✓</div></div>
-      <div class="mc"><div class="mc-n">${negPerdas.length}</div><div class="mc-l">Perdidos</div><div class="mc-s r">✗</div></div>
-      <div class="mc"><div class="mc-n">${txConv}%</div><div class="mc-l">Tx. conversão</div><div class="mc-s ${txConv>=15?'v':txConv>=8?'a':'r'}">${txConv>=15?'Boa':txConv>=8?'Regular':'Baixa'}</div></div>
-      <div class="mc"><div class="mc-n">${txPerda}%</div><div class="mc-l">Tx. perda</div><div class="mc-s ${txPerda<=30?'v':'r'}">${txPerda<=30?'Ok':'Alta'}</div></div>
-      <div class="mc"><div class="mc-n">R$${Math.round(receita).toLocaleString('pt-BR')}</div><div class="mc-l">Receita</div></div>
-      <div class="mc"><div class="mc-n">R$${tkMedio.toLocaleString('pt-BR')}</div><div class="mc-l">Ticket médio</div></div>
-      <div class="mc"><div class="mc-n">${atvH}</div><div class="mc-l">Ativ. hoje</div><div class="mc-s v">Hoje</div></div>
-      <div class="mc"><div class="mc-n">${atvA}</div><div class="mc-l">Atrasadas</div><div class="mc-s ${atvA>0?'r':'v'}">${atvA>0?'Atenção':'Ok'}</div></div>
-    </div>
-    <div style="background:var(--G);border-radius:6px;padding:.625rem 1rem;font-size:12px;color:var(--G3);margin-bottom:1rem">
-      📊 Taxas calculadas sobre <strong style="color:var(--K)">${baseConv} negociação${baseConv!==1?'s':''}</strong> no histórico — clientes recorrentes contam por negociação
-    </div>
-    <div class="divider"></div>
-    <div class="slbl">Pissifã — clientes recorrentes</div>
-    <div id="ins-pissifa-bloco"></div>
-    <div class="divider"></div>
-    <div class="slbl">Motivos de perda</div>
-    ${topM.length?topM.slice(0,8).map(([m,n])=>`<div class="bb"><div class="bb-row"><span>${m}</span><span>${n}</span></div><div class="bar"><div class="bar-f" style="width:${Math.round((n/maxM)*100)}%;background:#E24B4A"></div></div></div>`).join('')+(topM[0]?`<div style="background:var(--VM2);border-radius:6px;padding:.625rem 1rem;font-size:12px;color:var(--VM);margin-top:.5rem">⚠ Principal: <strong>${topM[0][0]}</strong> (${topM[0][1]}x)</div>`:''):'<div class="empty">Nenhuma perda no período</div>'}
-    <div class="divider"></div>
-    <div class="slbl">Volume de atividade</div>
-    <div class="mg">
-      <div class="mc"><div class="mc-n">${lista.reduce((a,c)=>a+(c.atv_hist||0),0)}</div><div class="mc-l">Checkpoints</div><div class="mc-s v">executados</div></div>
-      <div class="mc"><div class="mc-n">${lista.filter(c=>atvStatus(c)==='hoje').length}</div><div class="mc-l">Para hoje</div><div class="mc-s v">🟢</div></div>
-      <div class="mc"><div class="mc-n">${lista.filter(c=>atvStatus(c)==='agendada').length}</div><div class="mc-l">Agendadas</div></div>
-      <div class="mc"><div class="mc-n">${lista.filter(c=>atvStatus(c)==='atrasada').length}</div><div class="mc-l">Atrasadas</div><div class="mc-s a">🟡</div></div>
-      <div class="mc"><div class="mc-n">${lista.filter(c=>atvStatus(c)==='sem').length}</div><div class="mc-l">Sem atividade</div><div class="mc-s r">🔴</div></div>
-    </div>
-    <div class="divider"></div>
-    <div class="slbl">Por canal</div>
-    ${Object.entries(cc).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<div class="bb"><div class="bb-row"><span>${CANAL_LABEL[k]||k}</span><span>${n}</span></div><div class="bar"><div class="bar-f" style="width:${Math.round((n/maxC)*100)}%;background:var(--A)"></div></div></div>`).join('')||'<div class="empty">Sem dados</div>'}
-    <div class="divider"></div>
-    <div class="slbl">Por funil</div>
-    ${Object.entries(fc2).map(([nome,n])=>`<div class="bb"><div class="bb-row"><span>${nome}</span><span>${n}</span></div><div class="bar"><div class="bar-f" style="width:${Math.round((n/maxF2)*100)}%;background:var(--L)"></div></div></div>`).join('')||'<div class="empty">Sem dados</div>'}
-  `;
+  var su=document.getElementById('ins-user');
+  if(su){var puv=su.value;su.innerHTML='<option value="todos">Todos usuários</option>'+cfg.usuarios.map(function(u){return'<option value="'+u.id+'">'+u.nome+'</option>';}).join('');if(puv)su.value=puv;}
+  var sf=document.getElementById('ins-funil');
+  if(sf){var pfv=sf.value;sf.innerHTML='<option value="todos">Todos funis</option>'+cfg.funis.map(function(f){return'<option value="'+f.id+'">'+f.nome+'</option>';}).join('');if(pfv)sf.value=pfv;}
+  var iUser=(document.getElementById('ins-user')||{value:'todos'}).value;
+  var iFunil=(document.getElementById('ins-funil')||{value:'todos'}).value;
+  var iCanal=(document.getElementById('ins-canal')||{value:'todos'}).value;
+  var lista=filtPer(contatos);
+  var filtroUser=iUser!=='todos'?iUser:(userAtivo!=='todos'?userAtivo:'todos');
+  if(filtroUser!=='todos')lista=lista.filter(function(c){return c.usuario===filtroUser;});
+  if(iFunil!=='todos')lista=lista.filter(function(c){return c.funil===iFunil;});
+  if(iCanal!=='todos')lista=lista.filter(function(c){return c.canal===iCanal;});
+  var baseContatos=contatos.slice();
+  if(filtroUser!=='todos')baseContatos=baseContatos.filter(function(c){return c.usuario===filtroUser;});
+  if(iCanal!=='todos')baseContatos=baseContatos.filter(function(c){return c.canal===iCanal;});
+  var allNegs=[];
+  baseContatos.forEach(function(c){parseNegHist(c).forEach(function(x){allNegs.push({r:x.r,d:x.d,m:x.m,v:x.v,cid:c.id,funil:c.funil,usuario:c.usuario});});});
+  if(iFunil!=='todos')allNegs=allNegs.filter(function(n){return n.funil===iFunil;});
+  var todasNegs=filtNegsPer(allNegs,false);
+  var prevNegs=filtNegsPer(allNegs,true);
+  var negGanhos=todasNegs.filter(function(n){return n.r==='ganho';});
+  var negPerdas=todasNegs.filter(function(n){return n.r==='perda';});
+  var ganhosPrev=prevNegs.filter(function(n){return n.r==='ganho';});
+  var baseConv=todasNegs.length;
+  var receita=negGanhos.reduce(function(a,n){return a+(n.v||0);},0);
+  var tkMedio=negGanhos.length>0?receita/negGanhos.length:0;
+  var txConv=baseConv>0?Math.round((negGanhos.length/baseConv)*100):0;
+  var txPerda=baseConv>0?Math.round((negPerdas.length/baseConv)*100):0;
+  var receitaPrev=ganhosPrev.reduce(function(a,n){return a+(n.v||0);},0);
+  var tkMedioPrev=ganhosPrev.length>0?receitaPrev/ganhosPrev.length:0;
+  var baseConvPrev=prevNegs.length;
+  var txConvPrev=baseConvPrev>0?Math.round((ganhosPrev.length/baseConvPrev)*100):0;
+  var hasPrev=periodo!=='0'||periodoCustom.ativo;
+  var emAberto=lista.filter(function(c){return !parseNegHist(c).length&&!isGanho(c.funil,c.etapa)&&!isPerdido(c.funil,c.etapa);}).length;
+  var hj=new Date();hj.setHours(0,0,0,0);
+  var atvH=lista.filter(function(c){var d=normDate(c.atv_data);if(!d)return false;return new Date(d+'T00:00:00').getTime()===hj.getTime();}).length;
+  var atvAt=lista.filter(function(c){var d=normDate(c.atv_data);if(!d)return false;return new Date(d+'T00:00:00')<hj;}).length;
+  var atvAg=lista.filter(function(c){return atvStatus(c)==='agendada';}).length;
+  var semAtv=lista.filter(function(c){return atvStatus(c)==='sem';}).length;
+  var checkpts=lista.reduce(function(a,c){return a+(c.atv_hist||0);},0);
+  var porUser={};
+  cfg.usuarios.forEach(function(u){porUser[u.id]={nome:u.nome,ganhos:0,perdas:0,receita:0,negs:0};});
+  todasNegs.forEach(function(n){var uid=n.usuario||'';if(!porUser[uid])porUser[uid]={nome:uid,ganhos:0,perdas:0,receita:0,negs:0};porUser[uid].negs++;if(n.r==='ganho'){porUser[uid].ganhos++;porUser[uid].receita+=(n.v||0);}else if(n.r==='perda')porUser[uid].perdas++;});
+  var usuariosRows=Object.entries(porUser).filter(function(e){return e[1].negs>0;}).sort(function(a,b){return b[1].receita-a[1].receita;});
+  var canalNegs={};
+  todasNegs.forEach(function(n){var c2=contatos.find(function(x){return x.id===n.cid;});var k=c2?(c2.canal||'outro'):'outro';if(!canalNegs[k])canalNegs[k]={ganhos:0,total:0};canalNegs[k].total++;if(n.r==='ganho')canalNegs[k].ganhos++;});
+  var canalEntries=Object.entries(canalNegs).sort(function(a,b){return b[1].ganhos-a[1].ganhos;});
+  var motmc={};negPerdas.forEach(function(n){if(n.m)motmc[n.m]=(motmc[n.m]||0)+1;});
+  var topM=Object.entries(motmc).sort(function(a,b){return b[1]-a[1];});
+  var maxM=Math.max.apply(null,[1].concat(Object.values(motmc)));
+  var funilAtualObj=getFunil(funilAtivo);
+  var stageData=[];
+  if(funilAtualObj){var totalEtapas=contatos.filter(function(c){return c.funil===funilAtivo&&(filtroUser==='todos'||c.usuario===filtroUser);}).length;funilAtualObj.etapas.forEach(function(e){var cnt=contatos.filter(function(c){return c.funil===funilAtivo&&c.etapa===e.id&&(filtroUser==='todos'||c.usuario===filtroUser);}).length;stageData.push({nome:e.nome,count:cnt,pct:totalEtapas>0?Math.round((cnt/totalEtapas)*100):0});});}
+  var maxStage=Math.max.apply(null,[1].concat(stageData.map(function(s){return s.count;})));
+  var convCor=txConv>=15?'var(--VD)':txConv>=8?'var(--AM)':'var(--VM)';
+  var h='';
+  // ── HERO CARDS ──
+  h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:10px;margin-bottom:1rem">';
+  h+='<div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem">';
+  h+='<div style="font-size:10px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Receita</div>';
+  h+='<div style="font-size:1.75rem;font-weight:700;color:var(--K);line-height:1.1">R$'+Math.round(receita).toLocaleString('pt-BR')+'</div>';
+  h+='<div style="font-size:11px;margin-top:6px">'+(hasPrev&&(receitaPrev>0||receita>0)?varPct(receita,receitaPrev):'<span style="color:var(--G3)">'+negGanhos.length+' ganhos</span>')+'</div>';
+  h+='</div>';
+  h+='<div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem">';
+  h+='<div style="font-size:10px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Ganhos</div>';
+  h+='<div style="font-size:1.75rem;font-weight:700;color:var(--VD);line-height:1.1">'+negGanhos.length+'</div>';
+  h+='<div style="font-size:11px;margin-top:6px">'+(hasPrev&&prevNegs.length>0?varPct(negGanhos.length,ganhosPrev.length):'<span style="color:var(--G3)">negociações ganhas</span>')+'</div>';
+  h+='</div>';
+  h+='<div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem">';
+  h+='<div style="font-size:10px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Tx. Conversão</div>';
+  h+='<div style="font-size:1.75rem;font-weight:700;color:'+convCor+';line-height:1.1">'+txConv+'%</div>';
+  h+='<div style="font-size:11px;margin-top:6px">'+(hasPrev&&baseConvPrev>0?varPct(txConv,txConvPrev):'<span style="color:'+convCor+'">'+(txConv>=15?'Boa':txConv>=8?'Regular':'Baixa')+'</span>')+'</div>';
+  h+='</div>';
+  h+='<div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem">';
+  h+='<div style="font-size:10px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Ticket Médio</div>';
+  h+='<div style="font-size:1.75rem;font-weight:700;color:var(--K);line-height:1.1">R$'+Math.round(tkMedio).toLocaleString('pt-BR')+'</div>';
+  h+='<div style="font-size:11px;margin-top:6px">'+(hasPrev&&ganhosPrev.length>0?varPct(Math.round(tkMedio),Math.round(tkMedioPrev)):'<span style="color:var(--G3)">por ganho</span>')+'</div>';
+  h+='</div>';
+  h+='</div>';
+  // ── MINI STATS ──
+  h+='<div class="mg" style="margin-bottom:1rem">';
+  h+='<div class="mc"><div class="mc-n">'+baseConv+'</div><div class="mc-l">Negociações</div><div class="mc-s a">base</div></div>';
+  h+='<div class="mc"><div class="mc-n" style="color:var(--VM)">'+negPerdas.length+'</div><div class="mc-l">Perdidos</div><div class="mc-s r">'+txPerda+'%</div></div>';
+  h+='<div class="mc"><div class="mc-n">'+emAberto+'</div><div class="mc-l">Em aberto</div><div class="mc-s a">sem neg.</div></div>';
+  h+='<div class="mc"><div class="mc-n">'+lista.length+'</div><div class="mc-l">SAFRA</div><div class="mc-s">cards</div></div>';
+  h+='<div class="mc"><div class="mc-n" style="color:var(--A2)">'+checkpts+'</div><div class="mc-l">Checkpoints</div><div class="mc-s v">executados</div></div>';
+  h+='</div>';
+  // ── POR RESPONSÁVEL ──
+  if(usuariosRows.length>0){
+    h+='<div class="divider"></div><div class="slbl">Desempenho por responsável</div>';
+    h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-bottom:1rem">';
+    usuariosRows.forEach(function(entry){
+      var uid=entry[0],v=entry[1];
+      var txU=v.negs>0?Math.round((v.ganhos/v.negs)*100):0;
+      var txUCor=txU>=15?'var(--VD)':txU>=8?'var(--AM)':'var(--VM)';
+      h+='<div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem">';
+      h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">';
+      h+='<div style="font-size:13px;font-weight:700;color:var(--K)">'+(v.nome||uid)+'</div>';
+      h+='<div style="font-size:1.25rem;font-weight:800;color:'+txUCor+'">'+txU+'%</div></div>';
+      h+='<div style="font-size:1.5rem;font-weight:700;color:var(--K);margin-bottom:6px">R$'+Math.round(v.receita).toLocaleString('pt-BR')+'</div>';
+      h+='<div style="display:flex;gap:10px;font-size:11px;margin-bottom:10px">';
+      h+='<span style="color:var(--VD)">&#10003; '+v.ganhos+' ganhos</span>';
+      h+='<span style="color:var(--VM)">&#10007; '+v.perdas+' perdas</span>';
+      h+='<span style="color:var(--G3)">'+v.negs+' total</span></div>';
+      h+='<div style="background:var(--G2);border-radius:4px;height:5px;overflow:hidden">';
+      h+='<div style="width:'+txU+'%;height:100%;border-radius:4px;background:'+txUCor+'"></div></div></div>';
+    });
+    h+='</div>';
+  }
+  // ── CARDS POR ETAPA ──
+  if(stageData.length>0&&stageData.some(function(s){return s.count>0;})){
+    h+='<div class="divider"></div><div class="slbl">Cards por etapa &mdash; '+(funilAtualObj?funilAtualObj.nome:'')+'</div>';
+    h+='<div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem;margin-bottom:1rem">';
+    stageData.forEach(function(s){
+      h+='<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">';
+      h+='<span style="font-weight:500;color:var(--K)">'+s.nome+'</span>';
+      h+='<span style="color:var(--G3)">'+s.count+' '+(s.count===1?'card':'cards')+' &middot; '+s.pct+'%</span></div>';
+      h+='<div style="background:var(--G2);border-radius:4px;height:8px;overflow:hidden">';
+      h+='<div style="width:'+Math.round((s.count/maxStage)*100)+'%;height:100%;border-radius:4px;background:var(--L)"></div></div></div>';
+    });
+    h+='</div>';
+  }
+  // ── CONVERSÃO POR CANAL ──
+  if(canalEntries.length>0){
+    h+='<div class="divider"></div><div class="slbl">Conversão por canal</div>';
+    h+='<div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem;margin-bottom:1rem">';
+    canalEntries.forEach(function(entry){
+      var k=entry[0],v=entry[1];
+      var tx=v.total>0?Math.round((v.ganhos/v.total)*100):0;
+      var cor=tx>=50?'var(--VD)':tx>=30?'var(--L)':'var(--VM)';
+      h+='<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">';
+      h+='<span style="font-size:12px;font-weight:600;color:var(--K)">'+(CANAL_LABEL[k]||k)+'</span>';
+      h+='<div style="display:flex;gap:8px;font-size:11px"><span style="color:var(--G3)">'+v.ganhos+'/'+v.total+' negs</span>';
+      h+='<span style="color:'+cor+';font-weight:700">'+tx+'%</span></div></div>';
+      h+='<div style="background:var(--G2);border-radius:4px;height:7px;overflow:hidden">';
+      h+='<div style="width:'+tx+'%;height:100%;border-radius:4px;background:'+cor+'"></div></div></div>';
+    });
+    h+='</div>';
+  }
+  // ── MOTIVOS DE PERDA ──
+  h+='<div class="divider"></div><div class="slbl">Motivos de perda</div>';
+  if(topM.length){
+    if(topM[0]){
+      h+='<div style="background:var(--VM2);border-radius:8px;padding:.875rem 1rem;margin-bottom:.875rem;display:flex;align-items:center;justify-content:space-between">';
+      h+='<div><div style="font-size:10px;color:var(--VM);font-weight:700;text-transform:uppercase">Principal motivo</div>';
+      h+='<div style="font-size:15px;font-weight:700;color:var(--VM);margin-top:2px">'+topM[0][0]+'</div></div>';
+      h+='<div style="font-size:1.8rem;font-weight:900;color:var(--VM)">'+topM[0][1]+'x</div></div>';
+    }
+    if(topM.length>1){
+      h+='<div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem;margin-bottom:1rem">';
+      topM.slice(1).forEach(function(item){
+        var m=item[0],cnt=item[1];
+        var pct2=Math.round((cnt/maxM)*100);
+        h+='<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">';
+        h+='<span style="color:var(--K);font-weight:500">'+m+'</span><span style="color:var(--G3)">'+cnt+'x</span></div>';
+        h+='<div style="background:var(--G2);border-radius:4px;height:7px;overflow:hidden"><div style="width:'+pct2+'%;height:100%;border-radius:4px;background:#E24B4A"></div></div></div>';
+      });
+      h+='</div>';
+    }
+  }else{h+='<div class="empty">Nenhuma perda no período</div>';}
+  // ── ATIVIDADES ──
+  h+='<div class="divider"></div><div class="slbl">Atividades</div>';
+  h+='<div class="mg" style="margin-bottom:1rem">';
+  h+='<div class="mc"><div class="mc-n" style="color:var(--VD)">'+atvH+'</div><div class="mc-l">Para hoje</div><div class="mc-s v">&#128994;</div></div>';
+  h+='<div class="mc"><div class="mc-n" style="color:var(--AM)">'+atvAt+'</div><div class="mc-l">Atrasadas</div><div class="mc-s a">&#128993;</div></div>';
+  h+='<div class="mc"><div class="mc-n" style="color:var(--G3)">'+atvAg+'</div><div class="mc-l">Agendadas</div></div>';
+  h+='<div class="mc"><div class="mc-n" style="color:var(--VM)">'+semAtv+'</div><div class="mc-l">Sem atividade</div><div class="mc-s r">&#128308;</div></div>';
+  h+='<div class="mc"><div class="mc-n" style="color:var(--A2)">'+checkpts+'</div><div class="mc-l">Checkpoints</div><div class="mc-s v">&#10003;</div></div>';
+  h+='</div>';
+  // ── PISSIFÃ ──
+  h+='<div class="divider"></div><div class="slbl">Pissif&#227; &mdash; clientes recorrentes</div><div id="ins-pissifa-bloco"></div>';
+  document.getElementById('ins-content').innerHTML=h;
   renderInsightsPissifa();
 }
 
