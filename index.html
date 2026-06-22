@@ -618,6 +618,13 @@ function isNegociacao(fid,eid){
 function isGanho(fid,eid){const e=getEtapa(fid,eid);return e&&e.nome.toLowerCase().includes('fechado');}
 function isPerdido(fid,eid){const e=getEtapa(fid,eid);return e&&e.nome.toLowerCase().includes('perdido');}
 
+function getTierCliente(nCompras,ltv){
+  if(nCompras>4&&ltv>1000)return{label:'Pissifã Ouro',icone:'🥇',cor:'#9A6F00',bg:'#FFFAEB',borda:'#D4AF37',sub:nCompras+' compras · LTV R$'+Math.round(ltv)};
+  if(nCompras>3&&ltv>=301&&ltv<=600)return{label:'Pissifã Prata',icone:'🥈',cor:'#3A3A4A',bg:'#F2F2F6',borda:'#A0A0B0',sub:nCompras+' compras · LTV R$'+Math.round(ltv)};
+  if(nCompras>=2&&nCompras<=3&&ltv<=300)return{label:'Pissifã Bronze',icone:'🥉',cor:'#7D4F2B',bg:'#FDF0E8',borda:'#C87941',sub:nCompras+' compras · LTV R$'+Math.round(ltv)};
+  return{label:'Cliente comum',icone:'',cor:'var(--G3)',bg:'var(--G)',borda:'var(--G2)',sub:null};
+}
+
 function parseNegHist(c){
   try{if(c.neg_hist&&c.neg_hist!=='')return JSON.parse(c.neg_hist);}catch(e){}
   return[];
@@ -649,8 +656,9 @@ function ultimaCompraHtml(c){
   const nCompras=ganhos.length;
   const totalGasto=ganhos.reduce((a,h)=>a+(h.v||0),0);
   const totalStr=totalGasto>0?` · 💰 R$${totalGasto.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}`:'';
-  const vip=(totalGasto>=300||nCompras>=3)?' ⭐':'';
-  return`<div class="${cls}">${txt}${nCompras>1?` · ${nCompras}ª compra`:''}${totalStr}${vip}</div>`;
+  var tierC=getTierCliente(nCompras,totalGasto);
+  var vipSfx=tierC.icone?' '+tierC.icone:'';
+  return`<div class="${cls}">${txt}${nCompras>1?` · ${nCompras}ª compra`:''}${totalStr}${vipSfx}</div>`;
 }
 
 // ── CONFIG ───────────────────────────────────────────────
@@ -1496,7 +1504,7 @@ function renderInsightsPissifa(){
   var ganhosPsf=histPsf.filter(function(h){return h.r==='ganho';});
   var receitaPsf=ganhosPsf.reduce(function(a,h){return a+(h.v||0);},0);
   var tkPsf=ganhosPsf.length>0?Math.round(receitaPsf/ganhosPsf.length):0;
-  var vips=psf.filter(function(c){var g=parseNegHist(c).filter(function(h){return h.r==='ganho';});return g.reduce(function(a,h){return a+(h.v||0);},0)>=300||g.length>=3;});
+  var vips=psf.filter(function(c){var g=parseNegHist(c).filter(function(h){return h.r==='ganho';});var ltv2=g.reduce(function(a,h){return a+(h.v||0);},0);return getTierCliente(g.length,ltv2).label!=='Cliente comum';});
   var mediaDias=psf.filter(function(c){return parseNegHist(c).filter(function(h){return h.r==='ganho';}).length>=2;}).map(function(c){var g=parseNegHist(c).filter(function(h){return h.r==='ganho';}).sort(function(a,b){return b.d.localeCompare(a.d);});return Math.abs(Math.floor((new Date(g[0].d)-new Date(g[1].d))/(1000*60*60*24)));});
   var freqMedia=mediaDias.length>0?Math.round(mediaDias.reduce(function(a,b){return a+b;},0)/mediaDias.length):null;
   el.innerHTML='<div class="mg">'
@@ -1565,7 +1573,7 @@ function showPsfDetail(tipo){
       var dias=ultima?diasAtras(ultima.d):null;
       var freq=null;
       if(ganhos.length>=2){var sp=Math.abs(Math.floor((new Date(ganhos[0].d)-new Date(ganhos[ganhos.length-1].d))/(86400000)));freq=Math.round(sp/(ganhos.length-1));}
-      var isVip=total>=300||ganhos.length>=3;
+      var tierP=getTierCliente(ganhos.length,total);
       var diasStr=dias===null?'':dias===0?'Hoje':dias===1?'Ontem':'há '+dias+'d';
       var diasCor=dias===null?'var(--G3)':dias<=30?'var(--VD)':dias<=60?'var(--AM)':'var(--VM)';
       var u=cfg.usuarios.find(function(x){return x.id===c.usuario;});
@@ -1574,7 +1582,7 @@ function showPsfDetail(tipo){
       html+='<div style="background:var(--G);border-radius:10px;padding:.875rem 1rem;margin-bottom:8px">';
       html+='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">';
       html+='<div style="min-width:0;flex:1">';
-      html+='<div style="font-size:13px;font-weight:700;color:var(--K);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(isVip?'&#11088; ':'')+c.nome+'</div>';
+      html+='<div style="font-size:13px;font-weight:700;color:var(--K);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(tierP.icone?tierP.icone+' ':'')+c.nome+'</div>';
       html+='<div style="font-size:11px;color:var(--G3);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap">';
       if(u)html+='<span>&#128100; '+u.nome+'</span>';
       if(etapaObj)html+='<span>'+etapaObj.nome+'</span>';
@@ -1645,17 +1653,17 @@ function openContatoDetail(id){
   var ganhos=hist.filter(function(h){return h.r==='ganho';}).sort(function(a,b){return b.d.localeCompare(a.d);});
   var ltv=ganhos.reduce(function(a,h){return a+(h.v||0);},0);
   var nCompras=ganhos.length;
-  var isVip=ltv>=500&&nCompras>2;
   var tkMed=nCompras>0?Math.round(ltv/nCompras):0;
   var nPerdas=hist.filter(function(h){return h.r==='perda';}).length;
   var ultimaCompra=ganhos[0]?ganhos[0].d:null;
   var dias=ultimaCompra?diasAtras(ultimaCompra):null;
   var diasStr=dias===null?'&#8212;':dias===0?'Hoje':dias===1?'Ontem':'há '+dias+'d';
   var diasCor=dias===null?'var(--G3)':dias<=30?'var(--VD)':dias<=60?'var(--AM)':'var(--VM)';
+  var tier=getTierCliente(nCompras,ltv);
   var metrics='';
-  metrics+='<div style="background:'+(isVip?'var(--AM2)':'var(--G)')+';border-radius:8px;padding:10px;margin-bottom:10px;text-align:center">';
-  metrics+='<div style="font-size:14px;font-weight:800;color:'+(isVip?'var(--AM)':'var(--G3)')+'">'+( isVip?'&#11088; VIP':'Cliente comum')+'</div>';
-  if(isVip)metrics+='<div style="font-size:10px;color:var(--AM);margin-top:2px">LTV ≥ R$500 e 3+ compras</div>';
+  metrics+='<div style="background:'+tier.bg+';border:1px solid '+tier.borda+';border-radius:8px;padding:10px;margin-bottom:10px;text-align:center">';
+  metrics+='<div style="font-size:14px;font-weight:800;color:'+tier.cor+'">'+(tier.icone?tier.icone+' ':'')+tier.label+'</div>';
+  if(tier.sub)metrics+='<div style="font-size:10px;color:'+tier.cor+';margin-top:2px;opacity:.8">'+tier.sub+'</div>';
   metrics+='</div>';
   metrics+=detRow('LTV','<strong style="color:var(--VD)">R$'+Math.round(ltv).toLocaleString('pt-BR')+'</strong>');
   metrics+=detRow('Compras',nCompras+(nCompras===1?' compra':' compras'));
