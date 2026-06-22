@@ -546,10 +546,25 @@ textarea.fi{resize:vertical;min-height:60px}
 
 <!-- MODAL EDITAR GANHO -->
 <div class="overlay" id="modal-edit-neg" style="display:none">
-<div class="modal" style="max-width:380px">
+<div class="modal" style="max-width:500px">
   <div class="mtitle"><span>Editar ganho</span><button class="mcl" onclick="closeM('modal-edit-neg')">&#10005;</button></div>
-  <div class="fg fg1" style="margin-bottom:.75rem"><div><label class="flbl">Data do ganho</label><input class="fi" type="date" id="f-editneg-data"></div></div>
-  <div class="fg fg1" style="margin-bottom:1rem"><div><label class="flbl">Valor (R$)</label><input class="fi" type="number" id="f-editneg-valor" placeholder="0"></div></div>
+  <div class="fg fg2" style="margin-bottom:.75rem">
+    <div><label class="flbl">Data do ganho</label><input class="fi" type="date" id="f-editneg-data"></div>
+    <div><label class="flbl">Valor (R$)</label><input class="fi" type="number" id="f-editneg-valor" placeholder="0"></div>
+  </div>
+  <div style="background:var(--G);border-radius:8px;padding:.75rem;margin-bottom:.75rem">
+    <div style="font-size:10px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">Itens do pedido</div>
+    <div class="fg fg3" style="margin-bottom:.5rem">
+      <div><label class="flbl">Estampa</label><select class="fi" id="f-editneg-estampa"><option value="">&#8212; Estampa &#8212;</option></select></div>
+      <div><label class="flbl">Cor</label><select class="fi" id="f-editneg-cor"><option value="">&#8212; Cor &#8212;</option></select></div>
+      <div><label class="flbl">Tamanho</label><select class="fi" id="f-editneg-tamanho"><option value="">&#8212; Tamanho &#8212;</option></select></div>
+    </div>
+    <div class="fg fg2" style="margin-bottom:0">
+      <div><label class="flbl">Qtd</label><input class="fi" type="number" id="f-editneg-qty" min="1" value="1"></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn sm laranja full" onclick="adicionarItemEditNeg()">+ Adicionar</button></div>
+    </div>
+  </div>
+  <div id="editneg-itens-lista" style="margin-bottom:.75rem"></div>
   <div style="display:flex;gap:8px">
     <button class="btn primary full" onclick="saveEditNeg()">Salvar</button>
     <button class="btn full" onclick="closeM('modal-edit-neg')">Cancelar</button>
@@ -635,6 +650,7 @@ let perdaCid=null, ganhoCid=null, atvCid=null, editNegCid=null, editNegIdx=null;
 let motivoSel='', dragId=null, currentDetailId=null;
 let catalogo={estampas:[],cores:[],tamanhos:[]};
 var pedidoItens=[];
+var editNegItens=[];
 
 const CANAL_LABEL={instagram:'Instagram',story:'Story',anuncio:'Anúncio',indicacao:'Indicação',atelie:'Ateliê',busca:'Google',whatsapp:'WhatsApp',outro:'Outro'};
 
@@ -1838,6 +1854,18 @@ function openEditNeg(cid,idx){
   var neg=hist[idx];if(!neg||neg.r!=='ganho')return;
   document.getElementById('f-editneg-data').value=neg.d||hojeISO();
   document.getElementById('f-editneg-valor').value=neg.v||'';
+  var estOpts='<option value="">&#8212; Estampa &#8212;</option>';
+  catalogo.estampas.forEach(function(e){estOpts+='<option value="'+e.nome+'">'+e.nome+'</option>';});
+  var corOpts='<option value="">&#8212; Cor &#8212;</option>';
+  catalogo.cores.forEach(function(e){corOpts+='<option value="'+e.nome+'">'+e.nome+'</option>';});
+  var tamOpts='<option value="">&#8212; Tamanho &#8212;</option>';
+  catalogo.tamanhos.forEach(function(e){tamOpts+='<option value="'+e.nome+'">'+e.nome+'</option>';});
+  document.getElementById('f-editneg-estampa').innerHTML=estOpts;
+  document.getElementById('f-editneg-cor').innerHTML=corOpts;
+  document.getElementById('f-editneg-tamanho').innerHTML=tamOpts;
+  document.getElementById('f-editneg-qty').value='1';
+  editNegItens=(neg.itens||[]).slice();
+  renderItensEditNeg();
   document.getElementById('fb-editneg').textContent='';
   document.getElementById('modal-edit-neg').style.display='flex';
 }
@@ -1849,17 +1877,46 @@ async function saveEditNeg(){
   var novaData=document.getElementById('f-editneg-data').value;
   var novoValor=parseFloat(document.getElementById('f-editneg-valor').value)||0;
   if(!novaData){setFb('fb-editneg','Data obrigatória','er');return;}
-  neg.d=novaData;neg.v=novoValor;
+  neg.d=novaData;neg.v=novoValor;neg.itens=editNegItens.slice();
   c.neg_hist=JSON.stringify(hist);
   setFb('fb-editneg','Salvando...','info');
   try{
     await apiSave(c);
     closeM('modal-edit-neg');
     var savedCid=editNegCid;
-    editNegCid=null;editNegIdx=null;
+    editNegCid=null;editNegIdx=null;editNegItens=[];
     await doSync();
     openContatoDetail(savedCid);
   }catch(ex){setFb('fb-editneg','Erro ao salvar','er');}
+}
+
+function adicionarItemEditNeg(){
+  var est=document.getElementById('f-editneg-estampa').value;
+  var cor=document.getElementById('f-editneg-cor').value;
+  var tam=document.getElementById('f-editneg-tamanho').value;
+  var qty=parseInt(document.getElementById('f-editneg-qty').value)||1;
+  if(!est&&!cor&&!tam){ss('er','Selecione ao menos um campo');return;}
+  editNegItens.push({estampa:est,cor:cor,tamanho:tam,qty:qty});
+  document.getElementById('f-editneg-estampa').value='';
+  document.getElementById('f-editneg-cor').value='';
+  document.getElementById('f-editneg-tamanho').value='';
+  document.getElementById('f-editneg-qty').value='1';
+  renderItensEditNeg();
+}
+function removerItemEditNeg(i){editNegItens.splice(i,1);renderItensEditNeg();}
+function renderItensEditNeg(){
+  var el=document.getElementById('editneg-itens-lista');if(!el)return;
+  if(!editNegItens.length){el.innerHTML='<div style="font-size:11px;color:var(--G3);text-align:center;padding:.5rem 0">Nenhum item adicionado</div>';return;}
+  var h='<div style="background:var(--W);border:1px solid var(--G2);border-radius:8px;overflow:hidden;margin-bottom:.5rem">';
+  editNegItens.forEach(function(item,i){
+    var desc='';
+    if(item.estampa)desc+=item.estampa;
+    if(item.cor)desc+=(desc?' &middot; ':'')+item.cor;
+    if(item.tamanho)desc+=(desc?' &middot; ':'')+item.tamanho;
+    h+='<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;'+(i>0?'border-top:1px solid var(--G2)':'')+'"><div style="font-size:12px;color:var(--K)">'+desc+'</div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:var(--G3)">&times;'+item.qty+'</span><button class="btn xs danger" onclick="removerItemEditNeg('+i+')">&#10005;</button></div></div>';
+  });
+  h+='</div>';
+  el.innerHTML=h;
 }
 
 // ── GANHOS LIST MODAL ────────────────────────────────────
