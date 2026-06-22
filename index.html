@@ -364,9 +364,8 @@ textarea.fi{resize:vertical;min-height:60px}
     <div><label class="flbl">Aniversário</label><input class="fi" type="date" id="f-aniversario"></div>
     <div><label class="flbl">Endereço</label><input class="fi" id="f-endereco" placeholder="Rua, número, cidade..."></div>
   </div>
-  <div class="fg fg2">
+  <div class="fg fg1">
     <div><label class="flbl">Cód. MarketUp</label><input class="fi" id="f-cod-marketup" placeholder="Ex: 12345"></div>
-    <div style="display:flex;align-items:center;gap:8px;padding-top:1.4rem"><input type="checkbox" id="f-nf-emitida" style="width:16px;height:16px;accent-color:var(--VD)"><label class="flbl" for="f-nf-emitida" style="margin:0;cursor:pointer">NF emitida</label></div>
   </div>
   <div id="neg-hist-wrap" style="display:none;margin-bottom:.75rem">
     <div class="flbl" style="margin-bottom:.5rem">Histórico de negociações</div>
@@ -559,6 +558,22 @@ textarea.fi{resize:vertical;min-height:60px}
 </div>
 </div>
 
+<!-- MODAL GANHOS LIST -->
+<div class="overlay" id="modal-ganhos-list" style="display:none">
+<div class="modal" style="max-width:620px">
+  <div class="mtitle"><span id="mgl-title">Ganhos</span><button class="mcl" onclick="closeM('modal-ganhos-list')">&#10005;</button></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:.875rem;flex-wrap:wrap">
+    <div style="display:flex;gap:5px;flex-wrap:wrap">
+      <button class="filtro active" id="fgl-todos" onclick="setFiltroGL(this,'todos')">Todos</button>
+      <button class="filtro" id="fgl-ok" onclick="setFiltroGL(this,'ok')">&#10003; NF emitida</button>
+      <button class="filtro" id="fgl-pend" onclick="setFiltroGL(this,'pend')">&#10007; Sem NF</button>
+    </div>
+    <div id="mgl-summary" style="font-size:11px;color:var(--G3)"></div>
+  </div>
+  <div id="mgl-content" style="max-height:65vh;overflow-y:auto"></div>
+</div>
+</div>
+
 <!-- MODAL USUARIO -->
 <div class="overlay" id="modal-user" style="display:none">
 <div class="modal">
@@ -612,7 +627,7 @@ let cfg = {
   ],
   usuarios:[{id:'lucas',nome:'Lucas'},{id:'ana',nome:'Ana'}]
 };
-let funilAtivo='d2c', filtroC='todos', filtroAtv='todos', filtroRes='todos', filtroTier='todos';
+let funilAtivo='d2c', filtroC='todos', filtroAtv='todos', filtroRes='todos', filtroTier='todos', filtroGL='todos';
 let periodo='30', periodoCustom={ativo:false,de:null,ate:null};
 let userAtivo='todos';
 let editCid=null, editFid=null, editEfid=null, editEid=null;
@@ -993,7 +1008,7 @@ async function confirmarGanho(){
   var ganhosAnt=hist.filter(function(h){return h.r==='ganho';});
   var isSegundoGanhoD2c=ganhosAnt.length===1&&c.funil==='d2c';
   var dataGanho=(document.getElementById('f-neg-data')&&document.getElementById('f-neg-data').value)||hojeISO();
-  hist.push({r:'ganho',d:dataGanho,m:'',v:valorNeg,itens:pedidoItens.slice()});
+  hist.push({r:'ganho',d:dataGanho,m:'',v:valorNeg,itens:pedidoItens.slice(),nf:false});
   c.neg_hist=JSON.stringify(hist);
   c.valor=valorNeg;c.et='fechado';c.motivo_perda='';c.resultado='';
   if(c.funil==='pissifa'){c.etapa='psf-ativo';}
@@ -1134,7 +1149,6 @@ function openContato(id=null,fid=null,eid=null){
     document.getElementById('f-aniversario').value=c.aniversario||'';
     document.getElementById('f-endereco').value=c.endereco||'';
     document.getElementById('f-cod-marketup').value=c.cod_marketup||'';
-    document.getElementById('f-nf-emitida').checked=c.nf_emitida||false;
     // Histórico
     const hist=parseNegHist(c);
     const hw=document.getElementById('neg-hist-wrap');
@@ -1169,7 +1183,6 @@ function openContato(id=null,fid=null,eid=null){
     ['f-nome','f-tel','f-valor','f-atv-data-modal','f-atv-desc-modal','f-produto','f-obs','f-email','f-cpf','f-endereco','f-cod-marketup'].forEach(x=>document.getElementById(x).value='');
     document.getElementById('f-canal').value='instagram';document.getElementById('f-user').value='';
     document.getElementById('f-aniversario').value='';
-    document.getElementById('f-nf-emitida').checked=false;
     const hw=document.getElementById('neg-hist-wrap');if(hw)hw.style.display='none';
     const rw=document.getElementById('reabrir-wrap');if(rw)rw.style.display='none';
     if(eid)setTimeout(()=>{document.getElementById('f-etapa').value=eid;},30);
@@ -1209,7 +1222,7 @@ async function saveContato(){
     endereco:document.getElementById('f-endereco').value.trim(),
     notas:prev.notas||'',
     cod_marketup:document.getElementById('f-cod-marketup').value.trim(),
-    nf_emitida:document.getElementById('f-nf-emitida').checked
+    nf_emitida:prev.nf_emitida||false
   };
   try{await apiSave(c);setFb('fb-c','Salvo!','ok');closeM('modal-c');await doSync();}
   catch(ex){setFb('fb-c','Erro ao salvar','er');console.error(ex);}
@@ -1412,8 +1425,8 @@ function renderInsights(){
   h+='<div style="font-size:1.75rem;font-weight:700;color:var(--K);line-height:1.1">R$'+Math.round(receita).toLocaleString('pt-BR')+'</div>';
   h+='<div style="font-size:11px;margin-top:6px">'+(hasPrev&&(receitaPrev>0||receita>0)?varPct(receita,receitaPrev):'<span style="color:var(--G3)">'+negGanhos.length+' ganhos</span>')+'</div>';
   h+='</div>';
-  h+='<div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem">';
-  h+='<div style="font-size:10px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Ganhos</div>';
+  h+='<div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem;cursor:pointer;transition:border-color .15s,box-shadow .15s" onclick="openGanhosModal()" onmouseover="this.style.borderColor=\'var(--VD)\';this.style.boxShadow=\'0 2px 8px rgba(39,80,10,.15)\'" onmouseout="this.style.borderColor=\'var(--G2)\';this.style.boxShadow=\'none\'">';
+  h+='<div style="font-size:10px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">Ganhos <span style="font-size:9px;opacity:.5">ver lista &#8594;</span></div>';
   h+='<div style="font-size:1.75rem;font-weight:700;color:var(--VD);line-height:1.1">'+negGanhos.length+'</div>';
   h+='<div style="font-size:11px;margin-top:6px">'+(hasPrev&&prevNegs.length>0?varPct(negGanhos.length,ganhosPrev.length):'<span style="color:var(--G3)">negociações ganhas</span>')+'</div>';
   h+='</div>';
@@ -1712,7 +1725,6 @@ function openContatoDetail(id){
   info+=detRow('Cadastro',fmtDFull(c.data.slice(0,10)));
   if(c.produto)info+=detRow('Produto',c.produto);
   if(c.cod_marketup)info+=detRow('Cód. MarketUp',c.cod_marketup);
-  if(c.nf_emitida)info+=detRow('NF Emitida','<span style="color:var(--VD);font-weight:600">&#10003; Sim</span>');
   document.getElementById('det-info').innerHTML=info;
   // METRICS
   var hist=parseNegHist(c);
@@ -1848,6 +1860,91 @@ async function saveEditNeg(){
     await doSync();
     openContatoDetail(savedCid);
   }catch(ex){setFb('fb-editneg','Erro ao salvar','er');}
+}
+
+// ── GANHOS LIST MODAL ────────────────────────────────────
+function openGanhosModal(){
+  filtroGL='todos';
+  document.querySelectorAll('#modal-ganhos-list .filtro').forEach(function(b){b.classList.remove('active');});
+  var todos=document.getElementById('fgl-todos');if(todos)todos.classList.add('active');
+  renderGanhosModal();
+  document.getElementById('modal-ganhos-list').style.display='flex';
+}
+
+function setFiltroGL(btn,f){
+  document.querySelectorAll('#modal-ganhos-list .filtro').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  filtroGL=f;
+  renderGanhosModal();
+}
+
+function renderGanhosModal(){
+  var iUser=(document.getElementById('ins-user')||{value:'todos'}).value;
+  var iFunil=(document.getElementById('ins-funil')||{value:'todos'}).value;
+  var iCanal=(document.getElementById('ins-canal')||{value:'todos'}).value;
+  var filtroUser=iUser!=='todos'?iUser:(userAtivo!=='todos'?userAtivo:'todos');
+  var baseContatos=contatos.slice();
+  if(filtroUser!=='todos')baseContatos=baseContatos.filter(function(c){return c.usuario===filtroUser;});
+  if(iFunil!=='todos')baseContatos=baseContatos.filter(function(c){return c.funil===iFunil;});
+  if(iCanal!=='todos')baseContatos=baseContatos.filter(function(c){return c.canal===iCanal;});
+  var allGanhos=[];
+  baseContatos.forEach(function(c){
+    parseNegHist(c).forEach(function(x,i){
+      if(x.r==='ganho')allGanhos.push({r:'ganho',d:x.d,v:x.v||0,nf:x.nf||false,itens:x.itens||[],cid:c.id,nome:c.nome,usuario:c.usuario,negIdx:i});
+    });
+  });
+  var lista=filtNegsPer(allGanhos,false).sort(function(a,b){return b.d.localeCompare(a.d);});
+  var nfOkCnt=lista.filter(function(g){return g.nf;}).length;
+  var nfPendCnt=lista.filter(function(g){return !g.nf;}).length;
+  var titleEl=document.getElementById('mgl-title');
+  if(titleEl)titleEl.textContent='Ganhos ('+lista.length+')';
+  var sumEl=document.getElementById('mgl-summary');
+  if(sumEl)sumEl.innerHTML='<span style="color:var(--VD);font-weight:600">&#10003; '+nfOkCnt+' NF ok</span> &nbsp;&middot;&nbsp; <span style="color:var(--VM);font-weight:600">&#10007; '+nfPendCnt+' sem NF</span>';
+  var listView=lista;
+  if(filtroGL==='ok')listView=lista.filter(function(g){return g.nf;});
+  if(filtroGL==='pend')listView=lista.filter(function(g){return !g.nf;});
+  var el=document.getElementById('mgl-content');if(!el)return;
+  if(!listView.length){el.innerHTML='<div class="empty">Nenhum ganho encontrado</div>';return;}
+  var h='';
+  listView.forEach(function(g){
+    var u=cfg.usuarios.find(function(x){return x.id===g.usuario;});
+    var isNfOk=g.nf;
+    var nfCor=isNfOk?'var(--VD)':'var(--VM)';
+    var nfBg=isNfOk?'var(--VD2)':'var(--VM2)';
+    h+='<div style="display:flex;align-items:center;gap:10px;padding:.75rem 0;border-bottom:1px solid var(--G2)">';
+    h+='<div style="width:34px;height:34px;border-radius:50%;background:'+nfBg+';color:'+nfCor+';display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0">'+(isNfOk?'&#10003;':'&#10007;')+'</div>';
+    h+='<div style="flex:1;min-width:0">';
+    h+='<div style="font-size:13px;font-weight:600;color:var(--K);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+g.nome+'</div>';
+    h+='<div style="font-size:11px;color:var(--G3);margin-top:2px">';
+    h+=fmtDFull(g.d);
+    if(g.v)h+=' &middot; <strong style="color:var(--K)">R$'+g.v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'</strong>';
+    if(u)h+=' &middot; '+u.nome;
+    h+='</div></div>';
+    h+='<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">';
+    if(isNfOk){
+      h+='<span style="font-size:10px;background:var(--VD2);color:var(--VD);border:1px solid var(--VD);border-radius:20px;padding:2px 8px;font-weight:600;white-space:nowrap">NF emitida</span>';
+      h+='<button class="btn xs danger" onclick="toggleNFGanho(\''+g.cid+'\','+g.negIdx+')" title="Desmarcar NF">&#10005;</button>';
+    }else{
+      h+='<button class="btn xs primary" onclick="toggleNFGanho(\''+g.cid+'\','+g.negIdx+')" title="Marcar NF como emitida">Marcar NF</button>';
+    }
+    h+='<button class="btn xs" onclick="closeM(\'modal-ganhos-list\');openContatoDetail(\''+g.cid+'\')" title="Abrir cliente">&#9654;</button>';
+    h+='</div></div>';
+  });
+  el.innerHTML=h;
+}
+
+async function toggleNFGanho(cid,idx){
+  var c=contatos.find(function(x){return x.id===cid;});if(!c)return;
+  var hist=parseNegHist(c);
+  if(!hist[idx]||hist[idx].r!=='ganho')return;
+  hist[idx].nf=!hist[idx].nf;
+  c.neg_hist=JSON.stringify(hist);
+  ss('ld','Salvando...');
+  try{
+    await apiSave(c);
+    await doSync();
+    renderGanhosModal();
+  }catch(ex){ss('er','Erro ao salvar');}
 }
 
 // ── CONFIG ───────────────────────────────────────────────
