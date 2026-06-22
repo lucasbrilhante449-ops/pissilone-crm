@@ -1700,7 +1700,7 @@ function openContatoDetail(id){
   document.getElementById('det-sub').textContent=(funil?funil.nome:'')+(etapa?' · '+etapa.nome:'')+(c.canal?' · '+(CANAL_LABEL[c.canal]||c.canal):'');
   var u=cfg.usuarios.find(function(x){return x.id===c.usuario;});
   document.getElementById('det-responsavel').innerHTML=u?'&#128100; '+u.nome:'<span style="color:var(--G3)">Sem responsável</span>';
-  document.getElementById('det-edit-btn').onclick=function(){openContato(id);};
+  document.getElementById('det-edit-btn').onclick=function(){closeM('modal-detail');openContato(id);};
   // INFO
   var info='';
   info+=detRow('Telefone',c.tel?'<a href="tel:'+c.tel+'" style="color:var(--L);text-decoration:none">'+c.tel+'</a>':'&#8212;');
