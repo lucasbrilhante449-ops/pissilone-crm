@@ -402,7 +402,10 @@ textarea.fi{resize:vertical;min-height:60px}
     </div>
   </div>
   <div id="pedido-itens-lista" style="margin-bottom:.75rem"></div>
-  <div class="fg fg1" style="margin-bottom:.75rem"><div><label class="flbl">Valor total (R$)</label><input class="fi" type="number" id="f-neg-valor" placeholder="0"></div></div>
+  <div class="fg fg2" style="margin-bottom:.75rem">
+    <div><label class="flbl">Data do ganho</label><input class="fi" type="date" id="f-neg-data"></div>
+    <div><label class="flbl">Valor total (R$)</label><input class="fi" type="number" id="f-neg-valor" placeholder="0"></div>
+  </div>
   <div style="display:flex;gap:8px">
     <button class="btn primary full" onclick="confirmarGanho()">&#10003; Confirmar ganho</button>
     <button class="btn full" onclick="closeM('modal-valor-neg')">Cancelar</button>
@@ -542,6 +545,20 @@ textarea.fi{resize:vertical;min-height:60px}
 </div>
 </div>
 
+<!-- MODAL EDITAR GANHO -->
+<div class="overlay" id="modal-edit-neg" style="display:none">
+<div class="modal" style="max-width:380px">
+  <div class="mtitle"><span>Editar ganho</span><button class="mcl" onclick="closeM('modal-edit-neg')">&#10005;</button></div>
+  <div class="fg fg1" style="margin-bottom:.75rem"><div><label class="flbl">Data do ganho</label><input class="fi" type="date" id="f-editneg-data"></div></div>
+  <div class="fg fg1" style="margin-bottom:1rem"><div><label class="flbl">Valor (R$)</label><input class="fi" type="number" id="f-editneg-valor" placeholder="0"></div></div>
+  <div style="display:flex;gap:8px">
+    <button class="btn primary full" onclick="saveEditNeg()">Salvar</button>
+    <button class="btn full" onclick="closeM('modal-edit-neg')">Cancelar</button>
+  </div>
+  <div class="fb" id="fb-editneg"></div>
+</div>
+</div>
+
 <!-- MODAL USUARIO -->
 <div class="overlay" id="modal-user" style="display:none">
 <div class="modal">
@@ -599,7 +616,7 @@ let funilAtivo='d2c', filtroC='todos', filtroAtv='todos', filtroRes='todos', fil
 let periodo='30', periodoCustom={ativo:false,de:null,ate:null};
 let userAtivo='todos';
 let editCid=null, editFid=null, editEfid=null, editEid=null;
-let perdaCid=null, ganhoCid=null, atvCid=null;
+let perdaCid=null, ganhoCid=null, atvCid=null, editNegCid=null, editNegIdx=null;
 let motivoSel='', dragId=null, currentDetailId=null;
 let catalogo={estampas:[],cores:[],tamanhos:[]};
 var pedidoItens=[];
@@ -923,6 +940,7 @@ function abrirModalGanho(id){
   document.getElementById('f-item-qty').value='1';
   renderItensPedido();
   var el=document.getElementById('f-neg-valor');if(el)el.value=c.valor||'';
+  var elData=document.getElementById('f-neg-data');if(elData)elData.value=hojeISO();
   var hist=parseNegHist(c);
   var ganhoAnts=hist.filter(function(h){return h.r==='ganho';});
   var prev=document.getElementById('f-neg-hist-preview');
@@ -974,7 +992,8 @@ async function confirmarGanho(){
   var hist=parseNegHist(c);
   var ganhosAnt=hist.filter(function(h){return h.r==='ganho';});
   var isSegundoGanhoD2c=ganhosAnt.length===1&&c.funil==='d2c';
-  hist.push({r:'ganho',d:hojeISO(),m:'',v:valorNeg,itens:pedidoItens.slice()});
+  var dataGanho=(document.getElementById('f-neg-data')&&document.getElementById('f-neg-data').value)||hojeISO();
+  hist.push({r:'ganho',d:dataGanho,m:'',v:valorNeg,itens:pedidoItens.slice()});
   c.neg_hist=JSON.stringify(hist);
   c.valor=valorNeg;c.et='fechado';c.motivo_perda='';c.resultado='';
   if(c.funil==='pissifa'){c.etapa='psf-ativo';}
@@ -1723,11 +1742,12 @@ function openContatoDetail(id){
   // NOTAS
   document.getElementById('det-notas-ta').value=c.notas||'';
   // TIMELINE
-  var events=hist.slice().sort(function(a,b){return b.d.localeCompare(a.d);});
+  var eventsWithIdx=hist.map(function(ev,i){return{ev:ev,i:i};}).sort(function(a,b){return b.ev.d.localeCompare(a.ev.d);});
   var tl='';
-  if(!events.length){tl='<div class="empty" style="padding:.75rem 0">Sem histórico de negociações</div>';}
+  if(!eventsWithIdx.length){tl='<div class="empty" style="padding:.75rem 0">Sem histórico de negociações</div>';}
   else{
-    events.forEach(function(ev){
+    eventsWithIdx.forEach(function(item){
+      var ev=item.ev;var origIdx=item.i;
       var isG=ev.r==='ganho';
       var cor=isG?'var(--VD)':'var(--VM)';
       var bg=isG?'var(--VD2)':'var(--VM2)';
@@ -1737,7 +1757,9 @@ function openContatoDetail(id){
       tl+='<div style="font-size:12px;font-weight:600;color:'+cor+'">'+(isG?'Ganho':'Perda')+(ev.v?' — R$'+ev.v:'')+'</div>';
       if(ev.m)tl+='<div style="font-size:11px;color:var(--G3)">'+ev.m+'</div>';
       tl+='<div style="font-size:10px;color:var(--G3)">'+fmtDFull(ev.d)+'</div>';
-      tl+='</div></div>';
+      tl+='</div>';
+      if(isG)tl+='<button class="btn xs" onclick="openEditNeg(\''+id+'\','+origIdx+')" title="Editar data/valor">&#9998;</button>';
+      tl+='</div>';
     });
   }
   document.getElementById('det-timeline').innerHTML=tl;
@@ -1794,6 +1816,38 @@ async function checkpointAtvDetail(){
   ss('ld','Concluída...');
   try{await apiSave(c);await doSync();openContatoDetail(currentDetailId);}
   catch(ex){ss('er','Erro');}
+}
+
+// ── EDITAR GANHO ─────────────────────────────────────────
+function openEditNeg(cid,idx){
+  editNegCid=cid;editNegIdx=idx;
+  var c=contatos.find(function(x){return x.id===cid;});if(!c)return;
+  var hist=parseNegHist(c);
+  var neg=hist[idx];if(!neg||neg.r!=='ganho')return;
+  document.getElementById('f-editneg-data').value=neg.d||hojeISO();
+  document.getElementById('f-editneg-valor').value=neg.v||'';
+  document.getElementById('fb-editneg').textContent='';
+  document.getElementById('modal-edit-neg').style.display='flex';
+}
+async function saveEditNeg(){
+  if(editNegCid===null||editNegIdx===null)return;
+  var c=contatos.find(function(x){return x.id===editNegCid;});if(!c)return;
+  var hist=parseNegHist(c);
+  var neg=hist[editNegIdx];if(!neg)return;
+  var novaData=document.getElementById('f-editneg-data').value;
+  var novoValor=parseFloat(document.getElementById('f-editneg-valor').value)||0;
+  if(!novaData){setFb('fb-editneg','Data obrigatória','er');return;}
+  neg.d=novaData;neg.v=novoValor;
+  c.neg_hist=JSON.stringify(hist);
+  setFb('fb-editneg','Salvando...','info');
+  try{
+    await apiSave(c);
+    closeM('modal-edit-neg');
+    var savedCid=editNegCid;
+    editNegCid=null;editNegIdx=null;
+    await doSync();
+    openContatoDetail(savedCid);
+  }catch(ex){setFb('fb-editneg','Erro ao salvar','er');}
 }
 
 // ── CONFIG ───────────────────────────────────────────────
