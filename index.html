@@ -620,8 +620,8 @@ function isPerdido(fid,eid){const e=getEtapa(fid,eid);return e&&e.nome.toLowerCa
 
 function getTierCliente(nCompras,ltv){
   if(nCompras>4&&ltv>600)return{label:'Pissifã Ouro',icone:'🥇',cor:'#9A6F00',bg:'#FFFAEB',borda:'#D4AF37',sub:nCompras+' compras · LTV R$'+Math.round(ltv)};
-  if(nCompras>3&&ltv>=301&&ltv<=600)return{label:'Pissifã Prata',icone:'🥈',cor:'#3A3A4A',bg:'#F2F2F6',borda:'#A0A0B0',sub:nCompras+' compras · LTV R$'+Math.round(ltv)};
-  if(nCompras>=2&&nCompras<=3&&ltv<=300)return{label:'Pissifã Bronze',icone:'🥉',cor:'#7D4F2B',bg:'#FDF0E8',borda:'#C87941',sub:nCompras+' compras · LTV R$'+Math.round(ltv)};
+  if(nCompras>3&&ltv>301)return{label:'Pissifã Prata',icone:'🥈',cor:'#3A3A4A',bg:'#F2F2F6',borda:'#A0A0B0',sub:nCompras+' compras · LTV R$'+Math.round(ltv)};
+  if(nCompras>=2&&nCompras<=3&&ltv>300)return{label:'Pissifã Bronze',icone:'🥉',cor:'#7D4F2B',bg:'#FDF0E8',borda:'#C87941',sub:nCompras+' compras · LTV R$'+Math.round(ltv)};
   return{label:'Cliente comum',icone:'',cor:'var(--G3)',bg:'var(--G)',borda:'var(--G2)',sub:null};
 }
 
