@@ -674,9 +674,11 @@ async function saveCfg(){
 
 async function loadCatalogo(){
   try{
-    var rows=await sbGet('catalogo','select=*&order=tipo.asc,nome.asc');
+    var resp=await fetch(SB_URL+'/rest/v1/catalogo?select=*&order=tipo.asc,nome.asc',{headers:SB_HDR});
+    if(!resp.ok){console.warn('loadCatalogo HTTP error:',resp.status,await resp.text());return;}
+    var rows=await resp.json();
     catalogo={estampas:[],cores:[],tamanhos:[]};
-    (rows||[]).forEach(function(r){
+    (Array.isArray(rows)?rows:[]).forEach(function(r){
       if(r.tipo==='estampa')catalogo.estampas.push({id:r.id,nome:r.nome});
       else if(r.tipo==='cor')catalogo.cores.push({id:r.id,nome:r.nome});
       else if(r.tipo==='tamanho')catalogo.tamanhos.push({id:r.id,nome:r.nome});
@@ -1795,11 +1797,22 @@ async function saveCatalogoItem(){
   if(!nome){setFb('fb-cat','Nome obrigatório','er');return;}
   setFb('fb-cat','Salvando...','info');
   try{
-    await sbUpsert('catalogo',{nome:nome,tipo:tipo});
+    var resp=await fetch(SB_URL+'/rest/v1/catalogo',{
+      method:'POST',
+      headers:Object.assign({},SB_HDR,{'Prefer':'resolution=merge-duplicates,return=representation'}),
+      body:JSON.stringify({nome:nome,tipo:tipo})
+    });
+    if(!resp.ok){
+      var eBody=await resp.json();
+      var eMsg=eBody.message||eBody.hint||('HTTP '+resp.status);
+      setFb('fb-cat','Erro: '+eMsg,'er');
+      console.error('saveCatalogoItem error:',eBody);
+      return;
+    }
     await loadCatalogo();
     closeM('modal-catalogo');
     renderCatalogo();
-  }catch(ex){setFb('fb-cat','Erro ao salvar','er');console.error(ex);}
+  }catch(ex){setFb('fb-cat','Erro ao salvar: '+ex.message,'er');console.error(ex);}
 }
 
 async function delCatalogoItem(id,tipo){
