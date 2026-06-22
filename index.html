@@ -167,6 +167,12 @@ textarea.fi{resize:vertical;min-height:60px}
 .ultima-compra.alerta{color:var(--AM);background:var(--AM2)}
 .ultima-compra.critico{color:var(--VM);background:var(--VM2)}
 @media(max-width:600px){.fg2,.fg3{grid-template-columns:1fr}.mg{grid-template-columns:repeat(2,1fr)}}
+.cat-sw{position:relative}
+.cat-sd{display:none;position:absolute;z-index:500;background:var(--W);border:1px solid var(--G2);border-radius:8px;max-height:200px;overflow-y:auto;width:100%;top:calc(100% + 2px);left:0;box-shadow:0 4px 12px rgba(0,0,0,.13)}
+.cat-sd-opt{padding:7px 12px;font-size:12px;color:var(--K);cursor:pointer}
+.cat-sd-opt:hover{background:var(--L3)}
+.cat-sd-add{padding:7px 12px;font-size:12px;color:var(--L2);cursor:pointer;border-top:1px solid var(--G2);font-weight:600}
+.cat-sd-add:hover{background:var(--L3)}
 </style>
 </head>
 <body>
@@ -245,7 +251,11 @@ textarea.fi{resize:vertical;min-height:60px}
   <div class="board-wrap"><div class="board" id="board"></div></div>
 </div>
 <div id="pane-contatos" class="pane">
-  <div class="bw" style="margin-bottom:.625rem"><span class="bi">⌕</span><input class="fi busca-fi" id="busca" placeholder="Buscar por nome..." oninput="renderContatos()"></div>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:.625rem;flex-wrap:wrap">
+    <div class="bw" style="flex:1;min-width:200px;margin-bottom:0"><span class="bi">⌕</span><input class="fi busca-fi" id="busca" placeholder="Buscar por nome..." oninput="renderContatos()"></div>
+    <button class="btn sm laranja" onclick="openContato(null)">+ Contato</button>
+    <button class="btn sm" onclick="openImportModal()">&#8595; Importar CSV</button>
+  </div>
   <div style="display:flex;align-items:center;gap:6px;margin-bottom:.875rem;flex-wrap:wrap">
     <div class="fd-wrap">
       <button class="fd-btn" id="btn-filtros-c" onclick="toggleFiltrosC()">
@@ -362,7 +372,12 @@ textarea.fi{resize:vertical;min-height:60px}
   </div>
   <div class="fg fg2">
     <div><label class="flbl">Aniversário</label><input class="fi" type="date" id="f-aniversario"></div>
-    <div><label class="flbl">Endereço</label><input class="fi" id="f-endereco" placeholder="Rua, número, cidade..."></div>
+    <div><label class="flbl">Endereço</label><input class="fi" id="f-endereco" placeholder="Rua, número..."></div>
+  </div>
+  <div class="fg fg3">
+    <div><label class="flbl">Cidade</label><input class="fi" id="f-cidade" placeholder="Mossoró..."></div>
+    <div><label class="flbl">UF</label><input class="fi" id="f-uf" placeholder="RN" maxlength="2" style="text-transform:uppercase"></div>
+    <div><label class="flbl">CEP</label><input class="fi" id="f-cep" placeholder="59600-000"></div>
   </div>
   <div class="fg fg1">
     <div><label class="flbl">Cód. MarketUp</label><input class="fi" id="f-cod-marketup" placeholder="Ex: 12345"></div>
@@ -391,9 +406,9 @@ textarea.fi{resize:vertical;min-height:60px}
   <div style="background:var(--G);border-radius:8px;padding:.75rem;margin-bottom:.75rem">
     <div class="slbl" style="font-size:10px;margin-bottom:.5rem">Itens do pedido</div>
     <div class="fg fg3" style="margin-bottom:.5rem">
-      <div><label class="flbl">Estampa</label><select class="fi" id="f-item-estampa"><option value="">&#8212; Estampa &#8212;</option></select></div>
-      <div><label class="flbl">Cor</label><select class="fi" id="f-item-cor"><option value="">&#8212; Cor &#8212;</option></select></div>
-      <div><label class="flbl">Tamanho</label><select class="fi" id="f-item-tamanho"><option value="">&#8212; Tamanho &#8212;</option></select></div>
+      <div class="cat-sw"><label class="flbl">Estampa</label><input class="fi" type="text" id="csi-estampa-novo" placeholder="Buscar estampa..." oninput="catSelFilter('estampa','novo')" onfocus="catSelOpen('estampa','novo')" onblur="setTimeout(function(){catSelClose('estampa','novo');},220)" autocomplete="off"><div class="cat-sd" id="csd-estampa-novo"></div></div>
+      <div class="cat-sw"><label class="flbl">Cor</label><input class="fi" type="text" id="csi-cor-novo" placeholder="Buscar cor..." oninput="catSelFilter('cor','novo')" onfocus="catSelOpen('cor','novo')" onblur="setTimeout(function(){catSelClose('cor','novo');},220)" autocomplete="off"><div class="cat-sd" id="csd-cor-novo"></div></div>
+      <div class="cat-sw"><label class="flbl">Tamanho</label><input class="fi" type="text" id="csi-tamanho-novo" placeholder="Buscar tamanho..." oninput="catSelFilter('tamanho','novo')" onfocus="catSelOpen('tamanho','novo')" onblur="setTimeout(function(){catSelClose('tamanho','novo');},220)" autocomplete="off"><div class="cat-sd" id="csd-tamanho-novo"></div></div>
     </div>
     <div class="fg fg2" style="margin-bottom:0">
       <div><label class="flbl">Qtd</label><input class="fi" type="number" id="f-item-qty" min="1" value="1"></div>
@@ -555,9 +570,9 @@ textarea.fi{resize:vertical;min-height:60px}
   <div style="background:var(--G);border-radius:8px;padding:.75rem;margin-bottom:.75rem">
     <div style="font-size:10px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">Itens do pedido</div>
     <div class="fg fg3" style="margin-bottom:.5rem">
-      <div><label class="flbl">Estampa</label><select class="fi" id="f-editneg-estampa"><option value="">&#8212; Estampa &#8212;</option></select></div>
-      <div><label class="flbl">Cor</label><select class="fi" id="f-editneg-cor"><option value="">&#8212; Cor &#8212;</option></select></div>
-      <div><label class="flbl">Tamanho</label><select class="fi" id="f-editneg-tamanho"><option value="">&#8212; Tamanho &#8212;</option></select></div>
+      <div class="cat-sw"><label class="flbl">Estampa</label><input class="fi" type="text" id="csi-estampa-edit" placeholder="Buscar estampa..." oninput="catSelFilter('estampa','edit')" onfocus="catSelOpen('estampa','edit')" onblur="setTimeout(function(){catSelClose('estampa','edit');},220)" autocomplete="off"><div class="cat-sd" id="csd-estampa-edit"></div></div>
+      <div class="cat-sw"><label class="flbl">Cor</label><input class="fi" type="text" id="csi-cor-edit" placeholder="Buscar cor..." oninput="catSelFilter('cor','edit')" onfocus="catSelOpen('cor','edit')" onblur="setTimeout(function(){catSelClose('cor','edit');},220)" autocomplete="off"><div class="cat-sd" id="csd-cor-edit"></div></div>
+      <div class="cat-sw"><label class="flbl">Tamanho</label><input class="fi" type="text" id="csi-tamanho-edit" placeholder="Buscar tamanho..." oninput="catSelFilter('tamanho','edit')" onfocus="catSelOpen('tamanho','edit')" onblur="setTimeout(function(){catSelClose('tamanho','edit');},220)" autocomplete="off"><div class="cat-sd" id="csd-tamanho-edit"></div></div>
     </div>
     <div class="fg fg2" style="margin-bottom:0">
       <div><label class="flbl">Qtd</label><input class="fi" type="number" id="f-editneg-qty" min="1" value="1"></div>
@@ -586,6 +601,28 @@ textarea.fi{resize:vertical;min-height:60px}
     <div id="mgl-summary" style="font-size:11px;color:var(--G3)"></div>
   </div>
   <div id="mgl-content" style="max-height:65vh;overflow-y:auto"></div>
+</div>
+</div>
+
+<!-- MODAL IMPORTAR CSV -->
+<div class="overlay" id="modal-importar" style="display:none">
+<div class="modal" style="max-width:640px">
+  <div class="mtitle"><span>Importar Clientes via CSV</span><button class="mcl" onclick="closeM('modal-importar')">&#10005;</button></div>
+  <div style="background:var(--G);border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem">
+    <div style="font-size:12px;font-weight:700;color:var(--K);margin-bottom:4px">Formato esperado (separador: ponto e vírgula)</div>
+    <code style="font-size:11px;color:var(--G3);word-break:break-all;display:block">ID; NOME; CPF; TELEFONE; CIDADE; CEP; ENDEREÇO; UF; ANIVERSÁRIO; EMAIL</code>
+    <div style="font-size:11px;color:var(--G3);margin-top:5px">A primeira linha com cabeçalho é ignorada automaticamente. ID pode estar vazio.</div>
+  </div>
+  <label style="display:flex;align-items:center;justify-content:center;gap:8px;padding:.6rem 1rem;background:var(--L);color:var(--W);border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;margin-bottom:.875rem">
+    &#128196; Selecionar arquivo .csv
+    <input type="file" accept=".csv,.txt" id="f-importar-file" style="display:none" onchange="handleImportFile(event)">
+  </label>
+  <div id="importar-preview" style="max-height:280px;overflow-y:auto;margin-bottom:.875rem"></div>
+  <div style="display:flex;gap:8px">
+    <button class="btn primary full" id="btn-exec-import" style="display:none" onclick="executeImport()">&#10003; Importar todos</button>
+    <button class="btn full" onclick="closeM('modal-importar')">Fechar</button>
+  </div>
+  <div class="fb" id="fb-importar"></div>
 </div>
 </div>
 
@@ -777,6 +814,7 @@ async function doSync(){
         neg_hist:String(r.neg_hist||''),
         email:String(meta.email||''),cpf:String(meta.cpf||''),
         endereco:String(meta.endereco||''),notas:String(meta.notas||''),
+        cidade:String(meta.cidade||''),uf:String(meta.uf||''),cep:String(meta.cep||''),
         aniversario:normDate(String(r.aniversario||'')),
         cod_marketup:String(r.cod_marketup||''),nf_emitida:Boolean(r.nf_emitida)||false
       };
@@ -795,7 +833,7 @@ async function apiSave(c){
     atv_desc:c.atv_desc||'',resultado:c.resultado||'',
     atv_hist:c.atv_hist||0,neg_hist:c.neg_hist||'',
     aniversario:c.aniversario||null,cod_marketup:c.cod_marketup||'',nf_emitida:c.nf_emitida||false,
-    meta:JSON.stringify({email:c.email||'',cpf:c.cpf||'',endereco:c.endereco||'',notas:c.notas||''})
+    meta:JSON.stringify({email:c.email||'',cpf:c.cpf||'',endereco:c.endereco||'',notas:c.notas||'',cidade:c.cidade||'',uf:c.uf||'',cep:c.cep||''})
   });
 }
 
@@ -959,15 +997,9 @@ function abrirModalGanho(id){
   ganhoCid=id;
   var c=contatos.find(function(x){return x.id===id;});if(!c)return;
   pedidoItens=[];
-  var estOpts='<option value="">— Estampa —</option>';
-  catalogo.estampas.forEach(function(e){estOpts+='<option value="'+e.nome+'">'+e.nome+'</option>';});
-  var corOpts='<option value="">— Cor —</option>';
-  catalogo.cores.forEach(function(e){corOpts+='<option value="'+e.nome+'">'+e.nome+'</option>';});
-  var tamOpts='<option value="">— Tamanho —</option>';
-  catalogo.tamanhos.forEach(function(e){tamOpts+='<option value="'+e.nome+'">'+e.nome+'</option>';});
-  document.getElementById('f-item-estampa').innerHTML=estOpts;
-  document.getElementById('f-item-cor').innerHTML=corOpts;
-  document.getElementById('f-item-tamanho').innerHTML=tamOpts;
+  document.getElementById('csi-estampa-novo').value='';
+  document.getElementById('csi-cor-novo').value='';
+  document.getElementById('csi-tamanho-novo').value='';
   document.getElementById('f-item-qty').value='1';
   renderItensPedido();
   var el=document.getElementById('f-neg-valor');if(el)el.value=c.valor||'';
@@ -987,15 +1019,15 @@ function abrirModalGanho(id){
 }
 
 function adicionarItemPedido(){
-  var est=document.getElementById('f-item-estampa').value;
-  var cor=document.getElementById('f-item-cor').value;
-  var tam=document.getElementById('f-item-tamanho').value;
+  var est=catSelVal('estampa','novo');
+  var cor=catSelVal('cor','novo');
+  var tam=catSelVal('tamanho','novo');
   var qty=parseInt(document.getElementById('f-item-qty').value)||1;
   if(!est&&!cor&&!tam){ss('er','Selecione ao menos um campo');setTimeout(function(){ss('ok',contatos.length+' contatos');},2000);return;}
   pedidoItens.push({estampa:est,cor:cor,tamanho:tam,qty:qty});
-  document.getElementById('f-item-estampa').value='';
-  document.getElementById('f-item-cor').value='';
-  document.getElementById('f-item-tamanho').value='';
+  document.getElementById('csi-estampa-novo').value='';
+  document.getElementById('csi-cor-novo').value='';
+  document.getElementById('csi-tamanho-novo').value='';
   document.getElementById('f-item-qty').value='1';
   renderItensPedido();
 }
@@ -1164,6 +1196,9 @@ function openContato(id=null,fid=null,eid=null){
     document.getElementById('f-cpf').value=c.cpf||'';
     document.getElementById('f-aniversario').value=c.aniversario||'';
     document.getElementById('f-endereco').value=c.endereco||'';
+    document.getElementById('f-cidade').value=c.cidade||'';
+    document.getElementById('f-uf').value=c.uf||'';
+    document.getElementById('f-cep').value=c.cep||'';
     document.getElementById('f-cod-marketup').value=c.cod_marketup||'';
     // Histórico
     const hist=parseNegHist(c);
@@ -1196,7 +1231,7 @@ function openContato(id=null,fid=null,eid=null){
       if(rb&&ultimaNeg){rb.className=ultimaNeg.r==='ganho'?'res-ganho':'res-perda';rb.textContent=ultimaNeg.r==='ganho'?'✓ Ganho':'✗ Perda';}
     }
   }else{
-    ['f-nome','f-tel','f-valor','f-atv-data-modal','f-atv-desc-modal','f-produto','f-obs','f-email','f-cpf','f-endereco','f-cod-marketup'].forEach(x=>document.getElementById(x).value='');
+    ['f-nome','f-tel','f-valor','f-atv-data-modal','f-atv-desc-modal','f-produto','f-obs','f-email','f-cpf','f-endereco','f-cod-marketup','f-cidade','f-uf','f-cep'].forEach(x=>document.getElementById(x).value='');
     document.getElementById('f-canal').value='instagram';document.getElementById('f-user').value='';
     document.getElementById('f-aniversario').value='';
     const hw=document.getElementById('neg-hist-wrap');if(hw)hw.style.display='none';
@@ -1236,6 +1271,9 @@ async function saveContato(){
     cpf:document.getElementById('f-cpf').value.trim(),
     aniversario:normDate(document.getElementById('f-aniversario').value)||'',
     endereco:document.getElementById('f-endereco').value.trim(),
+    cidade:document.getElementById('f-cidade').value.trim(),
+    uf:document.getElementById('f-uf').value.trim().toUpperCase(),
+    cep:document.getElementById('f-cep').value.trim(),
     notas:prev.notas||'',
     cod_marketup:document.getElementById('f-cod-marketup').value.trim(),
     nf_emitida:prev.nf_emitida||false
@@ -1576,6 +1614,39 @@ function renderInsights(){
     h+=renderProdCol('Tamanhos',topTam,maxT);
     h+='</div>';
   }else{h+='<div class="empty" style="margin-bottom:1rem">Nenhum pedido com itens registrados</div>';}
+  // ── LOCALIZAÇÃO ──
+  h+='<div class="divider"></div><div class="slbl">Localização dos clientes</div>';
+  var contCidade={},contUF={};
+  baseContatos.forEach(function(c){
+    if(c.cidade)contCidade[c.cidade]=(contCidade[c.cidade]||0)+1;
+    if(c.uf)contUF[c.uf]=(contUF[c.uf]||0)+1;
+  });
+  var topCidades=Object.entries(contCidade).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
+  var topUFs=Object.entries(contUF).sort(function(a,b){return b[1]-a[1];}).slice(0,10);
+  if(topCidades.length||topUFs.length){
+    var maxCid=topCidades.length?topCidades[0][1]:1;
+    var maxUF2=topUFs.length?topUFs[0][1]:1;
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem">';
+    h+='<div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem">';
+    h+='<div style="font-size:10px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem">Por cidade</div>';
+    if(!topCidades.length){h+='<div style="font-size:11px;color:var(--G3);font-style:italic">Sem dados</div>';}
+    else topCidades.forEach(function(e){
+      var pct=Math.round((e[1]/maxCid)*100);
+      h+='<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="color:var(--K);font-weight:500">'+e[0]+'</span><span style="color:var(--G3)">'+e[1]+' cliente'+(e[1]>1?'s':'')+'</span></div>';
+      h+='<div style="background:var(--G2);border-radius:4px;height:6px;overflow:hidden"><div style="width:'+pct+'%;height:100%;border-radius:4px;background:var(--A)"></div></div></div>';
+    });
+    h+='</div>';
+    h+='<div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem">';
+    h+='<div style="font-size:10px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem">Por estado (UF)</div>';
+    if(!topUFs.length){h+='<div style="font-size:11px;color:var(--G3);font-style:italic">Sem dados</div>';}
+    else topUFs.forEach(function(e){
+      var pct=Math.round((e[1]/maxUF2)*100);
+      h+='<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="color:var(--K);font-weight:700">'+e[0]+'</span><span style="color:var(--G3)">'+e[1]+' cliente'+(e[1]>1?'s':'')+'</span></div>';
+      h+='<div style="background:var(--G2);border-radius:4px;height:6px;overflow:hidden"><div style="width:'+pct+'%;height:100%;border-radius:4px;background:var(--A2)"></div></div></div>';
+    });
+    h+='</div>';
+    h+='</div>';
+  }else{h+='<div class="empty" style="margin-bottom:1rem">Nenhum dado de localização cadastrado ainda</div>';}
   // ── ATIVIDADES ──
   h+='<div class="divider"></div><div class="slbl">Atividades</div>';
   h+='<div class="mg" style="margin-bottom:1rem">';
@@ -1737,6 +1808,8 @@ function openContatoDetail(id){
   info+=detRow('CPF',c.cpf||'&#8212;');
   info+=detRow('Aniversário',c.aniversario?fmtDFull(c.aniversario):'&#8212;');
   info+=detRow('Endereço',c.endereco||'&#8212;');
+  if(c.cidade||c.uf)info+=detRow('Cidade',(c.cidade||'&#8212;')+(c.uf?' &mdash; '+c.uf:''));
+  if(c.cep)info+=detRow('CEP',c.cep);
   info+=detRow('Canal',CANAL_LABEL[c.canal]||c.canal||'&#8212;');
   info+=detRow('Cadastro',fmtDFull(c.data.slice(0,10)));
   if(c.produto)info+=detRow('Produto',c.produto);
@@ -1854,15 +1927,9 @@ function openEditNeg(cid,idx){
   var neg=hist[idx];if(!neg||neg.r!=='ganho')return;
   document.getElementById('f-editneg-data').value=neg.d||hojeISO();
   document.getElementById('f-editneg-valor').value=neg.v||'';
-  var estOpts='<option value="">&#8212; Estampa &#8212;</option>';
-  catalogo.estampas.forEach(function(e){estOpts+='<option value="'+e.nome+'">'+e.nome+'</option>';});
-  var corOpts='<option value="">&#8212; Cor &#8212;</option>';
-  catalogo.cores.forEach(function(e){corOpts+='<option value="'+e.nome+'">'+e.nome+'</option>';});
-  var tamOpts='<option value="">&#8212; Tamanho &#8212;</option>';
-  catalogo.tamanhos.forEach(function(e){tamOpts+='<option value="'+e.nome+'">'+e.nome+'</option>';});
-  document.getElementById('f-editneg-estampa').innerHTML=estOpts;
-  document.getElementById('f-editneg-cor').innerHTML=corOpts;
-  document.getElementById('f-editneg-tamanho').innerHTML=tamOpts;
+  document.getElementById('csi-estampa-edit').value='';
+  document.getElementById('csi-cor-edit').value='';
+  document.getElementById('csi-tamanho-edit').value='';
   document.getElementById('f-editneg-qty').value='1';
   editNegItens=(neg.itens||[]).slice();
   renderItensEditNeg();
@@ -1891,15 +1958,15 @@ async function saveEditNeg(){
 }
 
 function adicionarItemEditNeg(){
-  var est=document.getElementById('f-editneg-estampa').value;
-  var cor=document.getElementById('f-editneg-cor').value;
-  var tam=document.getElementById('f-editneg-tamanho').value;
+  var est=catSelVal('estampa','edit');
+  var cor=catSelVal('cor','edit');
+  var tam=catSelVal('tamanho','edit');
   var qty=parseInt(document.getElementById('f-editneg-qty').value)||1;
   if(!est&&!cor&&!tam){ss('er','Selecione ao menos um campo');return;}
   editNegItens.push({estampa:est,cor:cor,tamanho:tam,qty:qty});
-  document.getElementById('f-editneg-estampa').value='';
-  document.getElementById('f-editneg-cor').value='';
-  document.getElementById('f-editneg-tamanho').value='';
+  document.getElementById('csi-estampa-edit').value='';
+  document.getElementById('csi-cor-edit').value='';
+  document.getElementById('csi-tamanho-edit').value='';
   document.getElementById('f-editneg-qty').value='1';
   renderItensEditNeg();
 }
@@ -1917,6 +1984,143 @@ function renderItensEditNeg(){
   });
   h+='</div>';
   el.innerHTML=h;
+}
+
+// ── CATALOG SEARCHABLE SELECT ────────────────────────────
+function catSelVal(tipo,ctx){return(document.getElementById('csi-'+tipo+'-'+ctx)||{value:''}).value.trim();}
+
+function catSelRender(tipo,ctx,items,q){
+  var el=document.getElementById('csd-'+tipo+'-'+ctx);if(!el)return;
+  var h='';
+  items.forEach(function(item){
+    var esc=item.nome.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    h+='<div class="cat-sd-opt" onmousedown="catSelPick(\''+tipo+'\',\''+ctx+'\',\''+esc+'\')">'+item.nome+'</div>';
+  });
+  if(q&&!items.find(function(i){return i.nome.toLowerCase()===q.toLowerCase();})){
+    h+='<div class="cat-sd-add" onmousedown="catSelAddNew(\''+tipo+'\',\''+ctx+'\')">+ Adicionar &quot;'+q+'&quot;</div>';
+  }
+  if(!h){
+    var empMsg='<div style="padding:8px 12px;font-size:12px;color:var(--G3);font-style:italic">Nenhum cadastrado</div>';
+    h=q?empMsg+'<div class="cat-sd-add" onmousedown="catSelAddNew(\''+tipo+'\',\''+ctx+'\')">+ Adicionar &quot;'+q+'&quot;</div>':empMsg;
+  }
+  el.innerHTML=h;
+  el.style.display='block';
+}
+
+function catSelFilter(tipo,ctx){
+  var q=catSelVal(tipo,ctx).toLowerCase();
+  var all=(tipo==='estampa'?catalogo.estampas:tipo==='cor'?catalogo.cores:catalogo.tamanhos);
+  var filtered=q?all.filter(function(i){return i.nome.toLowerCase().includes(q);}):all;
+  catSelRender(tipo,ctx,filtered,q);
+}
+
+function catSelOpen(tipo,ctx){catSelFilter(tipo,ctx);}
+function catSelClose(tipo,ctx){var el=document.getElementById('csd-'+tipo+'-'+ctx);if(el)el.style.display='none';}
+
+function catSelPick(tipo,ctx,val){
+  var inp=document.getElementById('csi-'+tipo+'-'+ctx);if(inp)inp.value=val;
+  catSelClose(tipo,ctx);
+}
+
+async function catSelAddNew(tipo,ctx){
+  var q=catSelVal(tipo,ctx);if(!q)return;
+  try{
+    var resp=await fetch(SB_URL+'/rest/v1/catalogo',{
+      method:'POST',
+      headers:Object.assign({},SB_HDR,{'Prefer':'resolution=merge-duplicates,return=representation'}),
+      body:JSON.stringify({nome:q,tipo:tipo})
+    });
+    if(!resp.ok){ss('er','Erro ao adicionar');return;}
+    await loadCatalogo();
+    catSelPick(tipo,ctx,q);
+    renderCatalogo();
+  }catch(e){ss('er','Erro ao adicionar');}
+}
+
+// ── IMPORTAR CSV ──────────────────────────────────────────
+var importarLinhas=[];
+
+function openImportModal(){
+  importarLinhas=[];
+  document.getElementById('importar-preview').innerHTML='';
+  var btn=document.getElementById('btn-exec-import');if(btn)btn.style.display='none';
+  var fi=document.getElementById('f-importar-file');if(fi)fi.value='';
+  setFb('fb-importar','','');
+  document.getElementById('modal-importar').style.display='flex';
+}
+
+function handleImportFile(e){
+  var file=e.target.files[0];if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    var text=ev.target.result;
+    var lines=text.split(/\r?\n/).filter(function(l){return l.trim();});
+    var skipFirst=false;
+    if(lines.length>0){
+      var fc=lines[0].split(';')[0].trim().toLowerCase();
+      if(fc==='id'||fc==='nome'||!/^\d+$/.test(fc.replace(/[^0-9]/g,'')))skipFirst=true;
+    }
+    var parsed=(skipFirst?lines.slice(1):lines).map(function(line){
+      var cols=line.split(';').map(function(s){return s.trim().replace(/^"|"$/g,'');});
+      return{
+        id:cols[0]||'',nome:cols[1]||'',cpf:cols[2]||'',tel:cols[3]||'',
+        cidade:cols[4]||'',cep:cols[5]||'',endereco:cols[6]||'',uf:cols[7]||'',
+        aniversario:normDate(cols[8]||''),email:cols[9]||''
+      };
+    }).filter(function(r){return r.nome;});
+    importarLinhas=parsed;
+    renderImportPreview(parsed);
+  };
+  reader.readAsText(file,'UTF-8');
+}
+
+function renderImportPreview(rows){
+  var el=document.getElementById('importar-preview');
+  var btn=document.getElementById('btn-exec-import');
+  if(!rows.length){el.innerHTML='<div class="empty">Nenhum dado válido encontrado</div>';if(btn)btn.style.display='none';return;}
+  var h='<div style="font-size:11px;color:var(--G3);margin-bottom:8px">'+rows.length+' cliente'+(rows.length>1?'s':'')+' encontrado'+(rows.length>1?'s':'')+'. Prévia:</div>';
+  h+='<div style="background:var(--G);border-radius:8px;overflow:hidden">';
+  rows.slice(0,10).forEach(function(r,i){
+    h+='<div style="padding:7px 12px;font-size:12px;'+(i>0?'border-top:1px solid var(--G2)':'')+'"><strong>'+r.nome+'</strong>';
+    if(r.tel)h+=' &middot; '+r.tel;
+    if(r.cidade)h+=' &middot; '+r.cidade;
+    if(r.uf)h+='/'+r.uf;
+    if(r.email)h+=' &middot; '+r.email;
+    h+='</div>';
+  });
+  if(rows.length>10)h+='<div style="padding:7px 12px;font-size:11px;color:var(--G3);border-top:1px solid var(--G2)">... e mais '+(rows.length-10)+' clientes</div>';
+  h+='</div>';
+  el.innerHTML=h;
+  if(btn){btn.style.display='flex';}
+}
+
+async function executeImport(){
+  if(!importarLinhas.length)return;
+  var btn=document.getElementById('btn-exec-import');
+  if(btn){btn.textContent='Importando...';btn.disabled=true;}
+  setFb('fb-importar','Salvando...','info');
+  var ok=0,dup=0,erros=0;
+  for(var i=0;i<importarLinhas.length;i++){
+    var r=importarLinhas[i];
+    var jaExiste=r.tel?contatos.find(function(c){return c.tel&&c.tel===r.tel;}):null;
+    if(jaExiste){dup++;continue;}
+    var novo={
+      id:(r.id&&r.id.length>3)?r.id:String(Date.now()+i),
+      nome:r.nome,tel:r.tel,et:'atendimento',canal:'outro',valor:0,produto:'',obs:'',
+      data:new Date().toISOString(),compras:0,funil:'d2c',etapa:'d2c-bv',usuario:'',
+      followup:'',motivo_perda:'',atv_data:'',atv_desc:'',resultado:'',atv_hist:0,
+      neg_hist:'',email:r.email,cpf:r.cpf,endereco:r.endereco,
+      cidade:r.cidade,uf:r.uf,cep:r.cep,
+      aniversario:r.aniversario,notas:'',cod_marketup:'',nf_emitida:false
+    };
+    try{await apiSave(novo);ok++;}catch(e){erros++;}
+  }
+  if(btn){btn.textContent='&#10003; Importar todos';btn.disabled=false;}
+  var msg=ok+' importado'+(ok!==1?'s':'');
+  if(dup)msg+=' &middot; '+dup+' já existiam';
+  if(erros)msg+=' &middot; '+erros+' erro'+(erros>1?'s':'');
+  setFb('fb-importar',msg,'ok');
+  await doSync();
 }
 
 // ── GANHOS LIST MODAL ────────────────────────────────────
