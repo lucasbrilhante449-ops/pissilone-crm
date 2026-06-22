@@ -245,8 +245,22 @@ textarea.fi{resize:vertical;min-height:60px}
   <div class="board-wrap"><div class="board" id="board"></div></div>
 </div>
 <div id="pane-contatos" class="pane">
-  <div class="bw"><span class="bi">⌕</span><input class="fi busca-fi" id="busca" placeholder="Buscar por nome..." oninput="renderContatos()"></div>
-  <div class="filtros" id="filtros-c"></div>
+  <div class="bw" style="margin-bottom:.625rem"><span class="bi">⌕</span><input class="fi busca-fi" id="busca" placeholder="Buscar por nome..." oninput="renderContatos()"></div>
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:.875rem;flex-wrap:wrap">
+    <div class="fd-wrap">
+      <button class="fd-btn" id="btn-filtros-c" onclick="toggleFiltrosC()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 13 13"><line x1="1" y1="3" x2="12" y2="3"/><line x1="3" y1="6.5" x2="10" y2="6.5"/><line x1="5" y1="10" x2="8" y2="10"/></svg>
+        Filtros
+        <span class="fd-ind" id="filtro-c-ind"></span>
+        <span style="font-size:10px;opacity:.6">&#9660;</span>
+      </button>
+      <div class="fd-panel" id="fd-panel-c">
+        <div class="fd-slbl">Etapa</div>
+        <div class="fd-opts" id="filtros-c" style="margin-bottom:0"></div>
+      </div>
+    </div>
+    <div id="filtros-tier" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+  </div>
   <div id="lista-c"></div>
 </div>
 <div id="pane-insights" class="pane">
@@ -581,7 +595,7 @@ let cfg = {
   ],
   usuarios:[{id:'lucas',nome:'Lucas'},{id:'ana',nome:'Ana'}]
 };
-let funilAtivo='d2c', filtroC='todos', filtroAtv='todos', filtroRes='todos';
+let funilAtivo='d2c', filtroC='todos', filtroAtv='todos', filtroRes='todos', filtroTier='todos';
 let periodo='30', periodoCustom={ativo:false,de:null,ate:null};
 let userAtivo='todos';
 let editCid=null, editFid=null, editEfid=null, editEid=null;
@@ -767,8 +781,8 @@ function updFiltroBtn(){
 }
 document.addEventListener('click',function(e){
   if(!e.target.closest('.fd-wrap')){
-    const p=document.getElementById('fd-panel');
-    if(p)p.classList.remove('open');
+    const p=document.getElementById('fd-panel');if(p)p.classList.remove('open');
+    const pc=document.getElementById('fd-panel-c');if(pc)pc.classList.remove('open');
   }
 });
 
@@ -1192,11 +1206,35 @@ window.delC=async function(id){
 // ── CONTATOS LIST ────────────────────────────────────────
 function renderContatos(){
   const funil=getFunil(funilAtivo);
+  // Etapa filters (inside Filtros dropdown)
   const fc=document.getElementById('filtros-c');
-  fc.innerHTML=`<button class="filtro${filtroC==='todos'?' active':''}" onclick="setFiltroC(this,'todos')">Todos</button>`;
-  if(funil)funil.etapas.forEach(e=>{fc.innerHTML+=`<button class="filtro${filtroC===e.id?' active':''}" onclick="setFiltroC(this,'${e.id}')">${e.nome}</button>`;});
+  if(fc){
+    fc.innerHTML=`<button class="filtro${filtroC==='todos'?' active':''}" onclick="setFiltroC(this,'todos')">Todos</button>`;
+    if(funil)funil.etapas.forEach(e=>{fc.innerHTML+=`<button class="filtro${filtroC===e.id?' active':''}" onclick="setFiltroC(this,'${e.id}')">${e.nome}</button>`;});
+  }
+  // Tier category filters (plain buttons)
+  const ft=document.getElementById('filtros-tier');
+  if(ft){
+    const tiers=[{id:'todos',label:'Todos'},{id:'ouro',label:'🥇 Ouro'},{id:'prata',label:'🥈 Prata'},{id:'bronze',label:'🥉 Bronze'},{id:'comum',label:'Cliente comum'}];
+    ft.innerHTML=tiers.map(t=>`<button class="filtro${filtroTier===t.id?' active':''}" onclick="setFiltroTier(this,'${t.id}')">${t.label}</button>`).join('');
+  }
+  updFiltroCBtn();
   const busca=(document.getElementById('busca')||{value:''}).value.toLowerCase();
-  const lista=contatos.filter(c=>(filtroC==='todos'||c.etapa===filtroC)&&(!busca||c.nome.toLowerCase().includes(busca))&&(userAtivo==='todos'||c.usuario===userAtivo));
+  const lista=contatos.filter(c=>{
+    if(filtroC!=='todos'&&c.etapa!==filtroC)return false;
+    if(busca&&!c.nome.toLowerCase().includes(busca))return false;
+    if(userAtivo!=='todos'&&c.usuario!==userAtivo)return false;
+    if(filtroTier!=='todos'){
+      const ganhos=parseNegHist(c).filter(h=>h.r==='ganho');
+      const ltv=ganhos.reduce((a,h)=>a+(h.v||0),0);
+      const tier=getTierCliente(ganhos.length,ltv);
+      if(filtroTier==='ouro'&&tier.label!=='Pissifã Ouro')return false;
+      if(filtroTier==='prata'&&tier.label!=='Pissifã Prata')return false;
+      if(filtroTier==='bronze'&&tier.label!=='Pissifã Bronze')return false;
+      if(filtroTier==='comum'&&tier.label!=='Cliente comum')return false;
+    }
+    return true;
+  });
   const el=document.getElementById('lista-c');
   if(!lista.length){el.innerHTML=`<div class="empty">${contatos.length?'Nenhum encontrado':'Nenhum contato ainda'}</div>`;return;}
   el.innerHTML=lista.map(c=>{
@@ -1229,6 +1267,15 @@ function renderContatos(){
   }).join('');
 }
 function setFiltroC(btn,f){document.querySelectorAll('#filtros-c .filtro').forEach(b=>b.classList.remove('active'));btn.classList.add('active');filtroC=f;renderContatos();}
+function setFiltroTier(btn,t){filtroTier=t;renderContatos();}
+function toggleFiltrosC(){const p=document.getElementById('fd-panel-c');if(p)p.classList.toggle('open');}
+function updFiltroCBtn(){
+  const btn=document.getElementById('btn-filtros-c');
+  const ind=document.getElementById('filtro-c-ind');
+  const hasFilter=filtroC!=='todos';
+  if(btn)btn.classList.toggle('ativo',hasFilter);
+  if(ind){ind.style.display=hasFilter?'inline-flex':'none';ind.textContent=hasFilter?'1':'';}
+}
 
 // ── INSIGHTS ─────────────────────────────────────────────
 function setPer(btn,p){document.querySelectorAll('.pb').forEach(b=>b.classList.remove('active'));btn.classList.add('active');periodo=p;periodoCustom.ativo=false;const w=document.getElementById('custom-per-wrap');if(w)w.style.display='none';renderInsights();}
