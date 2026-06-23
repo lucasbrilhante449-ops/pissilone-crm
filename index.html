@@ -278,9 +278,9 @@ textarea.fi{resize:vertical;min-height:60px}
     <div class="pbar">
       <button class="pb" onclick="setPer(this,'1')">Hoje</button>
       <button class="pb" onclick="setPer(this,'7')">7d</button>
-      <button class="pb active" onclick="setPer(this,'30')">30d</button>
+      <button class="pb" onclick="setPer(this,'30')">30d</button>
       <button class="pb" onclick="setPer(this,'90')">90d</button>
-      <button class="pb" onclick="setPer(this,'0')">Tudo</button>
+      <button class="pb active" onclick="setPer(this,'0')">Tudo</button>
       <button class="pb" id="pb-custom" onclick="toggleCustomPer()">Período ✦</button>
     </div>
     <select class="fi" style="width:auto;font-size:12px" id="ins-user" onchange="renderInsights()"><option value="todos">Todos usuários</option></select>
@@ -333,6 +333,11 @@ textarea.fi{resize:vertical;min-height:60px}
   <div class="slbl">Usuários</div>
   <div id="cfg-users"></div>
   <button class="btn sm" onclick="openUserModal()">+ Novo usuário</button>
+  <div class="divider" style="margin:1.25rem 0"></div>
+  <div class="slbl">Campos Personalizados</div>
+  <div style="font-size:11px;color:var(--G3);margin-bottom:.75rem">Campos extras exibidos em todos os cards de todos os funis</div>
+  <div id="cfg-campos"></div>
+  <button class="btn sm" onclick="openCampoModal()">+ Novo campo</button>
 </div>
 </div>
 </div>
@@ -635,6 +640,20 @@ textarea.fi{resize:vertical;min-height:60px}
 </div>
 </div>
 
+<!-- MODAL CAMPO PERSONALIZADO -->
+<div class="overlay" id="modal-campo" style="display:none">
+<div class="modal" style="max-width:440px">
+  <div class="mtitle"><span>Novo campo personalizado</span><button class="mcl" onclick="closeM('modal-campo')">&#10005;</button></div>
+  <div class="fg fg1" style="margin-bottom:.875rem"><div><label class="flbl">Nome do campo *</label><input class="fi" id="f-campo-nome" placeholder="Ex: Avalia&#231;&#227;o Google..."></div></div>
+  <div class="fg fg1" style="margin-bottom:.875rem"><div><label class="flbl">Op&#231;&#245;es (uma por linha) *</label><textarea class="fi" id="f-campo-opcoes" placeholder="J&#225; avaliou&#10;N&#227;o avaliou&#10;Pedido de avalia&#231;&#227;o feito" style="min-height:90px"></textarea></div></div>
+  <div style="display:flex;gap:8px">
+    <button class="btn primary full" onclick="saveCampo()">Criar campo</button>
+    <button class="btn full" onclick="closeM('modal-campo')">Cancelar</button>
+  </div>
+  <div class="fb" id="fb-campo"></div>
+</div>
+</div>
+
 <script>
 // ── SUPABASE CONFIG ──────────────────────────────────────
 const SB_URL  = 'https://wrczcdroekxqsdwdbquf.supabase.co';
@@ -677,10 +696,11 @@ let cfg = {
       {id:'psf-neg',nome:'Negociando 🤑'},{id:'psf-inativo',nome:'Inativo 😴'}
     ]}
   ],
-  usuarios:[{id:'lucas',nome:'Lucas'},{id:'ana',nome:'Ana'}]
+  usuarios:[{id:'lucas',nome:'Lucas'},{id:'ana',nome:'Ana'}],
+  campos_personalizados:[]
 };
 let funilAtivo='d2c', filtroC='todos', filtroAtv='todos', filtroRes='todos', filtroTier='todos', filtroGL='todos';
-let periodo='30', periodoCustom={ativo:false,de:null,ate:null};
+let periodo='0', periodoCustom={ativo:false,de:null,ate:null};
 let userAtivo='todos';
 let editCid=null, editFid=null, editEfid=null, editEid=null;
 let perdaCid=null, ganhoCid=null, atvCid=null, editNegCid=null, editNegIdx=null;
@@ -767,10 +787,10 @@ async function loadCfg(){
     const rows=await sbGet('config','id=eq.1&select=dados');
     if(rows&&rows[0]&&rows[0].dados){
       const p=JSON.parse(rows[0].dados);
-      if(p&&p.funis&&p.funis.length>0){cfg=p;return;}
+      if(p&&p.funis&&p.funis.length>0){cfg=p;if(!cfg.campos_personalizados)cfg.campos_personalizados=[];return;}
     }
   }catch(e){console.warn('loadCfg error:',e);}
-  try{const s=localStorage.getItem('psn_cfg4');if(s){const p=JSON.parse(s);if(p&&p.funis)cfg=p;}}catch(e){}
+  try{const s=localStorage.getItem('psn_cfg4');if(s){const p=JSON.parse(s);if(p&&p.funis){cfg=p;if(!cfg.campos_personalizados)cfg.campos_personalizados=[];}}}catch(e){}
 }
 async function saveCfg(){
   try{
@@ -808,7 +828,8 @@ async function doSync(){
         obs:String(r.obs||''),data:String(r.data||new Date().toISOString()),
         compras:parseInt(r.compras)||0,funil:String(r.funil||'d2c'),
         etapa:String(r.etapa||'d2c-bv'),usuario:String(r.usuario||''),
-        followup:String(r.followup||''),motivo_perda:String(r.motivo_perda||''),
+        followup:normDate(String(r.followup||'')),
+        motivo_perda:(function(){var v=String(r.motivo_perda||'');return /^\d{4}-\d{2}-\d{2}/.test(v)?'':v;})(),
         atv_data:normDate(String(r.atv_data||'')),
         atv_desc:String(r.atv_desc||''),
         resultado:String(r.resultado||''),atv_hist:parseInt(r.atv_hist)||0,
@@ -818,7 +839,8 @@ async function doSync(){
         log_hist:Array.isArray(meta.log_hist)?meta.log_hist:[],
         cidade:String(meta.cidade||''),uf:String(meta.uf||''),cep:String(meta.cep||''),
         aniversario:normDate(String(r.aniversario||'')),
-        cod_marketup:String(r.cod_marketup||''),nf_emitida:Boolean(r.nf_emitida)||false
+        cod_marketup:String(r.cod_marketup||''),nf_emitida:Boolean(r.nf_emitida)||false,
+        campos:(meta.campos&&typeof meta.campos==='object'&&!Array.isArray(meta.campos))?meta.campos:{}
       };
     });
     ss('ok',contatos.length+' contato'+(contatos.length!==1?'s':''));
@@ -830,12 +852,12 @@ async function apiSave(c){
   return sbUpsert('contatos',{
     id:c.id,nome:c.nome,tel:c.tel,et:c.et,canal:c.canal,
     valor:c.valor,produto:c.produto,obs:c.obs,data:c.data,compras:c.compras,
-    funil:c.funil,etapa:c.etapa,usuario:c.usuario,followup:c.followup||'',
-    motivo_perda:c.motivo_perda||'',atv_data:c.atv_data||null,
+    funil:c.funil,etapa:c.etapa,usuario:c.usuario,followup:c.followup||null,
+    motivo_perda:c.motivo_perda||null,atv_data:c.atv_data||null,
     atv_desc:c.atv_desc||'',resultado:c.resultado||'',
     atv_hist:c.atv_hist||0,neg_hist:c.neg_hist||'',
     aniversario:c.aniversario||null,cod_marketup:c.cod_marketup||'',nf_emitida:c.nf_emitida||false,
-    meta:JSON.stringify({email:c.email||'',cpf:c.cpf||'',endereco:c.endereco||'',notas:c.notas||'',log_hist:c.log_hist||[],cidade:c.cidade||'',uf:c.uf||'',cep:c.cep||''})
+    meta:JSON.stringify({email:c.email||'',cpf:c.cpf||'',endereco:c.endereco||'',notas:c.notas||'',log_hist:c.log_hist||[],campos:c.campos||{},cidade:c.cidade||'',uf:c.uf||'',cep:c.cep||''})
   });
 }
 
@@ -956,6 +978,9 @@ function kcardHtml(c,busca){
   const b=busca||'';
   const nomeHtml=b&&c.nome.toLowerCase().includes(b)?c.nome.replace(new RegExp('('+b.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<mark style="background:#F2E618;border-radius:2px;padding:0 1px">$1</mark>'):c.nome;
   const ucHtml=ultimaCompraHtml(c);
+  var camposBadgesHtml='';
+  var corsCampos=[{bg:'var(--VD2)',cor:'var(--VD)'},{bg:'var(--VM2)',cor:'var(--VM)'},{bg:'var(--AM2)',cor:'var(--AM)'},{bg:'var(--G)',cor:'var(--G3)'}];
+  if(c.campos)(cfg.campos_personalizados||[]).forEach(function(cp){var v=c.campos[cp.id]||'';if(v){var idx=cp.opcoes?cp.opcoes.indexOf(v):0;var clr=corsCampos[Math.min(Math.max(idx,0),corsCampos.length-1)];camposBadgesHtml+='<span style="background:'+clr.bg+';color:'+clr.cor+';border-radius:20px;padding:1px 6px;font-size:10px;font-weight:600">'+v+'</span>';}});
   return`<div class="kc" draggable="true" data-id="${c.id}">
     <div class="kc-nome kc-nome-link" onclick="openContatoDetail('${c.id}')">${nomeHtml}</div>
     <div class="kc-sub" style="cursor:pointer" onclick="openContatoDetail('${c.id}')">
@@ -967,6 +992,7 @@ function kcardHtml(c,busca){
     ${ucHtml?`<div style="margin-bottom:3px">${ucHtml}</div>`:''}
     ${botoesRes?`<div style="margin-bottom:4px;display:flex;gap:4px;flex-wrap:wrap">${botoesRes}</div>`:''}
     ${c.motivo_perda?`<div style="font-size:10px;color:var(--VM);margin-bottom:3px">⚠ ${c.motivo_perda}</div>`:''}
+    ${camposBadgesHtml?'<div style="margin-bottom:3px;display:flex;gap:4px;flex-wrap:wrap">'+camposBadgesHtml+'</div>':''}
     <div class="kc-actions">
       <div class="kc-left">
         <button class="btn xs" onclick="openContatoDetail('${c.id}')">✎</button>
@@ -982,6 +1008,20 @@ function kcardHtml(c,busca){
 async function dropCard(etapaId){
   if(!dragId)return;
   const c=contatos.find(x=>x.id===dragId);if(!c)return;
+  const wasInNeg=isNegociacao(c.funil,c.etapa);
+  if(wasInNeg){
+    const eAlvo=getEtapa(c.funil,etapaId);
+    const nAlvo=eAlvo?eAlvo.nome.toLowerCase():'';
+    const isGanhoAlvo=nAlvo.includes('cliente novo')||nAlvo.includes('fechado')||etapaId==='d2c-cn'||etapaId==='b2b-fech';
+    const isPerdaAlvo=nAlvo.includes('perdido')||nAlvo.includes('inativo')||etapaId==='b2b-perd'||etapaId==='psf-inativo';
+    if(isGanhoAlvo){
+      var hist=parseNegHist(c);
+      var jaTemGanho=hist.some(function(x){return x.r==='ganho';});
+      if(jaTemGanho){c.etapa=etapaId;c.et='fechado';dragId=null;ss('ld','Movendo...');try{await apiSave(c);await doSync();}catch(ex){ss('er','Erro ao mover');}return;}
+      ganhoCid=dragId;dragId=null;abrirModalGanho(ganhoCid);return;
+    }
+    if(isPerdaAlvo){perdaCid=dragId;dragId=null;document.getElementById('modal-perda').style.display='flex';return;}
+  }
   c.etapa=etapaId;c.et='atendimento';dragId=null;
   ss('ld','Movendo...');try{await apiSave(c);await doSync();}catch(ex){ss('er','Erro ao mover');}
 }
@@ -1282,6 +1322,7 @@ async function saveContato(){
     uf:document.getElementById('f-uf').value.trim().toUpperCase(),
     cep:document.getElementById('f-cep').value.trim(),
     notas:prev.notas||'',
+    campos:prev.campos||{},
     cod_marketup:document.getElementById('f-cod-marketup').value.trim(),
     nf_emitida:prev.nf_emitida||false
   };
@@ -1439,7 +1480,16 @@ function renderInsights(){
   if(filtroUser!=='todos')baseContatos=baseContatos.filter(function(c){return c.usuario===filtroUser;});
   if(iCanal!=='todos')baseContatos=baseContatos.filter(function(c){return c.canal===iCanal;});
   var allNegs=[];
-  baseContatos.forEach(function(c){parseNegHist(c).forEach(function(x){allNegs.push({r:x.r,d:x.d,m:x.m,v:x.v,itens:x.itens||[],cid:c.id,funil:c.funil,usuario:c.usuario});});});
+  baseContatos.forEach(function(c){
+    var fb=c.data?c.data.slice(0,10):'';
+    var negHist=parseNegHist(c);
+    negHist.forEach(function(x){allNegs.push({r:x.r,d:x.d||fb,m:x.m,v:x.v,itens:x.itens||[],cid:c.id,funil:c.funil,usuario:c.usuario});});
+    // Contatos em "Cliente Novo" (D2C) ou "Fechado" (B2B) sem entrada formal de ganho = ganho implícito
+    var temGanho=negHist.some(function(x){return x.r==='ganho';});
+    var eAlvo=getEtapa(c.funil,c.etapa);var nAlvo=eAlvo?eAlvo.nome.toLowerCase():'';
+    var isGanhoFinal=nAlvo.includes('cliente novo')||nAlvo.includes('fechado')||c.etapa==='d2c-cn'||c.etapa==='b2b-fech';
+    if(!temGanho&&isGanhoFinal){allNegs.push({r:'ganho',d:fb,m:'',v:c.valor||0,itens:[],cid:c.id,funil:c.funil,usuario:c.usuario});}
+  });
   if(iFunil!=='todos')allNegs=allNegs.filter(function(n){return n.funil===iFunil;});
   var todasNegs=filtNegsPer(allNegs,false);
   var prevNegs=filtNegsPer(allNegs,true);
@@ -1847,6 +1897,29 @@ function openContatoDetail(id){
   metrics+=detRow('Checkpoints',(c.atv_hist||0)+'');
   if(c.obs)metrics+='<div style="margin-top:8px;font-size:11px;color:var(--G3);font-style:italic;border-top:1px solid var(--G2);padding-top:8px">'+c.obs+'</div>';
   document.getElementById('det-metrics').innerHTML=metrics;
+  // CAMPOS PERSONALIZADOS
+  var camposArr=cfg.campos_personalizados||[];
+  var customEl=document.getElementById('det-custom');
+  if(customEl){
+    if(!camposArr.length){
+      customEl.innerHTML='<div style="font-size:11px;color:var(--G3);font-style:italic;margin-bottom:6px">Nenhum campo criado ainda</div><button class="btn xs" style="color:var(--G3)" onclick="closeM(\'modal-detail\');showTab(\'config\')">+ Criar campo</button>';
+    }else{
+      var ch='';
+      camposArr.forEach(function(campo){
+        var valorAtual=(c.campos&&c.campos[campo.id])||'';
+        var corBorda='';
+        if(valorAtual&&campo.opcoes){var idx=campo.opcoes.indexOf(valorAtual);var corMap=['var(--VD)','var(--VM)','var(--AM)'];if(idx>=0&&idx<corMap.length)corBorda='border-color:'+corMap[idx]+';color:'+corMap[idx]+';font-weight:600';}
+        ch+='<div style="margin-bottom:8px">';
+        ch+='<div style="font-size:10px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">'+campo.nome+'</div>';
+        ch+='<select class="fi" style="font-size:12px;'+corBorda+'" onchange="saveCampoValor(\''+id+'\',\''+campo.id+'\',this.value)">';
+        ch+='<option value="">— Selecionar —</option>';
+        (campo.opcoes||[]).forEach(function(op){ch+='<option value="'+op+'"'+(valorAtual===op?' selected':'')+'>'+op+'</option>';});
+        ch+='</select>';
+        ch+='</div>';
+      });
+      customEl.innerHTML=ch;
+    }
+  }
   // NOTAS
   document.getElementById('det-notas-ta').value='';
   // LINHA DO TEMPO
@@ -2288,6 +2361,28 @@ function renderConfig(){
       <button class="btn xs" onclick="openEtapaModal('${f.id}',null)">+ Etapa</button>
     </div></div>`).join('');
   document.getElementById('cfg-users').innerHTML=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.75rem">${cfg.usuarios.map(u=>`<div style="display:flex;align-items:center;gap:6px;background:var(--G);border-radius:20px;padding:5px 12px"><span style="font-size:12px">👤 ${u.nome}</span><button class="btn xs danger" onclick="delUser('${u.id}')">✕</button></div>`).join('')}</div>`;
+  // campos personalizados
+  var camposEl=document.getElementById('cfg-campos');
+  if(camposEl){
+    var camposArr=cfg.campos_personalizados||[];
+    var ch='';
+    if(!camposArr.length){
+      ch='<div style="font-size:11px;color:var(--G3);font-style:italic;margin-bottom:.75rem">Nenhum campo criado ainda</div>';
+    }else{
+      ch='<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:.75rem">';
+      camposArr.forEach(function(campo){
+        ch+='<div style="background:var(--G);border:1px solid var(--G2);border-radius:8px;padding:.75rem 1rem;display:flex;align-items:center;gap:10px">';
+        ch+='<div style="flex:1;min-width:0">';
+        ch+='<div style="font-size:12px;font-weight:600;color:var(--K)">'+campo.nome+'</div>';
+        ch+='<div style="font-size:10px;color:var(--G3);margin-top:2px">'+(campo.opcoes||[]).join(' &middot; ')+'</div>';
+        ch+='</div>';
+        ch+='<button class="btn xs danger" onclick="delCampo(\''+campo.id+'\')">&#10005; Apagar</button>';
+        ch+='</div>';
+      });
+      ch+='</div>';
+    }
+    camposEl.innerHTML=ch;
+  }
   // feedback
   if(!document.getElementById('fb-cfg')){const d=document.createElement('div');d.id='fb-cfg';d.className='fb';document.getElementById('pane-config').appendChild(d);}
 }
@@ -2381,6 +2476,38 @@ async function saveUser(){const nome=document.getElementById('f-user-nome').valu
 async function delFunil(id){if(!confirm('Apagar funil?'))return;cfg.funis=cfg.funis.filter(f=>f.id!==id);if(funilAtivo===id&&cfg.funis.length)funilAtivo=cfg.funis[0].id;await saveCfg();renderAll();}
 async function delEtapa(fid,eid){if(!confirm('Apagar etapa?'))return;const f=getFunil(fid);if(f)f.etapas=f.etapas.filter(e=>e.id!==eid);await saveCfg();renderAll();}
 async function delUser(id){if(!confirm('Remover usuário?'))return;cfg.usuarios=cfg.usuarios.filter(u=>u.id!==id);await saveCfg();renderConfig();renderUbtns();}
+
+// ── CAMPOS PERSONALIZADOS ────────────────────────────────
+function openCampoModal(){
+  document.getElementById('f-campo-nome').value='';
+  document.getElementById('f-campo-opcoes').value='';
+  document.getElementById('fb-campo').textContent='';
+  document.getElementById('modal-campo').style.display='flex';
+  setTimeout(function(){document.getElementById('f-campo-nome').focus();},50);
+}
+async function saveCampo(){
+  var nome=document.getElementById('f-campo-nome').value.trim();
+  if(!nome){setFb('fb-campo','Nome obrigatório','er');return;}
+  var opcoesRaw=document.getElementById('f-campo-opcoes').value.trim();
+  var opcoes=opcoesRaw.split('\n').map(function(s){return s.trim();}).filter(function(s){return s;});
+  if(!opcoes.length){setFb('fb-campo','Adicione ao menos uma opção','er');return;}
+  if(!cfg.campos_personalizados)cfg.campos_personalizados=[];
+  cfg.campos_personalizados.push({id:'cp'+Date.now(),nome:nome,tipo:'select',opcoes:opcoes});
+  setFb('fb-campo','Salvando...','info');
+  try{await saveCfg();closeM('modal-campo');renderConfig();}
+  catch(ex){setFb('fb-campo','Erro ao salvar','er');}
+}
+async function delCampo(id){
+  if(!confirm('Apagar este campo? Os valores nos contatos serão mantidos mas não serão mais exibidos.'))return;
+  cfg.campos_personalizados=(cfg.campos_personalizados||[]).filter(function(c){return c.id!==id;});
+  try{await saveCfg();renderConfig();}catch(ex){ss('er','Erro ao apagar campo');}
+}
+async function saveCampoValor(cid,campoId,valor){
+  var c=contatos.find(function(x){return x.id===cid;});if(!c)return;
+  if(!c.campos||typeof c.campos!=='object')c.campos={};
+  c.campos[campoId]=valor;
+  try{await apiSave(c);await doSync();}catch(ex){ss('er','Erro ao salvar campo');}
+}
 
 // ── HEADER ───────────────────────────────────────────────
 function renderUbtns(){
