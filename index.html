@@ -913,7 +913,7 @@ function renderFunil(){
     const cards=contatos.filter(c=>{
       if(c.funil!==funilAtivo)return false;
       if(c.etapa!==etapa.id)return false;
-      if(userAtivo!=='todos'&&c.usuario!==userAtivo)return false;
+      if(!matchUser(c))return false;
       if(filtroAtv!=='todos'&&atvStatus(c)!==filtroAtv)return false;
       if(filtroRes!=='todos'){
         const hist=parseNegHist(c);
@@ -1357,7 +1357,7 @@ function renderContatos(){
   const lista=contatos.filter(c=>{
     if(filtroC!=='todos'&&c.etapa!==filtroC)return false;
     if(busca&&!c.nome.toLowerCase().includes(busca))return false;
-    if(userAtivo!=='todos'&&c.usuario!==userAtivo)return false;
+    if(!matchUser(c))return false;
     if(filtroTier!=='todos'){
       const ganhos=parseNegHist(c).filter(h=>h.r==='ganho');
       const ltv=ganhos.reduce((a,h)=>a+(h.v||0),0);
@@ -2572,11 +2572,12 @@ async function saveCampoValor(cid,campoId,valor){
 }
 
 // ── HEADER ───────────────────────────────────────────────
+function matchUser(c){if(userAtivo==='todos')return true;if(userAtivo==='sem')return!c.usuario;return c.usuario===userAtivo;}
 function renderUbtns(){
-  const totalFunil=contatos.filter(c=>c.funil===funilAtivo&&(userAtivo==='todos'||c.usuario===userAtivo)).length;
-  const totalGeral=contatos.filter(c=>userAtivo==='todos'||c.usuario===userAtivo).length;
+  const totalFunil=contatos.filter(c=>c.funil===funilAtivo&&matchUser(c)).length;
+  const totalGeral=contatos.filter(c=>matchUser(c)).length;
   const funil=cfg.funis.find(f=>f.id===funilAtivo);
-  document.getElementById('ubtns').innerHTML=`<button class="hdr-ubtn${userAtivo==='todos'?' on':''}" onclick="setUser('todos')">Todos</button>`+cfg.usuarios.map(u=>`<button class="hdr-ubtn${userAtivo===u.id?' on':''}" onclick="setUser('${u.id}')">${u.nome}</button>`).join('');
+  document.getElementById('ubtns').innerHTML=`<button class="hdr-ubtn${userAtivo==='todos'?' on':''}" onclick="setUser('todos')">Todos</button>`+cfg.usuarios.map(u=>`<button class="hdr-ubtn${userAtivo===u.id?' on':''}" onclick="setUser('${u.id}')">${u.nome}</button>`).join('')+`<button class="hdr-ubtn${userAtivo==='sem'?' on':''}" onclick="setUser('sem')" title="Cards sem responsável">Sem resp.</button>`;
   const stxt=document.getElementById('stxt');if(stxt&&contatos.length>0)stxt.textContent=`${totalFunil} card${totalFunil!==1?'s':''} em ${funil?funil.nome:''} · ${totalGeral} total`;
 }
 function setUser(id){userAtivo=id;renderUbtns();renderAll();const insPane=document.getElementById('pane-insights');if(insPane&&insPane.classList.contains('active'))renderInsights();}
