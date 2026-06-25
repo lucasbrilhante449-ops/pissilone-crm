@@ -1980,7 +1980,9 @@ function openContatoDetail(id){
   document.getElementById('det-edit-btn').onclick=function(){closeM('modal-detail');openContato(id);};
   // INFO
   var info='';
-  info+=detRow('Telefone',c.tel?'<a href="tel:'+c.tel+'" style="color:var(--L);text-decoration:none">'+c.tel+'</a>':'&#8212;');
+  var waTel=c.tel?c.tel.replace(/\D/g,''):'';
+  if(waTel&&waTel.length<=11)waTel='55'+waTel;
+  info+=detRow('Telefone',c.tel?'<a href="https://wa.me/'+waTel+'" target="_blank" rel="noopener" style="color:var(--L);text-decoration:none">'+c.tel+'</a>':'&#8212;');
   info+=detRow('Email',c.email||'&#8212;');
   info+=detRow('CPF',c.cpf||'&#8212;');
   info+=detRow('Aniversário',c.aniversario?fmtDFull(c.aniversario):'&#8212;');
