@@ -643,11 +643,11 @@ textarea.fi{resize:vertical;min-height:60px}
 <!-- MODAL CAMPO PERSONALIZADO -->
 <div class="overlay" id="modal-campo" style="display:none">
 <div class="modal" style="max-width:440px">
-  <div class="mtitle"><span>Novo campo personalizado</span><button class="mcl" onclick="closeM('modal-campo')">&#10005;</button></div>
+  <div class="mtitle"><span id="mcampo-title">Novo campo personalizado</span><button class="mcl" onclick="closeM('modal-campo')">&#10005;</button></div>
   <div class="fg fg1" style="margin-bottom:.875rem"><div><label class="flbl">Nome do campo *</label><input class="fi" id="f-campo-nome" placeholder="Ex: Avalia&#231;&#227;o Google..."></div></div>
   <div class="fg fg1" style="margin-bottom:.875rem"><div><label class="flbl">Op&#231;&#245;es (uma por linha) *</label><textarea class="fi" id="f-campo-opcoes" placeholder="J&#225; avaliou&#10;N&#227;o avaliou&#10;Pedido de avalia&#231;&#227;o feito" style="min-height:90px"></textarea></div></div>
   <div style="display:flex;gap:8px">
-    <button class="btn primary full" onclick="saveCampo()">Criar campo</button>
+    <button class="btn primary full" id="btn-campo-save" onclick="saveCampo()">Criar campo</button>
     <button class="btn full" onclick="closeM('modal-campo')">Cancelar</button>
   </div>
   <div class="fb" id="fb-campo"></div>
@@ -703,7 +703,7 @@ let funilAtivo='d2c', filtroC='todos', filtroAtv='todos', filtroRes='todos', fil
 let periodo='0', periodoCustom={ativo:false,de:null,ate:null};
 let userAtivo='todos';
 let editCid=null, editFid=null, editEfid=null, editEid=null;
-let perdaCid=null, ganhoCid=null, atvCid=null, editNegCid=null, editNegIdx=null;
+let perdaCid=null, ganhoCid=null, atvCid=null, editNegCid=null, editNegIdx=null, editCampoId=null;
 let motivoSel='', dragId=null, currentDetailId=null, detTimelineFilter='todos';
 let catalogo={estampas:[],cores:[],tamanhos:[]};
 var pedidoItens=[];
@@ -2498,6 +2498,7 @@ function renderConfig(){
         ch+='<div style="font-size:12px;font-weight:600;color:var(--K)">'+campo.nome+'</div>';
         ch+='<div style="font-size:10px;color:var(--G3);margin-top:2px">'+(campo.opcoes||[]).join(' &middot; ')+'</div>';
         ch+='</div>';
+        ch+='<button class="btn xs" onclick="openCampoModal(\''+campo.id+'\')">&#9998; Editar</button>';
         ch+='<button class="btn xs danger" onclick="delCampo(\''+campo.id+'\')">&#10005; Apagar</button>';
         ch+='</div>';
       });
@@ -2600,9 +2601,15 @@ async function delEtapa(fid,eid){if(!confirm('Apagar etapa?'))return;const f=get
 async function delUser(id){if(!confirm('Remover usuário?'))return;cfg.usuarios=cfg.usuarios.filter(u=>u.id!==id);await saveCfg();renderConfig();renderUbtns();}
 
 // ── CAMPOS PERSONALIZADOS ────────────────────────────────
-function openCampoModal(){
-  document.getElementById('f-campo-nome').value='';
-  document.getElementById('f-campo-opcoes').value='';
+function openCampoModal(campoId){
+  editCampoId=campoId||null;
+  var campo=campoId?(cfg.campos_personalizados||[]).find(function(c){return c.id===campoId;}):null;
+  var titleEl=document.getElementById('mcampo-title');
+  var btnEl=document.getElementById('btn-campo-save');
+  if(titleEl)titleEl.textContent=campo?'Editar campo':'Novo campo personalizado';
+  if(btnEl)btnEl.textContent=campo?'Salvar alterações':'Criar campo';
+  document.getElementById('f-campo-nome').value=campo?campo.nome:'';
+  document.getElementById('f-campo-opcoes').value=campo?(campo.opcoes||[]).join('\n'):'';
   document.getElementById('fb-campo').textContent='';
   document.getElementById('modal-campo').style.display='flex';
   setTimeout(function(){document.getElementById('f-campo-nome').focus();},50);
@@ -2614,7 +2621,13 @@ async function saveCampo(){
   var opcoes=opcoesRaw.split('\n').map(function(s){return s.trim();}).filter(function(s){return s;});
   if(!opcoes.length){setFb('fb-campo','Adicione ao menos uma opção','er');return;}
   if(!cfg.campos_personalizados)cfg.campos_personalizados=[];
-  cfg.campos_personalizados.push({id:'cp'+Date.now(),nome:nome,tipo:'select',opcoes:opcoes});
+  if(editCampoId){
+    var idx=cfg.campos_personalizados.findIndex(function(c){return c.id===editCampoId;});
+    if(idx>=0){cfg.campos_personalizados[idx].nome=nome;cfg.campos_personalizados[idx].opcoes=opcoes;}
+  }else{
+    cfg.campos_personalizados.push({id:'cp'+Date.now(),nome:nome,tipo:'select',opcoes:opcoes});
+  }
+  editCampoId=null;
   setFb('fb-campo','Salvando...','info');
   try{await saveCfg();closeM('modal-campo');renderConfig();}
   catch(ex){setFb('fb-campo','Erro ao salvar','er');}
