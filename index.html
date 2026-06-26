@@ -1130,6 +1130,7 @@ async function confirmPerda(){
   c.neg_hist=JSON.stringify(hist);
   c.motivo_perda=motivo;c.et='perdido';c.resultado='perda';
   if(c.funil==='pissifa'){c.etapa='psf-inativo';c.resultado='';}
+  else if(c.funil==='d2c'){c.etapa='d2c-cr';c.resultado='';}
   ss('ld','Salvando...');try{await apiSave(c);await doSync();}catch(ex){ss('er','Erro');}
   closeM('modal-perda');motivoSel='';document.getElementById('f-motivo').value='';
   document.querySelectorAll('.chip').forEach(b=>b.classList.remove('sel'));perdaCid=null;
