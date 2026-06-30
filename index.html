@@ -33,9 +33,10 @@ body{background:var(--G);color:var(--K);font-family:'Barlow',sans-serif;min-heig
 .hdr-sync:hover{color:var(--W);background:rgba(255,255,255,.15)}
 .app-body{display:flex;height:calc(100vh - 48px)}
 .sidebar{width:58px;background:var(--K2);flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding:8px 0;gap:2px;height:calc(100vh - 48px);position:sticky;top:0;overflow-y:auto}
-.snav{width:46px;height:46px;border:none;background:transparent;color:rgba(255,255,255,.42);cursor:pointer;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:.15s;font-family:'Barlow',sans-serif;padding:0}
+.snav{width:46px;height:46px;border:none;background:transparent;color:rgba(255,255,255,.42);cursor:pointer;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:.15s;font-family:'Barlow',sans-serif;padding:0;position:relative}
 .snav:hover{background:rgba(255,255,255,.08);color:rgba(255,255,255,.82)}
 .snav.active{background:rgba(209,117,67,.22);color:var(--L)}
+.snav-badge{position:absolute;top:4px;right:4px;min-width:15px;height:15px;border-radius:8px;background:#E53935;color:#fff;font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px;pointer-events:none;animation:pulse 1.5s infinite}
 .snav-lbl{font-size:8px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;line-height:1}
 .main-wrap{flex:1;overflow-y:auto;height:calc(100vh - 48px)}
 .cnt{padding:1rem;max-width:1300px;margin:0 auto}
@@ -209,6 +210,15 @@ textarea.fi{resize:vertical;min-height:60px}
     <svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 19 19"><circle cx="9.5" cy="9.5" r="2.5"/><path d="M9.5 1.5v2M9.5 15.5v2M1.5 9.5h2M15.5 9.5h2M3.6 3.6l1.4 1.4M14 14l1.4 1.4M3.6 15.4l1.4-1.4M14 5l1.4-1.4" stroke-linecap="round"/></svg>
     <span class="snav-lbl">Config</span>
   </button>
+  <button class="snav" id="snav-aniversario" onclick="showTab('aniversario')" title="Aniversariantes">
+    <svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 19 19"><rect x="2" y="9" width="15" height="8" rx="1.2"/><path d="M6 9V7.5M9.5 9V7.5M13 9V7.5" stroke-linecap="round"/><circle cx="6" cy="7" r="1" fill="currentColor" stroke="none"/><circle cx="9.5" cy="7" r="1" fill="currentColor" stroke="none"/><circle cx="13" cy="7" r="1" fill="currentColor" stroke="none"/></svg>
+    <span class="snav-lbl">Aniver.</span>
+    <div class="snav-badge" id="bday-notif-badge" style="display:none"></div>
+  </button>
+  <button class="snav" id="snav-log" onclick="showTab('log')" title="Log de uso">
+    <svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 19 19"><rect x="2" y="2" width="15" height="15" rx="1.5"/><line x1="5.5" y1="6.5" x2="13.5" y2="6.5" stroke-linecap="round"/><line x1="5.5" y1="9.5" x2="13.5" y2="9.5" stroke-linecap="round"/><line x1="5.5" y1="12.5" x2="10" y2="12.5" stroke-linecap="round"/></svg>
+    <span class="snav-lbl">Log</span>
+  </button>
 </nav>
 <div class="main-wrap">
 <div class="cnt">
@@ -339,6 +349,16 @@ textarea.fi{resize:vertical;min-height:60px}
   <div id="cfg-campos"></div>
   <button class="btn sm" onclick="openCampoModal()">+ Novo campo</button>
 </div>
+<div id="pane-aniversario" class="pane">
+  <div id="aniversario-content"></div>
+</div>
+<div id="pane-log" class="pane">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:1rem">
+    <div style="font-size:16px;font-weight:700;color:var(--K)">Log de Atividade</div>
+    <div style="font-size:11px;color:var(--G3)">Últimos 7 dias &middot; <span style="cursor:pointer;color:var(--L);text-decoration:underline" onclick="renderLog()">Atualizar</span></div>
+  </div>
+  <div id="log-content"><div class="empty">Carregando...</div></div>
+</div>
 </div>
 </div>
 </div>
@@ -421,9 +441,20 @@ textarea.fi{resize:vertical;min-height:60px}
     </div>
   </div>
   <div id="pedido-itens-lista" style="margin-bottom:.75rem"></div>
-  <div class="fg fg2" style="margin-bottom:.75rem">
+  <div class="fg fg3" style="margin-bottom:.75rem">
     <div><label class="flbl">Data do ganho</label><input class="fi" type="date" id="f-neg-data"></div>
     <div><label class="flbl">Valor total (R$)</label><input class="fi" type="number" id="f-neg-valor" placeholder="0"></div>
+    <div><label class="flbl">Forma de pagamento</label>
+      <select class="fi" id="f-neg-fp">
+        <option value="">-- Selecionar --</option>
+        <option value="credito_vista">Crédito à Vista</option>
+        <option value="credito_parcelado">Crédito Parcelado</option>
+        <option value="pix">Pix</option>
+        <option value="dinheiro">Dinheiro</option>
+        <option value="debito">Débito</option>
+        <option value="bonificacao">Bonificação</option>
+      </select>
+    </div>
   </div>
   <div style="display:flex;gap:8px">
     <button class="btn primary full" onclick="confirmarGanho()">&#10003; Confirmar ganho</button>
@@ -568,9 +599,20 @@ textarea.fi{resize:vertical;min-height:60px}
 <div class="overlay" id="modal-edit-neg" style="display:none">
 <div class="modal" style="max-width:500px">
   <div class="mtitle"><span>Editar ganho</span><button class="mcl" onclick="closeM('modal-edit-neg')">&#10005;</button></div>
-  <div class="fg fg2" style="margin-bottom:.75rem">
+  <div class="fg fg3" style="margin-bottom:.75rem">
     <div><label class="flbl">Data do ganho</label><input class="fi" type="date" id="f-editneg-data"></div>
     <div><label class="flbl">Valor (R$)</label><input class="fi" type="number" id="f-editneg-valor" placeholder="0"></div>
+    <div><label class="flbl">Forma de pagamento</label>
+      <select class="fi" id="f-editneg-fp">
+        <option value="">-- Selecionar --</option>
+        <option value="credito_vista">Crédito à Vista</option>
+        <option value="credito_parcelado">Crédito Parcelado</option>
+        <option value="pix">Pix</option>
+        <option value="dinheiro">Dinheiro</option>
+        <option value="debito">Débito</option>
+        <option value="bonificacao">Bonificação</option>
+      </select>
+    </div>
   </div>
   <div style="background:var(--G);border-radius:8px;padding:.75rem;margin-bottom:.75rem">
     <div style="font-size:10px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">Itens do pedido</div>
@@ -710,6 +752,7 @@ var pedidoItens=[];
 var editNegItens=[];
 
 const CANAL_LABEL={instagram:'Instagram',story:'Story',anuncio:'Anúncio',indicacao:'Indicação',atelie:'Ateliê',busca:'Google',whatsapp:'WhatsApp',outro:'Outro'};
+const FORMA_PAG_LABEL={credito_vista:'Crédito à Vista',credito_parcelado:'Crédito Parcelado',pix:'Pix',dinheiro:'Dinheiro',debito:'Débito',bonificacao:'Bonificação'};
 
 // ── HELPERS ──────────────────────────────────────────────
 function ss(s,m){document.getElementById('sdot').className='sdot'+(s==='ld'?' ld':s==='er'?' er':'');document.getElementById('stxt').textContent=m;}
@@ -863,16 +906,19 @@ async function apiSave(c){
 
 // ── TABS ─────────────────────────────────────────────────
 function showTab(id){
-  ['funil','contatos','insights','catalogo','config'].forEach(t=>{
-    const btn=document.getElementById('snav-'+t);
+  ['funil','contatos','insights','catalogo','config','aniversario','log'].forEach(function(t){
+    var btn=document.getElementById('snav-'+t);
     if(btn)btn.classList.toggle('active',t===id);
-    document.getElementById('pane-'+t).classList.toggle('active',t===id);
+    var pane=document.getElementById('pane-'+t);
+    if(pane)pane.classList.toggle('active',t===id);
   });
   if(id==='funil')renderFunil();
   if(id==='contatos')renderContatos();
   if(id==='insights')initInsights();
   if(id==='catalogo')renderCatalogo();
   if(id==='config')renderConfig();
+  if(id==='aniversario')renderAniversario();
+  if(id==='log')renderLog();
 }
 
 // ── FILTROS DROPDOWN ─────────────────────────────────────
@@ -1046,6 +1092,7 @@ function abrirModalGanho(id){
   renderItensPedido();
   var el=document.getElementById('f-neg-valor');if(el)el.value=c.valor||'';
   var elData=document.getElementById('f-neg-data');if(elData)elData.value=hojeISO();
+  var fpEl=document.getElementById('f-neg-fp');if(fpEl)fpEl.value='';
   var hist=parseNegHist(c);
   var ganhoAnts=hist.filter(function(h){return h.r==='ganho';});
   var prev=document.getElementById('f-neg-hist-preview');
@@ -1098,7 +1145,8 @@ async function confirmarGanho(){
   var ganhosAnt=hist.filter(function(h){return h.r==='ganho';});
   var isSegundoGanhoD2c=ganhosAnt.length===1&&c.funil==='d2c';
   var dataGanho=(document.getElementById('f-neg-data')&&document.getElementById('f-neg-data').value)||hojeISO();
-  hist.push({r:'ganho',d:dataGanho,m:'',v:valorNeg,itens:pedidoItens.slice(),nf:false});
+  var fpNeg=(document.getElementById('f-neg-fp')||{value:''}).value;
+  hist.push({r:'ganho',d:dataGanho,m:'',v:valorNeg,itens:pedidoItens.slice(),nf:false,fp:fpNeg});
   c.neg_hist=JSON.stringify(hist);
   c.valor=valorNeg;c.et='fechado';c.motivo_perda='';c.resultado='';
   if(c.funil==='pissifa'){c.etapa='psf-ativo';}
@@ -1107,6 +1155,7 @@ async function confirmarGanho(){
   ss('ld','Salvando...');
   try{
     await apiSave(c);
+    logAction('ganho_confirmado',c.nome+(valorNeg?' - R$'+valorNeg:'')+(fpNeg&&FORMA_PAG_LABEL[fpNeg]?' - '+FORMA_PAG_LABEL[fpNeg]:''));
     if(isSegundoGanhoD2c){await duplicarParaPissifaAuto(c);}
     await doSync();
   }catch(ex){ss('er','Erro');}
@@ -1131,7 +1180,7 @@ async function confirmPerda(){
   c.motivo_perda=motivo;c.et='perdido';c.resultado='perda';
   if(c.funil==='pissifa'){c.etapa='psf-inativo';c.resultado='';}
   else if(c.funil==='d2c'){c.etapa='d2c-cr';c.resultado='';}
-  ss('ld','Salvando...');try{await apiSave(c);await doSync();}catch(ex){ss('er','Erro');}
+  ss('ld','Salvando...');try{await apiSave(c);logAction('perda_confirmada',c.nome+' - '+motivo);await doSync();}catch(ex){ss('er','Erro');}
   closeM('modal-perda');motivoSel='';document.getElementById('f-motivo').value='';
   document.querySelectorAll('.chip').forEach(b=>b.classList.remove('sel'));perdaCid=null;
 }
@@ -1213,7 +1262,7 @@ async function checkpointAtv(){
   if(!Array.isArray(c.log_hist))c.log_hist=[];
   c.log_hist.push({tipo:'atv_concluida',d:new Date().toISOString(),txt:descAtv||'Atividade'});
   c.atv_hist=(c.atv_hist||0)+1;c.atv_data='';c.atv_desc='';
-  ss('ld','Concluída...');try{await apiSave(c);await doSync();closeM('modal-atv');}catch(ex){ss('er','Erro');}
+  ss('ld','Concluída...');try{await apiSave(c);logAction('atividade_concluida',(c.nome||atvCid)+(descAtv?' - '+descAtv:''));await doSync();closeM('modal-atv');}catch(ex){ss('er','Erro');}
   if(btn)btn.disabled=false;atvCid=null;
 }
 
@@ -1327,7 +1376,7 @@ async function saveContato(){
     cod_marketup:document.getElementById('f-cod-marketup').value.trim(),
     nf_emitida:prev.nf_emitida||false
   };
-  try{await apiSave(c);setFb('fb-c','Salvo!','ok');closeM('modal-c');await doSync();}
+  try{await apiSave(c);logAction(editCid?'contato_editado':'contato_criado',nome);setFb('fb-c','Salvo!','ok');closeM('modal-c');await doSync();}
   catch(ex){setFb('fb-c','Erro ao salvar','er');console.error(ex);}
   document.getElementById('btn-sc').disabled=false;
 }
@@ -2132,7 +2181,10 @@ function renderDetTimeline(cid){
       editBtn='';
       if(tipo==='ganho'){
         icon='&#10003;';cor='var(--VD)';bg='var(--VD2)';
-        titulo='Ganho'+(ev.v?' — R$'+ev.v:'');sub=ev.m||'';dt=fmtDFull(ev.d);
+        titulo='Ganho'+(ev.v?' — R$'+ev.v:'');
+        sub=ev.m||'';
+        if(ev.fp&&FORMA_PAG_LABEL[ev.fp])sub=(sub?sub+' · ':'')+FORMA_PAG_LABEL[ev.fp];
+        dt=fmtDFull(ev.d);
         editBtn='<button class="btn xs" onclick="openEditNeg(\''+cid+'\','+item.origIdx+')" title="Editar">&#9998;</button>';
       }else if(tipo==='perda'){
         icon='&#10007;';cor='var(--VM)';bg='var(--VM2)';
@@ -2182,7 +2234,7 @@ async function checkpointAtvDetail(){
   c.log_hist.push({tipo:'atv_concluida',d:new Date().toISOString(),txt:descAtv||'Atividade'});
   c.atv_hist=(c.atv_hist||0)+1;c.atv_data='';c.atv_desc='';
   ss('ld','Concluída...');
-  try{await apiSave(c);await doSync();openContatoDetail(currentDetailId);}
+  try{await apiSave(c);logAction('atividade_concluida',(c.nome||currentDetailId)+(descAtv?' - '+descAtv:''));await doSync();openContatoDetail(currentDetailId);}
   catch(ex){ss('er','Erro');}
 }
 
@@ -2194,6 +2246,7 @@ function openEditNeg(cid,idx){
   var neg=hist[idx];if(!neg||neg.r!=='ganho')return;
   document.getElementById('f-editneg-data').value=neg.d||hojeISO();
   document.getElementById('f-editneg-valor').value=neg.v||'';
+  var fpEditEl=document.getElementById('f-editneg-fp');if(fpEditEl)fpEditEl.value=neg.fp||'';
   document.getElementById('csi-estampa-edit').value='';
   document.getElementById('csi-cor-edit').value='';
   document.getElementById('csi-tamanho-edit').value='';
@@ -2211,7 +2264,7 @@ async function saveEditNeg(){
   var novaData=document.getElementById('f-editneg-data').value;
   var novoValor=parseFloat(document.getElementById('f-editneg-valor').value)||0;
   if(!novaData){setFb('fb-editneg','Data obrigatória','er');return;}
-  neg.d=novaData;neg.v=novoValor;neg.itens=editNegItens.slice();
+  neg.d=novaData;neg.v=novoValor;neg.itens=editNegItens.slice();neg.fp=(document.getElementById('f-editneg-fp')||{value:''}).value;
   c.neg_hist=JSON.stringify(hist);
   setFb('fb-editneg','Salvando...','info');
   try{
@@ -2418,7 +2471,7 @@ function renderGanhosModal(){
   var allGanhos=[];
   baseContatos.forEach(function(c){
     parseNegHist(c).forEach(function(x,i){
-      if(x.r==='ganho')allGanhos.push({r:'ganho',d:x.d,v:x.v||0,nf:x.nf||false,itens:x.itens||[],cid:c.id,nome:c.nome,usuario:c.usuario,negIdx:i});
+      if(x.r==='ganho')allGanhos.push({r:'ganho',d:x.d,v:x.v||0,nf:x.nf||false,itens:x.itens||[],fp:x.fp||'',cid:c.id,nome:c.nome,usuario:c.usuario,negIdx:i});
     });
   });
   var lista=filtNegsPer(allGanhos,false).sort(function(a,b){return b.d.localeCompare(a.d);});
@@ -2447,6 +2500,7 @@ function renderGanhosModal(){
     h+=fmtDFull(g.d);
     if(g.v)h+=' &middot; <strong style="color:var(--K)">R$'+g.v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'</strong>';
     if(u)h+=' &middot; '+u.nome;
+    if(g.fp&&FORMA_PAG_LABEL[g.fp])h+=' &middot; <span style="background:var(--A3);color:var(--A2);border-radius:20px;padding:1px 7px;font-weight:600">'+FORMA_PAG_LABEL[g.fp]+'</span>';
     h+='</div></div>';
     h+='<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">';
     if(isNfOk){
@@ -2645,6 +2699,164 @@ async function saveCampoValor(cid,campoId,valor){
   try{await apiSave(c);await doSync();}catch(ex){ss('er','Erro ao salvar campo');}
 }
 
+// ── ANIVERSÁRIOS ─────────────────────────────────────────
+function getMonthBirthdays(){
+  var hj=hojeISO();var mm=hj.slice(5,7);
+  return contatos.filter(function(c){
+    var aniv=normDate(c.aniversario);if(!aniv)return false;
+    return aniv.slice(5,7)===mm;
+  }).sort(function(a,b){
+    return normDate(a.aniversario).slice(8,10).localeCompare(normDate(b.aniversario).slice(8,10));
+  });
+}
+function getTodayBirthdays(){
+  var hj=hojeISO();var mm=hj.slice(5,7);var dd=hj.slice(8,10);
+  return contatos.filter(function(c){
+    var aniv=normDate(c.aniversario);if(!aniv)return false;
+    return aniv.slice(5,7)===mm&&aniv.slice(8,10)===dd;
+  });
+}
+function getBdaySentToday(){
+  var key='psn_bday_'+hojeISO().replace(/-/g,'');
+  try{return JSON.parse(localStorage.getItem(key)||'{}');}catch(e){return{};}
+}
+function markBdaySent(cid){
+  var key='psn_bday_'+hojeISO().replace(/-/g,'');
+  var sent=getBdaySentToday();sent[cid]=true;
+  localStorage.setItem(key,JSON.stringify(sent));
+  var c=contatos.find(function(x){return x.id===cid;});
+  logAction('parabens_enviados',c?c.nome:cid);
+  updateBdayNotif();renderAniversario();
+}
+function updateBdayNotif(){
+  var todayBdays=getTodayBirthdays();
+  var sent=getBdaySentToday();
+  var pending=todayBdays.filter(function(c){return !sent[c.id];});
+  var badge=document.getElementById('bday-notif-badge');
+  if(badge){badge.style.display=pending.length>0?'flex':'none';if(pending.length>0)badge.textContent=String(pending.length);}
+}
+function renderAniversario(){
+  var el=document.getElementById('aniversario-content');if(!el)return;
+  var hj=hojeISO();var mm=hj.slice(5,7);var dd=hj.slice(8,10);
+  var meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  var nomeMes=meses[parseInt(mm,10)-1];
+  var lista=getMonthBirthdays();
+  var sent=getBdaySentToday();
+  var todayList=lista.filter(function(c){return normDate(c.aniversario).slice(8,10)===dd;});
+  var restList=lista.filter(function(c){return normDate(c.aniversario).slice(8,10)!==dd;});
+  var h='<div style="font-size:16px;font-weight:700;color:var(--K);margin-bottom:1rem">&#127874; Aniversariantes de '+nomeMes+'</div>';
+  if(!lista.length){h+='<div class="empty">Nenhum aniversariante cadastrado este mês</div>';el.innerHTML=h;return;}
+  if(todayList.length){
+    h+='<div style="background:var(--AM2);border:1px solid var(--AM);border-radius:10px;padding:.875rem 1rem;margin-bottom:1rem">';
+    h+='<div style="font-size:11px;font-weight:700;color:var(--AM);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem">&#127881; Aniversariante'+(todayList.length>1?'s':'')+' de Hoje</div>';
+    todayList.forEach(function(c){
+      var jaSent=sent[c.id];
+      var aniv=normDate(c.aniversario);
+      var anoNasc=aniv?aniv.slice(0,4):'';
+      var anoAtual=hj.slice(0,4);
+      var idade=(anoNasc&&anoNasc!=='0000')?(parseInt(anoAtual,10)-parseInt(anoNasc,10)):0;
+      var idadeStr=idade>0?(' &#8212; '+idade+' anos'):'';
+      var waTel=c.tel?c.tel.replace(/\D/g,''):'';
+      if(waTel&&waTel.length<=11)waTel='55'+waTel;
+      h+='<div style="background:var(--W);border-radius:8px;padding:.75rem 1rem;margin-bottom:8px;display:flex;align-items:center;gap:12px">';
+      h+='<div style="font-size:24px">&#127874;</div>';
+      h+='<div style="flex:1;min-width:0">';
+      h+='<div style="font-size:14px;font-weight:700;color:var(--K)">'+c.nome+'</div>';
+      h+='<div style="font-size:11px;color:var(--G3);margin-top:1px">Aniversário'+idadeStr+'</div>';
+      if(c.tel)h+='<div style="font-size:11px;color:var(--G3)">&#128222; '+c.tel+'</div>';
+      h+='</div>';
+      h+='<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">';
+      if(waTel)h+='<a href="https://wa.me/'+waTel+'?text=Feliz+Aniversário%21+%F0%9F%8E%82" target="_blank" rel="noopener" class="btn sm primary" style="text-decoration:none">&#128172; WhatsApp</a>';
+      if(jaSent){h+='<span style="font-size:11px;background:var(--VD2);color:var(--VD);border-radius:20px;padding:4px 10px;font-weight:600;display:flex;align-items:center">&#10003; Enviado</span>';}
+      else{h+='<button class="btn sm" onclick="markBdaySent(\''+c.id+'\')" style="border-color:var(--AM);color:var(--AM)">&#10003; Marcar enviado</button>';}
+      h+='</div>';
+      h+='</div>';
+    });
+    h+='</div>';
+  }
+  if(restList.length){
+    var antes=restList.filter(function(c){return normDate(c.aniversario).slice(8,10)<dd;});
+    var depois=restList.filter(function(c){return normDate(c.aniversario).slice(8,10)>dd;});
+    function renderBdaySimple(titulo,lst){
+      var out='';if(!lst.length)return out;
+      out+='<div class="slbl" style="margin-top:1rem">'+titulo+'</div>';
+      out+='<div style="background:var(--W);border:1px solid var(--G2);border-radius:10px;overflow:hidden">';
+      lst.forEach(function(c,i){
+        var aniv=normDate(c.aniversario);
+        var ddAniv=aniv.slice(8,10);
+        var anoNasc=aniv?aniv.slice(0,4):'';
+        var anoAtual=hj.slice(0,4);
+        var idade=(anoNasc&&anoNasc!=='0000')?(parseInt(anoAtual,10)-parseInt(anoNasc,10)):0;
+        var idadeStr=idade>0?(' &#8212; '+idade+' anos'):'';
+        var waTel=c.tel?c.tel.replace(/\D/g,''):'';
+        if(waTel&&waTel.length<=11)waTel='55'+waTel;
+        out+='<div style="display:flex;align-items:center;gap:10px;padding:.75rem 1rem;'+(i>0?'border-top:1px solid var(--G2)':'')+'">';
+        out+='<div style="width:36px;height:36px;border-radius:50%;background:var(--L3);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--L2);flex-shrink:0">'+ddAniv+'</div>';
+        out+='<div style="flex:1;min-width:0">';
+        out+='<div style="font-size:13px;font-weight:500;color:var(--K)">'+c.nome+'</div>';
+        out+='<div style="font-size:11px;color:var(--G3)">dia '+ddAniv+'/'+mm+idadeStr+'</div>';
+        out+='</div>';
+        if(waTel)out+='<a href="https://wa.me/'+waTel+'" target="_blank" rel="noopener" class="btn xs" style="text-decoration:none">&#128172;</a>';
+        out+='</div>';
+      });
+      out+='</div>';
+      return out;
+    }
+    h+=renderBdaySimple('Já passaram este mês',antes);
+    h+=renderBdaySimple('Ainda virão este mês',depois);
+  }
+  el.innerHTML=h;
+}
+
+// ── LOG DE USO ───────────────────────────────────────────
+async function logAction(action,details){
+  try{
+    await fetch(SB_URL+'/rest/v1/usage_log',{
+      method:'POST',
+      headers:Object.assign({},SB_HDR,{'Prefer':'return=minimal'}),
+      body:JSON.stringify({action:action,details:details||''})
+    });
+  }catch(e){}
+}
+async function purgeLogs(){
+  try{
+    var cutoff=new Date();cutoff.setDate(cutoff.getDate()-7);
+    var cutoffISO=cutoff.toISOString();
+    await fetch(SB_URL+'/rest/v1/usage_log?ts=lt.'+encodeURIComponent(cutoffISO),{method:'DELETE',headers:SB_HDR});
+  }catch(e){}
+}
+function formatActionName(action){
+  var names={contato_criado:'Contato criado',contato_editado:'Contato editado',ganho_confirmado:'Ganho confirmado',perda_confirmada:'Perda confirmada',atividade_concluida:'Atividade concluída',parabens_enviados:'Parabéns enviados'};
+  return names[action]||action;
+}
+async function renderLog(){
+  var el=document.getElementById('log-content');if(!el)return;
+  el.innerHTML='<div style="color:var(--G3);font-size:12px;padding:.5rem 0">Carregando...</div>';
+  try{
+    var resp=await fetch(SB_URL+'/rest/v1/usage_log?select=*&order=ts.desc&limit=150',{headers:SB_HDR});
+    if(!resp.ok){el.innerHTML='<div class="empty" style="padding:2rem 1rem">Tabela <strong>usage_log</strong> não encontrada.<br><span style="font-size:11px;color:var(--G3)">Crie a tabela no Supabase para ativar esta funcionalidade.</span></div>';return;}
+    var rows=await resp.json();
+    if(!rows.length){el.innerHTML='<div class="empty">Nenhum registro nos últimos 7 dias</div>';return;}
+    var actionIcons={contato_criado:'&#43;',contato_editado:'&#9998;',ganho_confirmado:'&#10003;',perda_confirmada:'&#10007;',atividade_concluida:'&#10003;',parabens_enviados:'&#127874;'};
+    var actionCors={contato_criado:'var(--L)',contato_editado:'var(--A2)',ganho_confirmado:'var(--VD)',perda_confirmada:'var(--VM)',atividade_concluida:'var(--A2)',parabens_enviados:'var(--AM)'};
+    var h='<div style="background:var(--W);border:1px solid var(--G2);border-radius:10px;overflow:hidden">';
+    rows.forEach(function(row,i){
+      var ic=actionIcons[row.action]||'&#9679;';
+      var cor=actionCors[row.action]||'var(--G3)';
+      var dt=fmtDatetime(row.ts);
+      h+='<div style="display:flex;align-items:center;gap:10px;padding:.75rem 1rem;'+(i>0?'border-top:1px solid var(--G2)':'')+'">';
+      h+='<div style="width:30px;height:30px;border-radius:50%;background:var(--G);color:'+cor+';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">'+ic+'</div>';
+      h+='<div style="flex:1;min-width:0">';
+      h+='<div style="font-size:12px;font-weight:600;color:'+cor+'">'+formatActionName(row.action)+'</div>';
+      if(row.details)h+='<div style="font-size:11px;color:var(--K);word-break:break-word">'+row.details+'</div>';
+      h+='<div style="font-size:10px;color:var(--G3)">'+dt+'</div>';
+      h+='</div></div>';
+    });
+    h+='</div>';
+    el.innerHTML=h;
+  }catch(e){el.innerHTML='<div class="empty">Erro ao carregar log</div>';}
+}
+
 // ── HEADER ───────────────────────────────────────────────
 function matchUser(c){if(userAtivo==='todos')return true;if(userAtivo==='sem')return!c.usuario;return c.usuario===userAtivo;}
 function renderUbtns(){
@@ -2660,7 +2872,7 @@ function closeM(id){document.getElementById(id).style.display='none';}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.overlay').forEach(o=>o.style.display='none');});
 document.addEventListener('click',e=>{if(e.target.classList.contains('overlay'))e.target.style.display='none';});
 function setFb(id,msg,type){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='fb '+type;}}
-function renderAll(){renderFunil();renderContatos();renderUbtns();}
+function renderAll(){renderFunil();renderContatos();renderUbtns();updateBdayNotif();}
 
 // ── INIT ─────────────────────────────────────────────────
 (async function(){
@@ -2669,6 +2881,8 @@ function renderAll(){renderFunil();renderContatos();renderUbtns();}
   try{await loadCatalogo();}catch(e){console.warn('loadCatalogo error:',e);}
   renderUbtns();
   try{await doSync();}catch(e){ss('er','Erro ao conectar — clique ↻ para tentar novamente');}
+  try{await purgeLogs();}catch(e){}
+  updateBdayNotif();
   // Auto-save config a cada 5 minutos
   setInterval(()=>saveCfg().catch(()=>{}),300000);
 })();
