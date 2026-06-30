@@ -280,6 +280,22 @@ textarea.fi{resize:vertical;min-height:60px}
       </div>
     </div>
     <div id="filtros-tier" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+    <select class="fi" id="filtro-aniv-mes" style="width:auto;font-size:12px;height:32px" onchange="setFiltroAniversario(this.value)">
+      <option value="">&#127874; Anivers&#225;rio</option>
+      <option value="mes">Este m&#234;s</option>
+      <option value="01">Janeiro</option>
+      <option value="02">Fevereiro</option>
+      <option value="03">Mar&#231;o</option>
+      <option value="04">Abril</option>
+      <option value="05">Maio</option>
+      <option value="06">Junho</option>
+      <option value="07">Julho</option>
+      <option value="08">Agosto</option>
+      <option value="09">Setembro</option>
+      <option value="10">Outubro</option>
+      <option value="11">Novembro</option>
+      <option value="12">Dezembro</option>
+    </select>
   </div>
   <div id="lista-c"></div>
 </div>
@@ -741,7 +757,7 @@ let cfg = {
   usuarios:[{id:'lucas',nome:'Lucas'},{id:'ana',nome:'Ana'}],
   campos_personalizados:[]
 };
-let funilAtivo='d2c', filtroC='todos', filtroAtv='todos', filtroRes='todos', filtroTier='todos', filtroGL='todos';
+let funilAtivo='d2c', filtroC='todos', filtroAtv='todos', filtroRes='todos', filtroTier='todos', filtroGL='todos', filtroAniversario='';
 let periodo='0', periodoCustom={ativo:false,de:null,ate:null};
 let userAtivo='todos';
 let editCid=null, editFid=null, editEfid=null, editEid=null;
@@ -1417,17 +1433,27 @@ function renderContatos(){
       if(filtroTier==='bronze'&&tier.label!=='Pissifã Bronze')return false;
       if(filtroTier==='comum'&&tier.label!=='Cliente comum')return false;
     }
+    if(filtroAniversario){
+      var anivFiltro=normDate(c.aniversario);
+      if(!anivFiltro)return false;
+      var mesFiltro=filtroAniversario==='mes'?hojeISO().slice(5,7):filtroAniversario;
+      if(anivFiltro.slice(5,7)!==mesFiltro)return false;
+    }
     return true;
   });
   const el=document.getElementById('lista-c');
   if(!lista.length){el.innerHTML=`<div class="empty">${contatos.length?'Nenhum encontrado':'Nenhum contato ainda'}</div>`;return;}
-  el.innerHTML=lista.map(c=>{
+  var listaFinal=lista.slice();
+  if(filtroAniversario){listaFinal.sort(function(a,b){return(normDate(a.aniversario)||'9999').slice(8,10).localeCompare((normDate(b.aniversario)||'9999').slice(8,10));});}
+  var selAnivEl=document.getElementById('filtro-aniv-mes');if(selAnivEl)selAnivEl.value=filtroAniversario;
+  el.innerHTML=listaFinal.map(c=>{
     const f=getFunil(c.funil);const e=f?f.etapas.find(x=>x.id===c.etapa):null;const u=cfg.usuarios.find(x=>x.id===c.usuario);
     const s=atvStatus(c);const atvCls={sem:'atv-vermelho',hoje:'atv-verde',atrasada:'atv-amarelo',agendada:'atv-cinza'};
+    var anivBadge='';if(c.aniversario){var ab=normDate(c.aniversario);var isHjBday=ab&&ab.slice(5,7)===hojeISO().slice(5,7)&&ab.slice(8,10)===hojeISO().slice(8,10);anivBadge='<span style="background:'+(isHjBday?'#FDD835':'var(--AM2)')+';color:var(--AM);border-radius:20px;padding:1px 7px;font-size:11px;font-weight:600;white-space:nowrap">&#127874; '+ab.slice(8,10)+'/'+ab.slice(5,7)+'</span>';}
     return`<div class="cc">
       <div class="cc-top">
         <div>
-          <div class="cc-nome">${c.nome}</div>
+          <div class="cc-nome" style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">${c.nome}${anivBadge}</div>
           <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
             ${f?`<span class="bdg-canal">${f.nome}</span>`:''}${e?`<span class="bdg-canal">${e.nome}</span>`:''}
             <span class="bdg-canal">${CANAL_LABEL[c.canal]||c.canal}</span>
@@ -1452,6 +1478,7 @@ function renderContatos(){
 }
 function setFiltroC(btn,f){document.querySelectorAll('#filtros-c .filtro').forEach(b=>b.classList.remove('active'));btn.classList.add('active');filtroC=f;renderContatos();}
 function setFiltroTier(btn,t){filtroTier=t;renderContatos();}
+function setFiltroAniversario(val){filtroAniversario=val;renderContatos();}
 function toggleFiltrosC(){const p=document.getElementById('fd-panel-c');if(p)p.classList.toggle('open');}
 function updFiltroCBtn(){
   const btn=document.getElementById('btn-filtros-c');
