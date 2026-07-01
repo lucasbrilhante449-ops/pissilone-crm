@@ -1238,7 +1238,8 @@ function openAtv(id){
     const labels={hoje:'📅 Hoje — ',atrasada:'⚠ Atrasada desde ',agendada:'📅 '};
     document.getElementById('atv-atual-data').textContent=(labels[s]||'')+fmtBR(atvData);
     document.getElementById('atv-atual-data').style.color=s==='atrasada'?'var(--VM)':s==='hoje'?'var(--VD)':'var(--K)';
-    document.getElementById('atv-atual-desc').textContent=c.atv_desc||'';
+    document.getElementById('atv-atual-desc').textContent=c.atv_desc||'(sem descrição)';
+    document.getElementById('atv-atual-desc').style.fontStyle=c.atv_desc?'normal':'italic';
     document.getElementById('btn-checkpoint').style.display='inline-flex';
   }else{wrap.style.display='none';divider.style.display='none';}
   document.getElementById('modal-atv').style.display='flex';
