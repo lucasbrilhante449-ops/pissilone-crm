@@ -1840,7 +1840,7 @@ function renderInsights(){
   h+='<div class="mc mc-link" onclick="showAtvDetail(\'checkpoint\')"><div class="mc-n" style="color:var(--A2)">'+checkpts+'</div><div class="mc-l">Checkpoints</div><div class="mc-s v">&#10003;</div></div>';
   h+='</div>';
   // ── NPS ──
-  var npsContacts=lista.filter(function(c){return c.nps!=null&&c.nps>=0&&c.nps<=10;});
+  var npsBase=baseContatos.slice();if(iFunil!=='todos')npsBase=npsBase.filter(function(c){return c.funil===iFunil;});_npsLista=npsBase;var npsContacts=npsBase.filter(function(c){return c.nps!=null&&c.nps>=0&&c.nps<=10;});
   h+='<div class="divider"></div><div class="slbl">NPS &mdash; Net Promoter Score</div>';
   if(!npsContacts.length){
     h+='<div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem;margin-bottom:1rem">';
@@ -2130,7 +2130,7 @@ async function changeResponsavel(cid,newUid,fromUid){
 }
 
 function showNpsDetail(grupo){
-  var base=_insightsLista||[];
+  var base=_npsLista||_insightsLista||[];
   var npsAll=base.filter(function(c){return c.nps!=null&&c.nps>=0&&c.nps<=10;});
   var items,titulo;
   if(grupo==='promo'){items=npsAll.filter(function(c){return c.nps>=9;});titulo='Promotores — nota 9–10';}
