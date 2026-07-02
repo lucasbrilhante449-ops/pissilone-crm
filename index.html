@@ -1651,10 +1651,15 @@ function renderInsights(){
   h+='<div class="mc"><div class="mc-n" style="color:var(--A2)">'+checkpts+'</div><div class="mc-l">Checkpoints</div><div class="mc-s v">executados</div></div>';
   h+='</div>';
   // ── RECEITA POR MÊS ──
-  if(mesesData.length>1){
+  if(mesesData.length>=1){
     h+='<div class="divider"></div><div class="slbl">Receita por m&#234;s</div>';
     h+='<div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem .75rem .5rem;margin-bottom:1rem">';
     h+=svgBarV(mesesData,560,118,'var(--L)');
+    h+='</div>';
+  }else if(negGanhos.length===0){
+    h+='<div class="divider"></div><div class="slbl">Receita por m&#234;s</div>';
+    h+='<div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem;margin-bottom:1rem;text-align:center">';
+    h+='<div style="font-size:11px;color:var(--G3);font-style:italic">Nenhum ganho registrado no período selecionado</div>';
     h+='</div>';
   }
   // ── POR RESPONSÁVEL ──
