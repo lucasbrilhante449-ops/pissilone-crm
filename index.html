@@ -420,9 +420,8 @@ textarea.fi{resize:vertical;min-height:60px}
     <div><label class="flbl">UF</label><input class="fi" id="f-uf" placeholder="RN" maxlength="2" style="text-transform:uppercase"></div>
     <div><label class="flbl">CEP</label><input class="fi" id="f-cep" placeholder="59600-000"></div>
   </div>
-  <div class="fg fg2">
+  <div class="fg fg1">
     <div><label class="flbl">Cód. MarketUp</label><input class="fi" id="f-cod-marketup" placeholder="Ex: 12345"></div>
-    <div><label class="flbl">NPS do cliente (0–10)</label><input class="fi" type="number" id="f-nps" min="0" max="10" placeholder="Ex: 9"></div>
   </div>
   <div id="neg-hist-wrap" style="display:none;margin-bottom:.75rem">
     <div class="flbl" style="margin-bottom:.5rem">Histórico de negociações</div>
@@ -808,6 +807,17 @@ function getTierCliente(nCompras,ltv){
 function parseNegHist(c){
   try{if(c.neg_hist&&c.neg_hist!=='')return JSON.parse(c.neg_hist);}catch(e){}
   return[];
+}
+
+function getNps(c){
+  var cps=cfg.campos_personalizados||[];
+  for(var i=0;i<cps.length;i++){
+    if(cps[i].nome.toLowerCase().includes('nps')){
+      var v=c.campos&&c.campos[cps[i].id];
+      if(v!==undefined&&v!==null&&v!==''){var n=parseInt(v);if(!isNaN(n)&&n>=0&&n<=10)return n;}
+    }
+  }
+  return c.nps!=null?c.nps:null;
 }
 
 function atvStatus(c){
@@ -1316,7 +1326,6 @@ function openContato(id=null,fid=null,eid=null){
     document.getElementById('f-uf').value=c.uf||'';
     document.getElementById('f-cep').value=c.cep||'';
     document.getElementById('f-cod-marketup').value=c.cod_marketup||'';
-    document.getElementById('f-nps').value=c.nps!=null?c.nps:'';
     // Histórico
     const hist=parseNegHist(c);
     const hw=document.getElementById('neg-hist-wrap');
@@ -1348,7 +1357,7 @@ function openContato(id=null,fid=null,eid=null){
       if(rb&&ultimaNeg){rb.className=ultimaNeg.r==='ganho'?'res-ganho':'res-perda';rb.textContent=ultimaNeg.r==='ganho'?'✓ Ganho':'✗ Perda';}
     }
   }else{
-    ['f-nome','f-tel','f-valor','f-atv-data-modal','f-atv-desc-modal','f-produto','f-obs','f-email','f-cpf','f-endereco','f-cod-marketup','f-nps','f-cidade','f-uf','f-cep'].forEach(x=>document.getElementById(x).value='');
+    ['f-nome','f-tel','f-valor','f-atv-data-modal','f-atv-desc-modal','f-produto','f-obs','f-email','f-cpf','f-endereco','f-cod-marketup','f-cidade','f-uf','f-cep'].forEach(x=>document.getElementById(x).value='');
     document.getElementById('f-canal').value='instagram';document.getElementById('f-user').value='';
     document.getElementById('f-aniversario').value='';
     const hw=document.getElementById('neg-hist-wrap');if(hw)hw.style.display='none';
@@ -1395,7 +1404,7 @@ async function saveContato(){
     campos:prev.campos||{},
     cod_marketup:document.getElementById('f-cod-marketup').value.trim(),
     nf_emitida:prev.nf_emitida||false,
-    nps:(function(){var v=document.getElementById('f-nps').value;return v!==''?parseInt(v):null;})()
+    nps:prev.nps!=null?prev.nps:null
   };
   try{await apiSave(c);logAction(editCid?'contato_editado':'contato_criado',nome);setFb('fb-c','Salvo!','ok');closeM('modal-c');await doSync();}
   catch(ex){setFb('fb-c','Erro ao salvar','er');console.error(ex);}
@@ -1840,7 +1849,7 @@ function renderInsights(){
   h+='<div class="mc mc-link" onclick="showAtvDetail(\'checkpoint\')"><div class="mc-n" style="color:var(--A2)">'+checkpts+'</div><div class="mc-l">Checkpoints</div><div class="mc-s v">&#10003;</div></div>';
   h+='</div>';
   // ── NPS ──
-  var npsBase=baseContatos.slice();if(iFunil!=='todos')npsBase=npsBase.filter(function(c){return c.funil===iFunil;});_npsLista=npsBase;var npsContacts=npsBase.filter(function(c){return c.nps!=null&&c.nps>=0&&c.nps<=10;});
+  var npsBase=baseContatos.slice();if(iFunil!=='todos')npsBase=npsBase.filter(function(c){return c.funil===iFunil;});_npsLista=npsBase;var npsContacts=npsBase.filter(function(c){var nv=getNps(c);return nv!=null&&nv>=0&&nv<=10;});
   h+='<div class="divider"></div><div class="slbl">NPS &mdash; Net Promoter Score</div>';
   if(!npsContacts.length){
     h+='<div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem;margin-bottom:1rem">';
@@ -1851,9 +1860,9 @@ function renderInsights(){
     h+='<div style="background:var(--VM2);border-radius:10px;padding:.875rem;text-align:center"><div style="font-size:10px;font-weight:700;color:var(--VM);text-transform:uppercase;margin-bottom:4px">Detratores</div><div style="font-size:1.5rem;font-weight:900;color:var(--VM)">—</div><div style="font-size:10px;color:var(--VM);opacity:.75">nota 0–6</div></div>';
     h+='</div></div>';
   }else{
-    var npsPromo=npsContacts.filter(function(c){return c.nps>=9;});
-    var npsNeutro=npsContacts.filter(function(c){return c.nps>=7&&c.nps<=8;});
-    var npsDetrat=npsContacts.filter(function(c){return c.nps<=6;});
+    var npsPromo=npsContacts.filter(function(c){return getNps(c)>=9;});
+    var npsNeutro=npsContacts.filter(function(c){var nv=getNps(c);return nv>=7&&nv<=8;});
+    var npsDetrat=npsContacts.filter(function(c){return getNps(c)<=6;});
     var npsScore=Math.round(((npsPromo.length-npsDetrat.length)/npsContacts.length)*100);
     var npsCor=npsScore>=50?'var(--VD)':npsScore>=0?'var(--AM)':'var(--VM)';
     var npsLabel=npsScore>=75?'Excelente':npsScore>=50?'Ótimo':npsScore>=0?'Regular':'Crítico';
@@ -2131,26 +2140,26 @@ async function changeResponsavel(cid,newUid,fromUid){
 
 function showNpsDetail(grupo){
   var base=_npsLista||_insightsLista||[];
-  var npsAll=base.filter(function(c){return c.nps!=null&&c.nps>=0&&c.nps<=10;});
+  var npsAll=base.filter(function(c){var nv=getNps(c);return nv!=null&&nv>=0&&nv<=10;});
   var items,titulo;
-  if(grupo==='promo'){items=npsAll.filter(function(c){return c.nps>=9;});titulo='Promotores — nota 9–10';}
-  else if(grupo==='neutro'){items=npsAll.filter(function(c){return c.nps>=7&&c.nps<=8;});titulo='Neutros — nota 7–8';}
-  else{items=npsAll.filter(function(c){return c.nps<=6;});titulo='Detratores — nota 0–6';}
-  items=items.slice().sort(function(a,b){return(b.nps||0)-(a.nps||0);});
+  if(grupo==='promo'){items=npsAll.filter(function(c){return getNps(c)>=9;});titulo='Promotores — nota 9–10';}
+  else if(grupo==='neutro'){items=npsAll.filter(function(c){var nv=getNps(c);return nv>=7&&nv<=8;});titulo='Neutros — nota 7–8';}
+  else{items=npsAll.filter(function(c){return getNps(c)<=6;});titulo='Detratores — nota 0–6';}
+  items=items.slice().sort(function(a,b){return(getNps(b)||0)-(getNps(a)||0);});
   document.getElementById('psf-detail-title').textContent=titulo+' ('+items.length+')';
   var html='';
   if(!items.length){html='<div class="empty">Nenhum cliente nesta categoria</div>';}
   else{
     items.forEach(function(c){
       var u=cfg.usuarios.find(function(x){return x.id===c.usuario;});
-      var npsCor=c.nps>=9?'var(--VD)':c.nps>=7?'var(--AM)':'var(--VM)';
+      var _nv=getNps(c);var npsCor=_nv>=9?'var(--VD)':_nv>=7?'var(--AM)':'var(--VM)';
       html+='<div style="background:var(--G);border-radius:10px;padding:.875rem 1rem;margin-bottom:8px">';
       html+='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px">';
       html+='<div style="flex:1;min-width:0">';
       html+='<div style="font-size:13px;font-weight:700;color:var(--K)">'+c.nome+'</div>';
       if(u)html+='<div style="font-size:11px;color:var(--G3);margin-top:2px">&#128100; '+u.nome+'</div>';
       html+='</div>';
-      html+='<div style="font-size:1.6rem;font-weight:900;color:'+npsCor+';min-width:28px;text-align:center">'+c.nps+'</div>';
+      html+='<div style="font-size:1.6rem;font-weight:900;color:'+npsCor+';min-width:28px;text-align:center">'+(_nv!=null?_nv:'')+'</div>';
       html+='<button class="btn xs" onclick="closeM(\'modal-psf-detail\');openContatoDetail(\''+c.id+'\')">&#9998; Abrir</button>';
       html+='</div></div>';
     });
