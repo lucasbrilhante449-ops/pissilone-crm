@@ -673,8 +673,7 @@ textarea.fi{resize:vertical;min-height:60px}
   <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:.875rem;flex-wrap:wrap">
     <div style="display:flex;gap:5px;flex-wrap:wrap">
       <button class="filtro active" id="fgl-todos" onclick="setFiltroGL(this,'todos')">Todos</button>
-      <button class="filtro" id="fgl-ok" onclick="setFiltroGL(this,'ok')">&#10003; NF emitida</button>
-      <button class="filtro" id="fgl-pend" onclick="setFiltroGL(this,'pend')">&#10007; Sem NF</button>
+      <button class="filtro" id="fgl-semprod" onclick="setFiltroGL(this,'semprod')">&#10007; Sem produtos</button>
     </div>
     <div id="mgl-summary" style="font-size:11px;color:var(--G3)"></div>
   </div>
@@ -2708,29 +2707,28 @@ function renderGanhosModal(){
   var allGanhos=[];
   baseContatos.forEach(function(c){
     parseNegHist(c).forEach(function(x,i){
-      if(x.r==='ganho')allGanhos.push({r:'ganho',d:x.d,v:x.v||0,nf:x.nf||false,itens:x.itens||[],fp:x.fp||'',cid:c.id,nome:c.nome,usuario:c.usuario,negIdx:i});
+      if(x.r==='ganho')allGanhos.push({r:'ganho',d:x.d,v:x.v||0,itens:x.itens||[],fp:x.fp||'',cid:c.id,nome:c.nome,usuario:c.usuario,negIdx:i});
     });
   });
   var lista=filtNegsPer(allGanhos,false).sort(function(a,b){return b.d.localeCompare(a.d);});
-  var nfOkCnt=lista.filter(function(g){return g.nf;}).length;
-  var nfPendCnt=lista.filter(function(g){return !g.nf;}).length;
+  var comProdCnt=lista.filter(function(g){return g.itens&&g.itens.length>0;}).length;
+  var semProdCnt=lista.length-comProdCnt;
   var titleEl=document.getElementById('mgl-title');
   if(titleEl)titleEl.textContent='Ganhos ('+lista.length+')';
   var sumEl=document.getElementById('mgl-summary');
-  if(sumEl)sumEl.innerHTML='<span style="color:var(--VD);font-weight:600">&#10003; '+nfOkCnt+' NF ok</span> &nbsp;&middot;&nbsp; <span style="color:var(--VM);font-weight:600">&#10007; '+nfPendCnt+' sem NF</span>';
+  if(sumEl)sumEl.innerHTML='<span style="color:var(--VD);font-weight:600">&#10003; '+comProdCnt+' com produtos</span> &nbsp;&middot;&nbsp; <span style="color:var(--VM);font-weight:600">&#10007; '+semProdCnt+' sem produtos</span>';
   var listView=lista;
-  if(filtroGL==='ok')listView=lista.filter(function(g){return g.nf;});
-  if(filtroGL==='pend')listView=lista.filter(function(g){return !g.nf;});
+  if(filtroGL==='semprod')listView=lista.filter(function(g){return !(g.itens&&g.itens.length>0);});
   var el=document.getElementById('mgl-content');if(!el)return;
   if(!listView.length){el.innerHTML='<div class="empty">Nenhum ganho encontrado</div>';return;}
   var h='';
   listView.forEach(function(g){
     var u=cfg.usuarios.find(function(x){return x.id===g.usuario;});
-    var isNfOk=g.nf;
-    var nfCor=isNfOk?'var(--VD)':'var(--VM)';
-    var nfBg=isNfOk?'var(--VD2)':'var(--VM2)';
+    var temProd=g.itens&&g.itens.length>0;
+    var pCor=temProd?'var(--VD)':'var(--VM)';
+    var pBg=temProd?'var(--VD2)':'var(--VM2)';
     h+='<div style="display:flex;align-items:center;gap:10px;padding:.75rem 0;border-bottom:1px solid var(--G2)">';
-    h+='<div style="width:34px;height:34px;border-radius:50%;background:'+nfBg+';color:'+nfCor+';display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0">'+(isNfOk?'&#10003;':'&#10007;')+'</div>';
+    h+='<div style="width:34px;height:34px;border-radius:50%;background:'+pBg+';color:'+pCor+';display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0" title="'+(temProd?'Com produtos':'Sem produtos vinculados')+'">'+(temProd?'&#10003;':'&#10007;')+'</div>';
     h+='<div style="flex:1;min-width:0">';
     h+='<div style="font-size:13px;font-weight:600;color:var(--K);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+g.nome+'</div>';
     h+='<div style="font-size:11px;color:var(--G3);margin-top:2px">';
@@ -2738,32 +2736,14 @@ function renderGanhosModal(){
     if(g.v)h+=' &middot; <strong style="color:var(--K)">R$'+g.v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'</strong>';
     if(u)h+=' &middot; '+u.nome;
     if(g.fp&&FORMA_PAG_LABEL[g.fp])h+=' &middot; <span style="background:var(--A3);color:var(--A2);border-radius:20px;padding:1px 7px;font-weight:600">'+FORMA_PAG_LABEL[g.fp]+'</span>';
+    if(!temProd)h+=' &middot; <span style="color:var(--VM)">sem produtos</span>';
     h+='</div></div>';
     h+='<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">';
-    if(isNfOk){
-      h+='<span style="font-size:10px;background:var(--VD2);color:var(--VD);border:1px solid var(--VD);border-radius:20px;padding:2px 8px;font-weight:600;white-space:nowrap">NF emitida</span>';
-      h+='<button class="btn xs danger" onclick="toggleNFGanho(\''+g.cid+'\','+g.negIdx+')" title="Desmarcar NF">&#10005;</button>';
-    }else{
-      h+='<button class="btn xs primary" onclick="toggleNFGanho(\''+g.cid+'\','+g.negIdx+')" title="Marcar NF como emitida">Marcar NF</button>';
-    }
+    h+='<button class="btn xs" onclick="closeM(\'modal-ganhos-list\');openEditNeg(\''+g.cid+'\','+g.negIdx+')" title="Editar itens do pedido">&#9998; Editar</button>';
     h+='<button class="btn xs" onclick="closeM(\'modal-ganhos-list\');openContatoDetail(\''+g.cid+'\')" title="Abrir cliente">&#9654;</button>';
     h+='</div></div>';
   });
   el.innerHTML=h;
-}
-
-async function toggleNFGanho(cid,idx){
-  var c=contatos.find(function(x){return x.id===cid;});if(!c)return;
-  var hist=parseNegHist(c);
-  if(!hist[idx]||hist[idx].r!=='ganho')return;
-  hist[idx].nf=!hist[idx].nf;
-  c.neg_hist=JSON.stringify(hist);
-  ss('ld','Salvando...');
-  try{
-    await apiSave(c);
-    await doSync();
-    renderGanhosModal();
-  }catch(ex){ss('er','Erro ao salvar');}
 }
 
 // ── CONFIG ───────────────────────────────────────────────
