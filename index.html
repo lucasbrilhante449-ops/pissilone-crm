@@ -1611,7 +1611,7 @@ function renderInsights(){
   baseContatos.forEach(function(c){
     var fb=c.data?c.data.slice(0,10):'';
     var negHist=parseNegHist(c);
-    negHist.forEach(function(x){allNegs.push({r:x.r,d:x.d||fb,m:x.m,v:x.v,itens:x.itens||[],cid:c.id,funil:c.funil,usuario:c.usuario});});
+    negHist.forEach(function(x){allNegs.push({r:x.r,d:x.d||fb,m:x.m,v:x.v,itens:x.itens||[],fp:x.fp||'',cid:c.id,funil:c.funil,usuario:c.usuario});});
     // Contatos em "Cliente Novo" (D2C) ou "Fechado" (B2B) sem entrada formal de ganho = ganho implícito
     var temGanho=negHist.some(function(x){return x.r==='ganho';});
     var eAlvo=getEtapa(c.funil,c.etapa);var nAlvo=eAlvo?eAlvo.nome.toLowerCase():'';
