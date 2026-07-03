@@ -776,7 +776,7 @@ let funilAtivo='d2c', filtroC='todos', filtroAtv='todos', filtroRes='todos', fil
 let periodo='0', periodoCustom={ativo:false,de:null,ate:null};
 let userAtivo='todos';
 let editCid=null, editFid=null, editEfid=null, editEid=null;
-let perdaCid=null, ganhoCid=null, atvCid=null, editNegCid=null, editNegIdx=null, editCampoId=null;
+let perdaCid=null, ganhoCid=null, atvCid=null, editNegCid=null, editNegIdx=null, editCampoId=null, editNegOrigin='detail';
 let motivoSel='', dragId=null, currentDetailId=null, detTimelineFilter='todos';
 let catalogo={estampas:[],cores:[],tamanhos:[],produtos:[]};
 var pedidoItens=[];
@@ -1213,6 +1213,8 @@ async function confirmarGanho(){
     logAction('ganho_confirmado',c.nome+(valorNeg?' - R$'+valorNeg:'')+(fpNeg&&FORMA_PAG_LABEL[fpNeg]?' - '+FORMA_PAG_LABEL[fpNeg]:''));
     if(isSegundoGanhoD2c){await duplicarParaPissifaAuto(c);}
     await doSync();
+    var insPane=document.getElementById('pane-insights');
+    if(insPane&&insPane.classList.contains('active'))renderInsights();
   }catch(ex){ss('er','Erro');}
   ganhoCid=null;
 }
@@ -2441,7 +2443,7 @@ function renderDetTimeline(cid){
         sub=ev.m||'';
         if(ev.fp&&FORMA_PAG_LABEL[ev.fp])sub=(sub?sub+' · ':'')+FORMA_PAG_LABEL[ev.fp];
         dt=fmtDFull(ev.d);
-        editBtn='<button class="btn xs" onclick="openEditNeg(\''+cid+'\','+item.origIdx+')" title="Editar">&#9998;</button>';
+        editBtn='<button class="btn xs" onclick="editNegOrigin=\'detail\';openEditNeg(\''+cid+'\','+item.origIdx+')" title="Editar">&#9998;</button>';
       }else if(tipo==='perda'){
         icon='&#10007;';cor='var(--VM)';bg='var(--VM2)';
         titulo='Perda';sub=ev.m||'';dt=fmtDFull(ev.d);
@@ -2532,9 +2534,13 @@ async function saveEditNeg(){
     await apiSave(c);
     closeM('modal-edit-neg');
     var savedCid=editNegCid;
-    editNegCid=null;editNegIdx=null;editNegItens=[];
+    var origem=editNegOrigin;
+    editNegCid=null;editNegIdx=null;editNegItens=[];editNegOrigin='detail';
     await doSync();
-    openContatoDetail(savedCid);
+    var insPane=document.getElementById('pane-insights');
+    if(insPane&&insPane.classList.contains('active'))renderInsights();
+    if(origem==='ganhos')openGanhosModal();
+    else openContatoDetail(savedCid);
   }catch(ex){setFb('fb-editneg','Erro ao salvar','er');}
 }
 
@@ -2775,7 +2781,7 @@ function renderGanhosModal(){
     if(!temProd)h+=' &middot; <span style="color:var(--VM)">sem produtos</span>';
     h+='</div></div>';
     h+='<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">';
-    h+='<button class="btn xs" onclick="closeM(\'modal-ganhos-list\');openEditNeg(\''+g.cid+'\','+g.negIdx+')" title="Editar itens do pedido">&#9998; Editar</button>';
+    h+='<button class="btn xs" onclick="editNegOrigin=\'ganhos\';closeM(\'modal-ganhos-list\');openEditNeg(\''+g.cid+'\','+g.negIdx+')" title="Editar itens do pedido">&#9998; Editar</button>';
     h+='<button class="btn xs" onclick="closeM(\'modal-ganhos-list\');openContatoDetail(\''+g.cid+'\')" title="Abrir cliente">&#9654;</button>';
     h+='</div></div>';
   });
