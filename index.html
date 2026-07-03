@@ -1580,6 +1580,11 @@ function filtNegsPer(negs,isPrev){
 function svgDonut(pct,cor,s,txt){var r=s*0.35,cx=s/2,cy=s/2,circ=2*Math.PI*r,arc=Math.min(Math.max(pct,0),100)/100*circ,sw=s*0.15;var o='<svg width="'+s+'" height="'+s+'" viewBox="0 0 '+s+' '+s+'" style="display:block;flex-shrink:0"><circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="var(--G2)" stroke-width="'+sw+'"/>';if(pct>0)o+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+cor+'" stroke-width="'+sw+'" stroke-dasharray="'+arc.toFixed(1)+' '+circ.toFixed(1)+'" stroke-dashoffset="'+(circ*0.25).toFixed(1)+'" stroke-linecap="round"/>';if(txt)o+='<text x="'+cx+'" y="'+(cy+s*0.077)+'" text-anchor="middle" font-size="'+(s*0.21)+'" font-weight="700" fill="'+cor+'" font-family="Barlow,sans-serif">'+txt+'</text>';return o+'</svg>';}
 function svgPieSegs(segs,s){var r=s*0.34,cx=s/2,cy=s/2,circ=2*Math.PI*r,sw=s*0.19,total=segs.reduce(function(a,x){return a+(x.v||0);},0);var o='<svg width="'+s+'" height="'+s+'" viewBox="0 0 '+s+' '+s+'" style="display:block;flex-shrink:0"><circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="var(--G2)" stroke-width="'+sw+'"/>';if(total>0){var cum=0;segs.forEach(function(seg){if(!seg.v)return;var arc=seg.v/total*circ,offset=circ*0.25-cum;o+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+seg.c+'" stroke-width="'+sw+'" stroke-dasharray="'+(arc-1.5).toFixed(1)+' '+(circ-arc+1.5).toFixed(1)+'" stroke-dashoffset="'+offset.toFixed(1)+'"/>';cum+=arc;});}return o+'</svg>';}
 function svgBarV(data,vbW,vbH,cor){if(!data||!data.length)return'';var maxV=Math.max.apply(null,data.map(function(d){return d.v||0;}));if(!maxV)maxV=1;var pL=8,pR=8,pT=18,pB=22;var n=data.length;var slot=(vbW-pL-pR)/n;var bw=Math.min(slot*0.65,48);var ch=vbH-pT-pB;var o='<svg viewBox="0 0 '+vbW+' '+vbH+'" width="100%" style="display:block;overflow:visible">';data.forEach(function(d,i){var x=pL+i*slot+(slot-bw)/2;var bh=Math.max(2,((d.v||0)/maxV)*ch);var y=pT+ch-bh;var isLast=(i===n-1);o+='<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+bh.toFixed(1)+'" rx="3" fill="'+cor+'" opacity="'+(isLast?'1':'0.72')+'"/>';if(bh>16){var vs=d.v>=1000000?'R$'+(d.v/1000000).toFixed(1)+'M':d.v>=1000?'R$'+Math.round(d.v/1000)+'k':'R$'+Math.round(d.v);o+='<text x="'+(x+bw/2).toFixed(1)+'" y="'+(y-4).toFixed(1)+'" text-anchor="middle" font-size="9" fill="'+cor+'" font-weight="700" font-family="Barlow,sans-serif">'+vs+'</text>';}o+='<text x="'+(x+bw/2).toFixed(1)+'" y="'+(vbH-5)+'" text-anchor="middle" font-size="9" fill="var(--G3)" font-family="Barlow,sans-serif">'+d.l+'</text>';});return o+'</svg>';}
+function itemProdutoEfetivo(it){
+  if(it.produto)return it.produto;
+  if(it.estampa||it.cor||it.tamanho)return'Camiseta';
+  return'';
+}
 function renderInsights(){
   var su=document.getElementById('ins-user');
   if(su){var puv=su.value;su.innerHTML='<option value="todos">Todos usuários</option>'+cfg.usuarios.map(function(u){return'<option value="'+u.id+'">'+u.nome+'</option>';}).join('');if(puv)su.value=puv;}
@@ -1801,7 +1806,8 @@ function renderInsights(){
   if(todosItens.length){
     var contProd={},contEst={},contCor={},contTam={};
     todosItens.forEach(function(it){
-      if(it.produto){contProd[it.produto]=(contProd[it.produto]||0)+(it.qty||1);}
+      var pEf=itemProdutoEfetivo(it);
+      if(pEf){contProd[pEf]=(contProd[pEf]||0)+(it.qty||1);}
       if(it.estampa){contEst[it.estampa]=(contEst[it.estampa]||0)+(it.qty||1);}
       if(it.cor){contCor[it.cor]=(contCor[it.cor]||0)+(it.qty||1);}
       if(it.tamanho){contTam[it.tamanho]=(contTam[it.tamanho]||0)+(it.qty||1);}
@@ -1843,7 +1849,8 @@ function renderInsights(){
     var semCategoria=0;
     todosItens.forEach(function(it){
       var qty=it.qty||1;
-      var cat=it.produto?prodCatMap[it.produto.toLowerCase()]:null;
+      var pEf=itemProdutoEfetivo(it);
+      var cat=pEf?prodCatMap[pEf.toLowerCase()]:null;
       if(cat&&porCategoria.hasOwnProperty(cat))porCategoria[cat]+=qty;
       else semCategoria+=qty;
     });
