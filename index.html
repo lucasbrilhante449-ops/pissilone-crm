@@ -448,7 +448,7 @@ textarea.fi{resize:vertical;min-height:60px}
   <div style="background:var(--G);border-radius:8px;padding:.75rem;margin-bottom:.75rem">
     <div class="slbl" style="font-size:10px;margin-bottom:.5rem">Itens do pedido</div>
     <div class="fg fg1" style="margin-bottom:.5rem">
-      <div class="cat-sw"><label class="flbl">Produto</label><input class="fi" type="text" id="csi-produto-novo" placeholder="Buscar produto..." oninput="catSelFilter('produto','novo')" onfocus="catSelOpen('produto','novo')" onblur="setTimeout(function(){catSelClose('produto','novo');},220)" autocomplete="off"><div class="cat-sd" id="csd-produto-novo"></div></div>
+      <div class="cat-sw"><label class="flbl">Produto *</label><input class="fi" type="text" id="csi-produto-novo" placeholder="Buscar produto..." oninput="catSelFilter('produto','novo')" onfocus="catSelOpen('produto','novo')" onblur="setTimeout(function(){catSelClose('produto','novo');},220)" autocomplete="off"><div class="cat-sd" id="csd-produto-novo"></div></div>
     </div>
     <div id="variacao-wrap-novo" style="display:none">
       <div class="fg fg3" style="margin-bottom:.5rem">
@@ -466,7 +466,7 @@ textarea.fi{resize:vertical;min-height:60px}
   <div class="fg fg3" style="margin-bottom:.75rem">
     <div><label class="flbl">Data do ganho</label><input class="fi" type="date" id="f-neg-data"></div>
     <div><label class="flbl">Valor total (R$)</label><input class="fi" type="number" id="f-neg-valor" placeholder="0"></div>
-    <div><label class="flbl">Forma de pagamento</label>
+    <div><label class="flbl">Forma de pagamento *</label>
       <select class="fi" id="f-neg-fp">
         <option value="">-- Selecionar --</option>
         <option value="credito_vista">Crédito à Vista</option>
@@ -482,6 +482,7 @@ textarea.fi{resize:vertical;min-height:60px}
     <button class="btn primary full" onclick="confirmarGanho()">&#10003; Confirmar ganho</button>
     <button class="btn full" onclick="closeM('modal-valor-neg')">Cancelar</button>
   </div>
+  <div class="fb" id="fb-neg"></div>
 </div>
 </div>
 
@@ -628,7 +629,7 @@ textarea.fi{resize:vertical;min-height:60px}
   <div class="fg fg3" style="margin-bottom:.75rem">
     <div><label class="flbl">Data do ganho</label><input class="fi" type="date" id="f-editneg-data"></div>
     <div><label class="flbl">Valor (R$)</label><input class="fi" type="number" id="f-editneg-valor" placeholder="0"></div>
-    <div><label class="flbl">Forma de pagamento</label>
+    <div><label class="flbl">Forma de pagamento *</label>
       <select class="fi" id="f-editneg-fp">
         <option value="">-- Selecionar --</option>
         <option value="credito_vista">Crédito à Vista</option>
@@ -643,7 +644,7 @@ textarea.fi{resize:vertical;min-height:60px}
   <div style="background:var(--G);border-radius:8px;padding:.75rem;margin-bottom:.75rem">
     <div style="font-size:10px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">Itens do pedido</div>
     <div class="fg fg1" style="margin-bottom:.5rem">
-      <div class="cat-sw"><label class="flbl">Produto</label><input class="fi" type="text" id="csi-produto-edit" placeholder="Buscar produto..." oninput="catSelFilter('produto','edit')" onfocus="catSelOpen('produto','edit')" onblur="setTimeout(function(){catSelClose('produto','edit');},220)" autocomplete="off"><div class="cat-sd" id="csd-produto-edit"></div></div>
+      <div class="cat-sw"><label class="flbl">Produto *</label><input class="fi" type="text" id="csi-produto-edit" placeholder="Buscar produto..." oninput="catSelFilter('produto','edit')" onfocus="catSelOpen('produto','edit')" onblur="setTimeout(function(){catSelClose('produto','edit');},220)" autocomplete="off"><div class="cat-sd" id="csd-produto-edit"></div></div>
     </div>
     <div id="variacao-wrap-edit" style="display:none">
       <div class="fg fg3" style="margin-bottom:.5rem">
@@ -783,6 +784,7 @@ var editNegItens=[];
 
 const CANAL_LABEL={instagram:'Instagram',story:'Story',anuncio:'Anúncio',indicacao:'Indicação',atelie:'Ateliê',busca:'Google',whatsapp:'WhatsApp',outro:'Outro'};
 const FORMA_PAG_LABEL={credito_vista:'Crédito à Vista',credito_parcelado:'Crédito Parcelado',pix:'Pix',dinheiro:'Dinheiro',debito:'Débito',bonificacao:'Bonificação'};
+const FORMA_PAG_COR={credito_vista:'var(--L)',credito_parcelado:'var(--L2)',pix:'var(--A)',dinheiro:'var(--A2)',debito:'var(--AM)',bonificacao:'var(--VD)'};
 const CATEGORIA_LABEL={moda:'Moda',decor_home:'Decor/Home',acessorios:'Acessórios'};
 const CATEGORIA_COR={moda:'var(--L)',decor_home:'var(--A)',acessorios:'var(--VD)'};
 
@@ -1129,6 +1131,7 @@ function setResultado(id,resultado){
 function abrirModalGanho(id){
   ganhoCid=id;
   var c=contatos.find(function(x){return x.id===id;});if(!c)return;
+  setFb('fb-neg','','');
   pedidoItens=[];
   document.getElementById('csi-produto-novo').value='';
   document.getElementById('csi-estampa-novo').value='';
@@ -1190,12 +1193,14 @@ function renderItensPedido(){
 
 async function confirmarGanho(){
   var c=contatos.find(function(x){return x.id===ganhoCid;});if(!c)return;
+  if(!pedidoItens.length){setFb('fb-neg','Adicione ao menos um produto ao pedido','er');return;}
+  var fpNeg=(document.getElementById('f-neg-fp')||{value:''}).value;
+  if(!fpNeg){setFb('fb-neg','Selecione a forma de pagamento','er');return;}
   var valorNeg=parseFloat(document.getElementById('f-neg-valor').value)||0;
   var hist=parseNegHist(c);
   var ganhosAnt=hist.filter(function(h){return h.r==='ganho';});
   var isSegundoGanhoD2c=ganhosAnt.length===1&&c.funil==='d2c';
   var dataGanho=(document.getElementById('f-neg-data')&&document.getElementById('f-neg-data').value)||hojeISO();
-  var fpNeg=(document.getElementById('f-neg-fp')||{value:''}).value;
   hist.push({r:'ganho',d:dataGanho,m:'',v:valorNeg,itens:pedidoItens.slice(),nf:false,fp:fpNeg});
   c.neg_hist=JSON.stringify(hist);
   c.valor=valorNeg;c.et='fechado';c.motivo_perda='';c.resultado='';
@@ -1763,6 +1768,34 @@ function renderInsights(){
     });
     h+='</div>';
   }
+  // ── FORMA DE PAGAMENTO ──
+  h+='<div class="divider"></div><div class="slbl">Forma de pagamento</div>';
+  if(negGanhos.length){
+    var porFp={};
+    negGanhos.forEach(function(n){
+      var k=n.fp||'sem_fp';
+      if(!porFp[k])porFp[k]={cnt:0,receita:0};
+      porFp[k].cnt++;
+      porFp[k].receita+=(n.v||0);
+    });
+    var fpEntries=Object.keys(porFp).map(function(k){
+      return{k:k,label:FORMA_PAG_LABEL[k]||'Sem forma informada',v:porFp[k].receita,cnt:porFp[k].cnt,c:FORMA_PAG_COR[k]||'var(--G3)'};
+    }).sort(function(a,b){return b.cnt-a.cnt;});
+    var segsFp=fpEntries.map(function(e){return{v:e.cnt,c:e.c};});
+    h+='<div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem;margin-bottom:1rem">';
+    h+='<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">';
+    h+=svgPieSegs(segsFp,96);
+    h+='<div style="flex:1;min-width:180px">';
+    fpEntries.forEach(function(e){
+      var pct=negGanhos.length>0?Math.round((e.cnt/negGanhos.length)*100):0;
+      h+='<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">';
+      h+='<span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--K)"><span style="width:8px;height:8px;border-radius:50%;background:'+e.c+';flex-shrink:0"></span>'+e.label+'</span>';
+      h+='<span style="font-size:12px;color:var(--G3)">'+e.cnt+' venda'+(e.cnt!==1?'s':'')+' &middot; <strong style="color:var(--K)">'+pct+'%</strong> &middot; R$'+Math.round(e.v).toLocaleString('pt-BR')+'</span></div>';
+      h+='<div style="background:var(--G2);border-radius:4px;height:6px;overflow:hidden"><div style="width:'+pct+'%;height:100%;border-radius:4px;background:'+e.c+'"></div></div></div>';
+    });
+    h+='</div></div>';
+    h+='</div>';
+  }else{h+='<div class="empty" style="margin-bottom:1rem">Nenhum ganho no período</div>';}
   // ── MOTIVOS DE PERDA ──
   h+='<div class="divider"></div><div class="slbl">Motivos de perda</div>';
   if(topM.length){
@@ -2489,7 +2522,10 @@ async function saveEditNeg(){
   var novaData=document.getElementById('f-editneg-data').value;
   var novoValor=parseFloat(document.getElementById('f-editneg-valor').value)||0;
   if(!novaData){setFb('fb-editneg','Data obrigatória','er');return;}
-  neg.d=novaData;neg.v=novoValor;neg.itens=editNegItens.slice();neg.fp=(document.getElementById('f-editneg-fp')||{value:''}).value;
+  if(!editNegItens.length){setFb('fb-editneg','Adicione ao menos um produto','er');return;}
+  var fpEdit=(document.getElementById('f-editneg-fp')||{value:''}).value;
+  if(!fpEdit){setFb('fb-editneg','Selecione a forma de pagamento','er');return;}
+  neg.d=novaData;neg.v=novoValor;neg.itens=editNegItens.slice();neg.fp=fpEdit;
   c.neg_hist=JSON.stringify(hist);
   setFb('fb-editneg','Salvando...','info');
   try{
