@@ -337,9 +337,10 @@ textarea.fi{resize:vertical;min-height:60px}
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:1.25rem">
     <div>
       <div style="font-size:16px;font-weight:700;color:var(--K)">Cat&#225;logo de Produtos</div>
-      <div style="font-size:11px;color:var(--G3);margin-top:2px">Estampas, cores e tamanhos usados nos pedidos</div>
+      <div style="font-size:11px;color:var(--G3);margin-top:2px">Produtos (com categoria), estampas, cores e tamanhos usados nos pedidos</div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn sm laranja" onclick="openCatalogoModal('produto')">+ Produto</button>
       <button class="btn sm laranja" onclick="openCatalogoModal('estampa')">+ Estampa</button>
       <button class="btn sm laranja" onclick="openCatalogoModal('cor')">+ Cor</button>
       <button class="btn sm laranja" onclick="openCatalogoModal('tamanho')">+ Tamanho</button>
@@ -446,10 +447,15 @@ textarea.fi{resize:vertical;min-height:60px}
   <div id="f-neg-hist-preview" style="font-size:11px;margin-bottom:.75rem;min-height:16px"></div>
   <div style="background:var(--G);border-radius:8px;padding:.75rem;margin-bottom:.75rem">
     <div class="slbl" style="font-size:10px;margin-bottom:.5rem">Itens do pedido</div>
-    <div class="fg fg3" style="margin-bottom:.5rem">
-      <div class="cat-sw"><label class="flbl">Estampa</label><input class="fi" type="text" id="csi-estampa-novo" placeholder="Buscar estampa..." oninput="catSelFilter('estampa','novo')" onfocus="catSelOpen('estampa','novo')" onblur="setTimeout(function(){catSelClose('estampa','novo');},220)" autocomplete="off"><div class="cat-sd" id="csd-estampa-novo"></div></div>
-      <div class="cat-sw"><label class="flbl">Cor</label><input class="fi" type="text" id="csi-cor-novo" placeholder="Buscar cor..." oninput="catSelFilter('cor','novo')" onfocus="catSelOpen('cor','novo')" onblur="setTimeout(function(){catSelClose('cor','novo');},220)" autocomplete="off"><div class="cat-sd" id="csd-cor-novo"></div></div>
-      <div class="cat-sw"><label class="flbl">Tamanho</label><input class="fi" type="text" id="csi-tamanho-novo" placeholder="Buscar tamanho..." oninput="catSelFilter('tamanho','novo')" onfocus="catSelOpen('tamanho','novo')" onblur="setTimeout(function(){catSelClose('tamanho','novo');},220)" autocomplete="off"><div class="cat-sd" id="csd-tamanho-novo"></div></div>
+    <div class="fg fg1" style="margin-bottom:.5rem">
+      <div class="cat-sw"><label class="flbl">Produto</label><input class="fi" type="text" id="csi-produto-novo" placeholder="Buscar produto..." oninput="catSelFilter('produto','novo')" onfocus="catSelOpen('produto','novo')" onblur="setTimeout(function(){catSelClose('produto','novo');},220)" autocomplete="off"><div class="cat-sd" id="csd-produto-novo"></div></div>
+    </div>
+    <div id="variacao-wrap-novo" style="display:none">
+      <div class="fg fg3" style="margin-bottom:.5rem">
+        <div class="cat-sw"><label class="flbl">Estampa</label><input class="fi" type="text" id="csi-estampa-novo" placeholder="Buscar estampa..." oninput="catSelFilter('estampa','novo')" onfocus="catSelOpen('estampa','novo')" onblur="setTimeout(function(){catSelClose('estampa','novo');},220)" autocomplete="off"><div class="cat-sd" id="csd-estampa-novo"></div></div>
+        <div class="cat-sw"><label class="flbl">Cor</label><input class="fi" type="text" id="csi-cor-novo" placeholder="Buscar cor..." oninput="catSelFilter('cor','novo')" onfocus="catSelOpen('cor','novo')" onblur="setTimeout(function(){catSelClose('cor','novo');},220)" autocomplete="off"><div class="cat-sd" id="csd-cor-novo"></div></div>
+        <div class="cat-sw"><label class="flbl">Tamanho</label><input class="fi" type="text" id="csi-tamanho-novo" placeholder="Buscar tamanho..." oninput="catSelFilter('tamanho','novo')" onfocus="catSelOpen('tamanho','novo')" onblur="setTimeout(function(){catSelClose('tamanho','novo');},220)" autocomplete="off"><div class="cat-sd" id="csd-tamanho-novo"></div></div>
+      </div>
     </div>
     <div class="fg fg2" style="margin-bottom:0">
       <div><label class="flbl">Qtd</label><input class="fi" type="number" id="f-item-qty" min="1" value="1"></div>
@@ -483,8 +489,11 @@ textarea.fi{resize:vertical;min-height:60px}
 <div class="overlay" id="modal-catalogo" style="display:none">
 <div class="modal" style="max-width:360px">
   <div class="mtitle"><span id="mcat-title">Novo item</span><button class="mcl" onclick="closeM('modal-catalogo')">&#10005;</button></div>
-  <div class="fg fg1" style="margin-bottom:.75rem"><div><label class="flbl">Nome</label><input class="fi" id="f-cat-nome" placeholder="Ex: Kit Nordeste Vivo..."></div></div>
+  <div class="fg fg1" style="margin-bottom:.75rem"><div><label class="flbl">Nome</label><input class="fi" id="f-cat-nome" placeholder="Ex: Camiseta..."></div></div>
   <div class="fg fg1" id="cat-categoria-wrap" style="margin-bottom:.75rem;display:none"><div><label class="flbl">Categoria</label><select class="fi" id="f-cat-categoria"><option value="">-- Sem categoria --</option><option value="moda">Moda</option><option value="decor_home">Decor/Home</option><option value="acessorios">Acessórios</option></select></div></div>
+  <div id="cat-variacao-wrap" style="margin-bottom:.75rem;display:none">
+    <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--K);cursor:pointer"><input type="checkbox" id="f-cat-variacao"> Tem estampa, cor e tamanho (ex: camiseta)</label>
+  </div>
   <input type="hidden" id="f-cat-tipo">
   <div style="display:flex;gap:8px">
     <button class="btn primary full" onclick="saveCatalogoItem()">Salvar</button>
@@ -633,10 +642,15 @@ textarea.fi{resize:vertical;min-height:60px}
   </div>
   <div style="background:var(--G);border-radius:8px;padding:.75rem;margin-bottom:.75rem">
     <div style="font-size:10px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">Itens do pedido</div>
-    <div class="fg fg3" style="margin-bottom:.5rem">
-      <div class="cat-sw"><label class="flbl">Estampa</label><input class="fi" type="text" id="csi-estampa-edit" placeholder="Buscar estampa..." oninput="catSelFilter('estampa','edit')" onfocus="catSelOpen('estampa','edit')" onblur="setTimeout(function(){catSelClose('estampa','edit');},220)" autocomplete="off"><div class="cat-sd" id="csd-estampa-edit"></div></div>
-      <div class="cat-sw"><label class="flbl">Cor</label><input class="fi" type="text" id="csi-cor-edit" placeholder="Buscar cor..." oninput="catSelFilter('cor','edit')" onfocus="catSelOpen('cor','edit')" onblur="setTimeout(function(){catSelClose('cor','edit');},220)" autocomplete="off"><div class="cat-sd" id="csd-cor-edit"></div></div>
-      <div class="cat-sw"><label class="flbl">Tamanho</label><input class="fi" type="text" id="csi-tamanho-edit" placeholder="Buscar tamanho..." oninput="catSelFilter('tamanho','edit')" onfocus="catSelOpen('tamanho','edit')" onblur="setTimeout(function(){catSelClose('tamanho','edit');},220)" autocomplete="off"><div class="cat-sd" id="csd-tamanho-edit"></div></div>
+    <div class="fg fg1" style="margin-bottom:.5rem">
+      <div class="cat-sw"><label class="flbl">Produto</label><input class="fi" type="text" id="csi-produto-edit" placeholder="Buscar produto..." oninput="catSelFilter('produto','edit')" onfocus="catSelOpen('produto','edit')" onblur="setTimeout(function(){catSelClose('produto','edit');},220)" autocomplete="off"><div class="cat-sd" id="csd-produto-edit"></div></div>
+    </div>
+    <div id="variacao-wrap-edit" style="display:none">
+      <div class="fg fg3" style="margin-bottom:.5rem">
+        <div class="cat-sw"><label class="flbl">Estampa</label><input class="fi" type="text" id="csi-estampa-edit" placeholder="Buscar estampa..." oninput="catSelFilter('estampa','edit')" onfocus="catSelOpen('estampa','edit')" onblur="setTimeout(function(){catSelClose('estampa','edit');},220)" autocomplete="off"><div class="cat-sd" id="csd-estampa-edit"></div></div>
+        <div class="cat-sw"><label class="flbl">Cor</label><input class="fi" type="text" id="csi-cor-edit" placeholder="Buscar cor..." oninput="catSelFilter('cor','edit')" onfocus="catSelOpen('cor','edit')" onblur="setTimeout(function(){catSelClose('cor','edit');},220)" autocomplete="off"><div class="cat-sd" id="csd-cor-edit"></div></div>
+        <div class="cat-sw"><label class="flbl">Tamanho</label><input class="fi" type="text" id="csi-tamanho-edit" placeholder="Buscar tamanho..." oninput="catSelFilter('tamanho','edit')" onfocus="catSelOpen('tamanho','edit')" onblur="setTimeout(function(){catSelClose('tamanho','edit');},220)" autocomplete="off"><div class="cat-sd" id="csd-tamanho-edit"></div></div>
+      </div>
     </div>
     <div class="fg fg2" style="margin-bottom:0">
       <div><label class="flbl">Qtd</label><input class="fi" type="number" id="f-editneg-qty" min="1" value="1"></div>
@@ -764,7 +778,7 @@ let userAtivo='todos';
 let editCid=null, editFid=null, editEfid=null, editEid=null;
 let perdaCid=null, ganhoCid=null, atvCid=null, editNegCid=null, editNegIdx=null, editCampoId=null;
 let motivoSel='', dragId=null, currentDetailId=null, detTimelineFilter='todos';
-let catalogo={estampas:[],cores:[],tamanhos:[]};
+let catalogo={estampas:[],cores:[],tamanhos:[],produtos:[]};
 var pedidoItens=[];
 var editNegItens=[];
 
@@ -878,11 +892,12 @@ async function loadCatalogo(){
     var resp=await fetch(SB_URL+'/rest/v1/catalogo?select=*&order=tipo.asc,nome.asc',{headers:SB_HDR});
     if(!resp.ok){console.warn('loadCatalogo HTTP error:',resp.status,await resp.text());return;}
     var rows=await resp.json();
-    catalogo={estampas:[],cores:[],tamanhos:[]};
+    catalogo={estampas:[],cores:[],tamanhos:[],produtos:[]};
     (Array.isArray(rows)?rows:[]).forEach(function(r){
-      if(r.tipo==='estampa')catalogo.estampas.push({id:r.id,nome:r.nome,categoria:r.categoria||''});
+      if(r.tipo==='estampa')catalogo.estampas.push({id:r.id,nome:r.nome});
       else if(r.tipo==='cor')catalogo.cores.push({id:r.id,nome:r.nome});
       else if(r.tipo==='tamanho')catalogo.tamanhos.push({id:r.id,nome:r.nome});
+      else if(r.tipo==='produto')catalogo.produtos.push({id:r.id,nome:r.nome,categoria:r.categoria||'',temVariacao:Boolean(r.tem_variacao)});
     });
   }catch(e){console.warn('loadCatalogo error:',e);}
 }
@@ -1116,10 +1131,12 @@ function abrirModalGanho(id){
   ganhoCid=id;
   var c=contatos.find(function(x){return x.id===id;});if(!c)return;
   pedidoItens=[];
+  document.getElementById('csi-produto-novo').value='';
   document.getElementById('csi-estampa-novo').value='';
   document.getElementById('csi-cor-novo').value='';
   document.getElementById('csi-tamanho-novo').value='';
   document.getElementById('f-item-qty').value='1';
+  updProdutoVariacaoUI('novo','');
   renderItensPedido();
   var el=document.getElementById('f-neg-valor');if(el)el.value=c.valor||'';
   var elData=document.getElementById('f-neg-data');if(elData)elData.value=hojeISO();
@@ -1139,16 +1156,19 @@ function abrirModalGanho(id){
 }
 
 function adicionarItemPedido(){
+  var prod=catSelVal('produto','novo');
   var est=catSelVal('estampa','novo');
   var cor=catSelVal('cor','novo');
   var tam=catSelVal('tamanho','novo');
   var qty=parseInt(document.getElementById('f-item-qty').value)||1;
-  if(!est&&!cor&&!tam){ss('er','Selecione ao menos um campo');setTimeout(function(){ss('ok',contatos.length+' contatos');},2000);return;}
-  pedidoItens.push({estampa:est,cor:cor,tamanho:tam,qty:qty});
+  if(!prod){ss('er','Selecione um produto');setTimeout(function(){ss('ok',contatos.length+' contatos');},2000);return;}
+  pedidoItens.push({produto:prod,estampa:est,cor:cor,tamanho:tam,qty:qty});
+  document.getElementById('csi-produto-novo').value='';
   document.getElementById('csi-estampa-novo').value='';
   document.getElementById('csi-cor-novo').value='';
   document.getElementById('csi-tamanho-novo').value='';
   document.getElementById('f-item-qty').value='1';
+  updProdutoVariacaoUI('novo','');
   renderItensPedido();
 }
 
@@ -1159,8 +1179,8 @@ function renderItensPedido(){
   if(!pedidoItens.length){el.innerHTML='<div style="font-size:11px;color:var(--G3);text-align:center;padding:.5rem 0">Nenhum item adicionado</div>';return;}
   var h='<div style="background:var(--W);border:1px solid var(--G2);border-radius:8px;overflow:hidden;margin-bottom:.5rem">';
   pedidoItens.forEach(function(item,i){
-    var desc='';
-    if(item.estampa)desc+=item.estampa;
+    var desc=item.produto||'';
+    if(item.estampa)desc+=(desc?' &middot; ':'')+item.estampa;
     if(item.cor)desc+=(desc?' &middot; ':'')+item.cor;
     if(item.tamanho)desc+=(desc?' &middot; ':'')+item.tamanho;
     h+='<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;'+(i>0?'border-top:1px solid var(--G2)':'')+'"><div style="font-size:12px;color:var(--K)">'+desc+'</div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:var(--G3)">&times;'+item.qty+'</span><button class="btn xs danger" onclick="removerItemPedido('+i+')">&#10005;</button></div></div>';
@@ -1779,20 +1799,23 @@ function renderInsights(){
   // ── PRODUTOS ──
   h+='<div class="divider"></div><div class="slbl">Produtos mais vendidos</div>';
   if(todosItens.length){
-    var contEst={},contCor={},contTam={};
+    var contProd={},contEst={},contCor={},contTam={};
     todosItens.forEach(function(it){
+      if(it.produto){contProd[it.produto]=(contProd[it.produto]||0)+(it.qty||1);}
       if(it.estampa){contEst[it.estampa]=(contEst[it.estampa]||0)+(it.qty||1);}
       if(it.cor){contCor[it.cor]=(contCor[it.cor]||0)+(it.qty||1);}
       if(it.tamanho){contTam[it.tamanho]=(contTam[it.tamanho]||0)+(it.qty||1);}
     });
     var sortObj=function(obj){return Object.entries(obj).sort(function(a,b){return b[1]-a[1];});};
+    var topProd=sortObj(contProd).slice(0,5);
     var topEst=sortObj(contEst).slice(0,5);
     var topCor=sortObj(contCor).slice(0,5);
     var topTam=sortObj(contTam).slice(0,5);
+    var maxP=topProd.length?topProd[0][1]:1;
     var maxE=topEst.length?topEst[0][1]:1;
     var maxC=topCor.length?topCor[0][1]:1;
     var maxT=topTam.length?topTam[0][1]:1;
-    h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:1rem">';
+    h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:1rem">';
     var renderProdCol=function(titulo,itens,maxV){
       var col='<div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1rem">';
       col+='<div style="font-size:10px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem">'+titulo+'</div>';
@@ -1805,6 +1828,7 @@ function renderInsights(){
       col+='</div>';
       return col;
     };
+    h+=renderProdCol('Produtos',topProd,maxP);
     h+=renderProdCol('Estampas',topEst,maxE);
     h+=renderProdCol('Cores',topCor,maxC);
     h+=renderProdCol('Tamanhos',topTam,maxT);
@@ -1813,13 +1837,13 @@ function renderInsights(){
   // ── VENDAS POR CATEGORIA ──
   h+='<div class="divider"></div><div class="slbl">Vendas por categoria</div>';
   if(totalPecas>0){
-    var estCatMap={};
-    catalogo.estampas.forEach(function(e){if(e.categoria)estCatMap[e.nome.toLowerCase()]=e.categoria;});
+    var prodCatMap={};
+    catalogo.produtos.forEach(function(p){if(p.categoria)prodCatMap[p.nome.toLowerCase()]=p.categoria;});
     var porCategoria={moda:0,decor_home:0,acessorios:0};
     var semCategoria=0;
     todosItens.forEach(function(it){
       var qty=it.qty||1;
-      var cat=it.estampa?estCatMap[it.estampa.toLowerCase()]:null;
+      var cat=it.produto?prodCatMap[it.produto.toLowerCase()]:null;
       if(cat&&porCategoria.hasOwnProperty(cat))porCategoria[cat]+=qty;
       else semCategoria+=qty;
     });
@@ -1839,7 +1863,7 @@ function renderInsights(){
       h+='<div style="background:var(--G2);border-radius:4px;height:6px;overflow:hidden"><div style="width:'+pct+'%;height:100%;border-radius:4px;background:'+e.c+'"></div></div></div>';
     });
     h+='</div></div>';
-    h+='<div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--G2);font-size:11px;color:var(--G3)">Total: <strong style="color:var(--K)">'+totalPecas+' peças</strong> vendidas no período'+(semCategoria>0?' &middot; <span style="color:var(--G3)">categorize as estampas no Catálogo para reduzir o "Sem categoria"</span>':'')+'</div>';
+    h+='<div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--G2);font-size:11px;color:var(--G3)">Total: <strong style="color:var(--K)">'+totalPecas+' peças</strong> vendidas no período'+(semCategoria>0?' &middot; <span style="color:var(--G3)">categorize os produtos no Catálogo para reduzir o "Sem categoria"</span>':'')+'</div>';
     h+='</div>';
   }else{h+='<div class="empty" style="margin-bottom:1rem">Nenhuma peça vendida no período</div>';}
   // ── LOCALIZAÇÃO ──
@@ -2440,10 +2464,12 @@ function openEditNeg(cid,idx){
   document.getElementById('f-editneg-data').value=neg.d||hojeISO();
   document.getElementById('f-editneg-valor').value=neg.v||'';
   var fpEditEl=document.getElementById('f-editneg-fp');if(fpEditEl)fpEditEl.value=neg.fp||'';
+  document.getElementById('csi-produto-edit').value='';
   document.getElementById('csi-estampa-edit').value='';
   document.getElementById('csi-cor-edit').value='';
   document.getElementById('csi-tamanho-edit').value='';
   document.getElementById('f-editneg-qty').value='1';
+  updProdutoVariacaoUI('edit','');
   editNegItens=(neg.itens||[]).slice();
   renderItensEditNeg();
   document.getElementById('fb-editneg').textContent='';
@@ -2471,16 +2497,19 @@ async function saveEditNeg(){
 }
 
 function adicionarItemEditNeg(){
+  var prod=catSelVal('produto','edit');
   var est=catSelVal('estampa','edit');
   var cor=catSelVal('cor','edit');
   var tam=catSelVal('tamanho','edit');
   var qty=parseInt(document.getElementById('f-editneg-qty').value)||1;
-  if(!est&&!cor&&!tam){ss('er','Selecione ao menos um campo');return;}
-  editNegItens.push({estampa:est,cor:cor,tamanho:tam,qty:qty});
+  if(!prod){ss('er','Selecione um produto');return;}
+  editNegItens.push({produto:prod,estampa:est,cor:cor,tamanho:tam,qty:qty});
+  document.getElementById('csi-produto-edit').value='';
   document.getElementById('csi-estampa-edit').value='';
   document.getElementById('csi-cor-edit').value='';
   document.getElementById('csi-tamanho-edit').value='';
   document.getElementById('f-editneg-qty').value='1';
+  updProdutoVariacaoUI('edit','');
   renderItensEditNeg();
 }
 function removerItemEditNeg(i){editNegItens.splice(i,1);renderItensEditNeg();}
@@ -2489,8 +2518,8 @@ function renderItensEditNeg(){
   if(!editNegItens.length){el.innerHTML='<div style="font-size:11px;color:var(--G3);text-align:center;padding:.5rem 0">Nenhum item adicionado</div>';return;}
   var h='<div style="background:var(--W);border:1px solid var(--G2);border-radius:8px;overflow:hidden;margin-bottom:.5rem">';
   editNegItens.forEach(function(item,i){
-    var desc='';
-    if(item.estampa)desc+=item.estampa;
+    var desc=item.produto||'';
+    if(item.estampa)desc+=(desc?' &middot; ':'')+item.estampa;
     if(item.cor)desc+=(desc?' &middot; ':'')+item.cor;
     if(item.tamanho)desc+=(desc?' &middot; ':'')+item.tamanho;
     h+='<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;'+(i>0?'border-top:1px solid var(--G2)':'')+'"><div style="font-size:12px;color:var(--K)">'+desc+'</div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:var(--G3)">&times;'+item.qty+'</span><button class="btn xs danger" onclick="removerItemEditNeg('+i+')">&#10005;</button></div></div>';
@@ -2522,9 +2551,10 @@ function catSelRender(tipo,ctx,items,q){
 
 function catSelFilter(tipo,ctx){
   var q=catSelVal(tipo,ctx).toLowerCase();
-  var all=(tipo==='estampa'?catalogo.estampas:tipo==='cor'?catalogo.cores:catalogo.tamanhos);
+  var all=(tipo==='produto'?catalogo.produtos:tipo==='estampa'?catalogo.estampas:tipo==='cor'?catalogo.cores:catalogo.tamanhos);
   var filtered=q?all.filter(function(i){return i.nome.toLowerCase().includes(q);}):all;
   catSelRender(tipo,ctx,filtered,q);
+  if(tipo==='produto')updProdutoVariacaoUI(ctx,catSelVal(tipo,ctx));
 }
 
 function catSelOpen(tipo,ctx){catSelFilter(tipo,ctx);}
@@ -2533,6 +2563,13 @@ function catSelClose(tipo,ctx){var el=document.getElementById('csd-'+tipo+'-'+ct
 function catSelPick(tipo,ctx,val){
   var inp=document.getElementById('csi-'+tipo+'-'+ctx);if(inp)inp.value=val;
   catSelClose(tipo,ctx);
+  if(tipo==='produto')updProdutoVariacaoUI(ctx,val);
+}
+
+function updProdutoVariacaoUI(ctx,nome){
+  var p=catalogo.produtos.find(function(x){return x.nome.toLowerCase()===String(nome||'').toLowerCase();});
+  var wrap=document.getElementById('variacao-wrap-'+ctx);
+  if(wrap)wrap.style.display=(p&&p.temVariacao)?'block':'none';
 }
 
 async function catSelAddNew(tipo,ctx){
@@ -2760,11 +2797,11 @@ function renderConfig(){
 
 function renderCatalogo(){
   var el=document.getElementById('cat-content');if(!el)return;
-  var tipoLabel={estampa:'Estampas',cor:'Cores',tamanho:'Tamanhos'};
-  var tipoSing={estampa:'Estampa',cor:'Cor',tamanho:'Tamanho'};
+  var tipoLabel={produto:'Produtos',estampa:'Estampas',cor:'Cores',tamanho:'Tamanhos'};
+  var tipoSing={produto:'Produto',estampa:'Estampa',cor:'Cor',tamanho:'Tamanho'};
   var h='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem">';
-  ['estampa','cor','tamanho'].forEach(function(tipo){
-    var itens=catalogo[tipo==='estampa'?'estampas':tipo==='cor'?'cores':'tamanhos'];
+  ['produto','estampa','cor','tamanho'].forEach(function(tipo){
+    var itens=catalogo[tipo==='produto'?'produtos':tipo==='estampa'?'estampas':tipo==='cor'?'cores':'tamanhos'];
     h+='<div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem;display:flex;flex-direction:column">';
     h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:.625rem;border-bottom:1px solid var(--G2)">';
     h+='<div style="font-size:13px;font-weight:700;color:var(--K)">'+tipoLabel[tipo]+'</div>';
@@ -2774,15 +2811,19 @@ function renderCatalogo(){
     else{
       h+='<div style="display:flex;flex-wrap:wrap;gap:6px;flex:1;margin-bottom:1rem">';
       itens.forEach(function(item){
-        if(tipo==='estampa'){
-          h+='<div style="display:flex;align-items:center;gap:6px;background:var(--G);border-radius:8px;padding:5px 8px;width:100%">';
-          h+='<span style="font-size:12px;color:var(--K);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+item.nome+'</span>';
-          h+='<select class="fi" style="width:auto;font-size:10px;padding:2px 6px;height:auto" onchange="setCategoriaEstampa(\''+item.id+'\',this.value)">';
+        if(tipo==='produto'){
+          h+='<div style="display:flex;flex-direction:column;gap:6px;background:var(--G);border-radius:8px;padding:8px;width:100%">';
+          h+='<div style="display:flex;align-items:center;gap:6px">';
+          h+='<span style="font-size:12px;color:var(--K);font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+item.nome+'</span>';
+          h+='<button class="btn xs danger" onclick="delCatalogoItem(\''+item.id+'\',\''+tipo+'\')">&#10005;</button>';
+          h+='</div>';
+          h+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">';
+          h+='<select class="fi" style="width:auto;font-size:10px;padding:2px 6px;height:auto" onchange="setCategoriaProduto(\''+item.id+'\',this.value)">';
           h+='<option value=""'+(!item.categoria?' selected':'')+'>Sem categoria</option>';
           Object.keys(CATEGORIA_LABEL).forEach(function(ck){h+='<option value="'+ck+'"'+(item.categoria===ck?' selected':'')+'>'+CATEGORIA_LABEL[ck]+'</option>';});
           h+='</select>';
-          h+='<button class="btn xs danger" onclick="delCatalogoItem(\''+item.id+'\',\''+tipo+'\')">&#10005;</button>';
-          h+='</div>';
+          h+='<label style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--G3);cursor:pointer"><input type="checkbox"'+(item.temVariacao?' checked':'')+' onchange="setVariacaoProduto(\''+item.id+'\',this.checked)"> estampa/cor/tam.</label>';
+          h+='</div></div>';
         }else{
           h+='<div style="display:flex;align-items:center;gap:5px;background:var(--G);border-radius:20px;padding:5px 10px"><span style="font-size:12px;color:var(--K)">'+item.nome+'</span><button class="btn xs danger" onclick="delCatalogoItem(\''+item.id+'\',\''+tipo+'\')">&#10005;</button></div>';
         }
@@ -2797,13 +2838,15 @@ function renderCatalogo(){
 }
 
 function openCatalogoModal(tipo){
-  var tipoLabel={estampa:'Estampa',cor:'Cor',tamanho:'Tamanho'};
+  var tipoLabel={estampa:'Estampa',cor:'Cor',tamanho:'Tamanho',produto:'Produto'};
   document.getElementById('mcat-title').textContent='Nova '+tipoLabel[tipo];
   document.getElementById('f-cat-nome').value='';
   document.getElementById('f-cat-tipo').value=tipo;
   document.getElementById('fb-cat').textContent='';
   var catWrap=document.getElementById('cat-categoria-wrap');
-  if(catWrap){catWrap.style.display=tipo==='estampa'?'block':'none';document.getElementById('f-cat-categoria').value='';}
+  if(catWrap){catWrap.style.display=tipo==='produto'?'block':'none';document.getElementById('f-cat-categoria').value='';}
+  var varWrap=document.getElementById('cat-variacao-wrap');
+  if(varWrap){varWrap.style.display=tipo==='produto'?'block':'none';document.getElementById('f-cat-variacao').checked=false;}
   document.getElementById('modal-catalogo').style.display='flex';
   setTimeout(function(){document.getElementById('f-cat-nome').focus();},50);
 }
@@ -2815,7 +2858,10 @@ async function saveCatalogoItem(){
   setFb('fb-cat','Salvando...','info');
   try{
     var body={nome:nome,tipo:tipo};
-    if(tipo==='estampa'){var catVal=document.getElementById('f-cat-categoria').value;if(catVal)body.categoria=catVal;}
+    if(tipo==='produto'){
+      var catVal=document.getElementById('f-cat-categoria').value;if(catVal)body.categoria=catVal;
+      body.tem_variacao=document.getElementById('f-cat-variacao').checked;
+    }
     var resp=await fetch(SB_URL+'/rest/v1/catalogo',{
       method:'POST',
       headers:Object.assign({},SB_HDR,{'Prefer':'resolution=merge-duplicates,return=representation'}),
@@ -2834,12 +2880,20 @@ async function saveCatalogoItem(){
   }catch(ex){setFb('fb-cat','Erro ao salvar: '+ex.message,'er');console.error(ex);}
 }
 
-async function setCategoriaEstampa(id,categoria){
+async function setCategoriaProduto(id,categoria){
   try{
     await fetch(SB_URL+'/rest/v1/catalogo?id=eq.'+id,{method:'PATCH',headers:SB_HDR,body:JSON.stringify({categoria:categoria})});
     await loadCatalogo();
     renderCatalogo();
   }catch(e){ss('er','Erro ao salvar categoria');}
+}
+
+async function setVariacaoProduto(id,temVariacao){
+  try{
+    await fetch(SB_URL+'/rest/v1/catalogo?id=eq.'+id,{method:'PATCH',headers:SB_HDR,body:JSON.stringify({tem_variacao:temVariacao})});
+    await loadCatalogo();
+    renderCatalogo();
+  }catch(e){ss('er','Erro ao salvar');}
 }
 
 async function delCatalogoItem(id,tipo){
