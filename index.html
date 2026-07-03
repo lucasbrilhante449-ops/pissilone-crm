@@ -484,6 +484,7 @@ textarea.fi{resize:vertical;min-height:60px}
 <div class="modal" style="max-width:360px">
   <div class="mtitle"><span id="mcat-title">Novo item</span><button class="mcl" onclick="closeM('modal-catalogo')">&#10005;</button></div>
   <div class="fg fg1" style="margin-bottom:.75rem"><div><label class="flbl">Nome</label><input class="fi" id="f-cat-nome" placeholder="Ex: Kit Nordeste Vivo..."></div></div>
+  <div class="fg fg1" id="cat-categoria-wrap" style="margin-bottom:.75rem;display:none"><div><label class="flbl">Categoria</label><select class="fi" id="f-cat-categoria"><option value="">-- Sem categoria --</option><option value="moda">Moda</option><option value="decor_home">Decor/Home</option><option value="acessorios">Acessórios</option></select></div></div>
   <input type="hidden" id="f-cat-tipo">
   <div style="display:flex;gap:8px">
     <button class="btn primary full" onclick="saveCatalogoItem()">Salvar</button>
@@ -769,6 +770,8 @@ var editNegItens=[];
 
 const CANAL_LABEL={instagram:'Instagram',story:'Story',anuncio:'Anúncio',indicacao:'Indicação',atelie:'Ateliê',busca:'Google',whatsapp:'WhatsApp',outro:'Outro'};
 const FORMA_PAG_LABEL={credito_vista:'Crédito à Vista',credito_parcelado:'Crédito Parcelado',pix:'Pix',dinheiro:'Dinheiro',debito:'Débito',bonificacao:'Bonificação'};
+const CATEGORIA_LABEL={moda:'Moda',decor_home:'Decor/Home',acessorios:'Acessórios'};
+const CATEGORIA_COR={moda:'var(--L)',decor_home:'var(--A)',acessorios:'var(--VD)'};
 
 // ── HELPERS ──────────────────────────────────────────────
 function ss(s,m){document.getElementById('sdot').className='sdot'+(s==='ld'?' ld':s==='er'?' er':'');document.getElementById('stxt').textContent=m;}
@@ -877,7 +880,7 @@ async function loadCatalogo(){
     var rows=await resp.json();
     catalogo={estampas:[],cores:[],tamanhos:[]};
     (Array.isArray(rows)?rows:[]).forEach(function(r){
-      if(r.tipo==='estampa')catalogo.estampas.push({id:r.id,nome:r.nome});
+      if(r.tipo==='estampa')catalogo.estampas.push({id:r.id,nome:r.nome,categoria:r.categoria||''});
       else if(r.tipo==='cor')catalogo.cores.push({id:r.id,nome:r.nome});
       else if(r.tipo==='tamanho')catalogo.tamanhos.push({id:r.id,nome:r.nome});
     });
@@ -1589,6 +1592,10 @@ function renderInsights(){
   var prevNegs=filtNegsPer(allNegs,true);
   var negGanhos=todasNegs.filter(function(n){return n.r==='ganho';});
   var negPerdas=todasNegs.filter(function(n){return n.r==='perda';});
+  var todosItens=[];
+  negGanhos.forEach(function(n){if(n.itens&&n.itens.length)n.itens.forEach(function(it){todosItens.push(it);});});
+  var totalPecas=todosItens.reduce(function(a,it){return a+(it.qty||1);},0);
+  var pa=negGanhos.length>0?totalPecas/negGanhos.length:0;
   var ganhosPrev=prevNegs.filter(function(n){return n.r==='ganho';});
   var baseConv=todasNegs.length;
   var receita=negGanhos.reduce(function(a,n){return a+(n.v||0);},0);
@@ -1658,6 +1665,7 @@ function renderInsights(){
   h+='<div class="mc"><div class="mc-n">'+emAberto+'</div><div class="mc-l">Em aberto</div><div class="mc-s a">sem neg.</div></div>';
   h+='<div class="mc"><div class="mc-n">'+lista.length+'</div><div class="mc-l">SAFRA</div><div class="mc-s">cards</div></div>';
   h+='<div class="mc"><div class="mc-n" style="color:var(--A2)">'+checkpts+'</div><div class="mc-l">Checkpoints</div><div class="mc-s v">executados</div></div>';
+  h+='<div class="mc"><div class="mc-n">'+pa.toFixed(1)+'</div><div class="mc-l">PA</div><div class="mc-s">'+totalPecas+' peças</div></div>';
   h+='</div>';
   // ── RECEITA POR MÊS ──
   if(mesesData.length>=1){
@@ -1770,10 +1778,6 @@ function renderInsights(){
   }else{h+='<div class="empty">Nenhuma perda no período</div>';}
   // ── PRODUTOS ──
   h+='<div class="divider"></div><div class="slbl">Produtos mais vendidos</div>';
-  var todosItens=[];
-  todasNegs.filter(function(n){return n.r==='ganho';}).forEach(function(n){
-    if(n.itens&&n.itens.length)n.itens.forEach(function(it){todosItens.push(it);});
-  });
   if(todosItens.length){
     var contEst={},contCor={},contTam={};
     todosItens.forEach(function(it){
@@ -1806,6 +1810,38 @@ function renderInsights(){
     h+=renderProdCol('Tamanhos',topTam,maxT);
     h+='</div>';
   }else{h+='<div class="empty" style="margin-bottom:1rem">Nenhum pedido com itens registrados</div>';}
+  // ── VENDAS POR CATEGORIA ──
+  h+='<div class="divider"></div><div class="slbl">Vendas por categoria</div>';
+  if(totalPecas>0){
+    var estCatMap={};
+    catalogo.estampas.forEach(function(e){if(e.categoria)estCatMap[e.nome.toLowerCase()]=e.categoria;});
+    var porCategoria={moda:0,decor_home:0,acessorios:0};
+    var semCategoria=0;
+    todosItens.forEach(function(it){
+      var qty=it.qty||1;
+      var cat=it.estampa?estCatMap[it.estampa.toLowerCase()]:null;
+      if(cat&&porCategoria.hasOwnProperty(cat))porCategoria[cat]+=qty;
+      else semCategoria+=qty;
+    });
+    var catEntries=Object.keys(CATEGORIA_LABEL).map(function(ck){return{k:ck,label:CATEGORIA_LABEL[ck],v:porCategoria[ck],c:CATEGORIA_COR[ck]};});
+    if(semCategoria>0)catEntries.push({k:'sem',label:'Sem categoria',v:semCategoria,c:'var(--G3)'});
+    catEntries=catEntries.filter(function(e){return e.v>0;}).sort(function(a,b){return b.v-a.v;});
+    var segsCat=catEntries.map(function(e){return{v:e.v,c:e.c};});
+    h+='<div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem;margin-bottom:1rem">';
+    h+='<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">';
+    h+=svgPieSegs(segsCat,96);
+    h+='<div style="flex:1;min-width:180px">';
+    catEntries.forEach(function(e){
+      var pct=Math.round((e.v/totalPecas)*100);
+      h+='<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">';
+      h+='<span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--K)"><span style="width:8px;height:8px;border-radius:50%;background:'+e.c+';flex-shrink:0"></span>'+e.label+'</span>';
+      h+='<span style="font-size:12px;color:var(--G3)">'+e.v+' pç &middot; '+pct+'%</span></div>';
+      h+='<div style="background:var(--G2);border-radius:4px;height:6px;overflow:hidden"><div style="width:'+pct+'%;height:100%;border-radius:4px;background:'+e.c+'"></div></div></div>';
+    });
+    h+='</div></div>';
+    h+='<div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--G2);font-size:11px;color:var(--G3)">Total: <strong style="color:var(--K)">'+totalPecas+' peças</strong> vendidas no período'+(semCategoria>0?' &middot; <span style="color:var(--G3)">categorize as estampas no Catálogo para reduzir o "Sem categoria"</span>':'')+'</div>';
+    h+='</div>';
+  }else{h+='<div class="empty" style="margin-bottom:1rem">Nenhuma peça vendida no período</div>';}
   // ── LOCALIZAÇÃO ──
   h+='<div class="divider"></div><div class="slbl">Localização dos clientes</div>';
   var contCidade={},contUF={};
@@ -2738,7 +2774,18 @@ function renderCatalogo(){
     else{
       h+='<div style="display:flex;flex-wrap:wrap;gap:6px;flex:1;margin-bottom:1rem">';
       itens.forEach(function(item){
-        h+='<div style="display:flex;align-items:center;gap:5px;background:var(--G);border-radius:20px;padding:5px 10px"><span style="font-size:12px;color:var(--K)">'+item.nome+'</span><button class="btn xs danger" onclick="delCatalogoItem(\''+item.id+'\',\''+tipo+'\')">&#10005;</button></div>';
+        if(tipo==='estampa'){
+          h+='<div style="display:flex;align-items:center;gap:6px;background:var(--G);border-radius:8px;padding:5px 8px;width:100%">';
+          h+='<span style="font-size:12px;color:var(--K);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+item.nome+'</span>';
+          h+='<select class="fi" style="width:auto;font-size:10px;padding:2px 6px;height:auto" onchange="setCategoriaEstampa(\''+item.id+'\',this.value)">';
+          h+='<option value=""'+(!item.categoria?' selected':'')+'>Sem categoria</option>';
+          Object.keys(CATEGORIA_LABEL).forEach(function(ck){h+='<option value="'+ck+'"'+(item.categoria===ck?' selected':'')+'>'+CATEGORIA_LABEL[ck]+'</option>';});
+          h+='</select>';
+          h+='<button class="btn xs danger" onclick="delCatalogoItem(\''+item.id+'\',\''+tipo+'\')">&#10005;</button>';
+          h+='</div>';
+        }else{
+          h+='<div style="display:flex;align-items:center;gap:5px;background:var(--G);border-radius:20px;padding:5px 10px"><span style="font-size:12px;color:var(--K)">'+item.nome+'</span><button class="btn xs danger" onclick="delCatalogoItem(\''+item.id+'\',\''+tipo+'\')">&#10005;</button></div>';
+        }
       });
       h+='</div>';
     }
@@ -2755,6 +2802,8 @@ function openCatalogoModal(tipo){
   document.getElementById('f-cat-nome').value='';
   document.getElementById('f-cat-tipo').value=tipo;
   document.getElementById('fb-cat').textContent='';
+  var catWrap=document.getElementById('cat-categoria-wrap');
+  if(catWrap){catWrap.style.display=tipo==='estampa'?'block':'none';document.getElementById('f-cat-categoria').value='';}
   document.getElementById('modal-catalogo').style.display='flex';
   setTimeout(function(){document.getElementById('f-cat-nome').focus();},50);
 }
@@ -2765,10 +2814,12 @@ async function saveCatalogoItem(){
   if(!nome){setFb('fb-cat','Nome obrigatório','er');return;}
   setFb('fb-cat','Salvando...','info');
   try{
+    var body={nome:nome,tipo:tipo};
+    if(tipo==='estampa'){var catVal=document.getElementById('f-cat-categoria').value;if(catVal)body.categoria=catVal;}
     var resp=await fetch(SB_URL+'/rest/v1/catalogo',{
       method:'POST',
       headers:Object.assign({},SB_HDR,{'Prefer':'resolution=merge-duplicates,return=representation'}),
-      body:JSON.stringify({nome:nome,tipo:tipo})
+      body:JSON.stringify(body)
     });
     if(!resp.ok){
       var eBody=await resp.json();
@@ -2781,6 +2832,14 @@ async function saveCatalogoItem(){
     closeM('modal-catalogo');
     renderCatalogo();
   }catch(ex){setFb('fb-cat','Erro ao salvar: '+ex.message,'er');console.error(ex);}
+}
+
+async function setCategoriaEstampa(id,categoria){
+  try{
+    await fetch(SB_URL+'/rest/v1/catalogo?id=eq.'+id,{method:'PATCH',headers:SB_HDR,body:JSON.stringify({categoria:categoria})});
+    await loadCatalogo();
+    renderCatalogo();
+  }catch(e){ss('er','Erro ao salvar categoria');}
 }
 
 async function delCatalogoItem(id,tipo){
