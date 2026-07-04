@@ -1433,8 +1433,12 @@ async function saveContato(){
     campos:prev.campos||{},
     cod_marketup:document.getElementById('f-cod-marketup').value.trim(),
     nf_emitida:prev.nf_emitida||false,
-    nps:prev.nps!=null?prev.nps:null
+    nps:prev.nps!=null?prev.nps:null,
+    log_hist:Array.isArray(prev.log_hist)?prev.log_hist.slice():[]
   };
+  if(editCid&&prev.canal&&prev.canal!==c.canal){
+    c.log_hist.push({tipo:'canal_atualizado',d:new Date().toISOString(),txt:'Canal atualizado para '+(CANAL_LABEL[c.canal]||c.canal)});
+  }
   try{await apiSave(c);logAction(editCid?'contato_editado':'contato_criado',nome);setFb('fb-c','Salvo!','ok');closeM('modal-c');await doSync();}
   catch(ex){setFb('fb-c','Erro ao salvar','er');console.error(ex);}
   document.getElementById('btn-sc').disabled=false;
@@ -1716,9 +1720,9 @@ function renderInsights(){
   // ── AQUISIÇÃO DE CLIENTES ──
   h+='<div class="divider"></div><div class="slbl">Aquisição de clientes</div>';
   h+='<div class="mg" style="margin-bottom:1rem">';
-  h+='<div class="mc"><div class="mc-n" style="color:var(--VD)">'+clientesNovos+'</div><div class="mc-l">Clientes novos</div><div class="mc-s v">1&#170; compra no período</div></div>';
-  h+='<div class="mc"><div class="mc-n" style="color:var(--A2)">'+conversasWhats+'</div><div class="mc-l">Conversas WhatsApp</div><div class="mc-s a">cards criados</div></div>';
-  h+='<div class="mc"><div class="mc-n" style="color:var(--L)">'+visitasAtelie+'</div><div class="mc-l">Visitas ao Ateliê</div><div class="mc-s a">cards criados</div></div>';
+  h+='<div class="mc"><div class="mc-n" style="color:var(--VD)">'+clientesNovos+'</div><div class="mc-l">Clientes novos</div></div>';
+  h+='<div class="mc"><div class="mc-n" style="color:var(--A2)">'+conversasWhats+'</div><div class="mc-l">Conversas WhatsApp</div></div>';
+  h+='<div class="mc"><div class="mc-n" style="color:var(--L)">'+visitasAtelie+'</div><div class="mc-l">Visitas ao Ateliê</div></div>';
   h+='</div>';
   // ── RECEITA POR MÊS ──
   if(mesesData.length>=1){
@@ -2481,6 +2485,9 @@ function renderDetTimeline(cid){
       }else if(tipo==='atv_concluida'){
         icon='&#10003;';cor='var(--A2)';bg='var(--A3)';
         titulo='Atividade concluída';sub=ev.txt||'';dt=fmtDatetime(ev.d);
+      }else if(tipo==='canal_atualizado'){
+        icon='&#128260;';cor='var(--A2)';bg='var(--A3)';
+        titulo='Canal atualizado';sub=ev.txt||'';dt=fmtDatetime(ev.d);
       }else{
         icon='&#9679;';cor='var(--G3)';bg='var(--G)';
         titulo=tipo||'Evento';sub='';dt=fmtDatetime(ev.d);
