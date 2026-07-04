@@ -1620,7 +1620,7 @@ function renderInsights(){
   });
   if(iFunil!=='todos')allNegs=allNegs.filter(function(n){return n.funil===iFunil;});
   var ganhosPorCliente={};
-  allNegs.forEach(function(n){if(n.r!=='ganho')return;if(!ganhosPorCliente[n.cid])ganhosPorCliente[n.cid]=[];ganhosPorCliente[n.cid].push(n.d);});
+  allNegs.forEach(function(n){if(n.r!=='ganho')return;if(n.funil==='pissifa')return;if(!ganhosPorCliente[n.cid])ganhosPorCliente[n.cid]=[];ganhosPorCliente[n.cid].push(n.d);});
   var primeiraCompraList=Object.keys(ganhosPorCliente).map(function(cid){var datas=ganhosPorCliente[cid].filter(Boolean).sort();return{d:datas[0]};});
   var clientesNovos=filtNegsPer(primeiraCompraList,false).length;
   var todasNegs=filtNegsPer(allNegs,false);
@@ -1643,8 +1643,17 @@ function renderInsights(){
   var txConvPrev=baseConvPrev>0?Math.round((ganhosPrev.length/baseConvPrev)*100):0;
   var hasPrev=periodo!=='0'||periodoCustom.ativo;
   var emAberto=lista.filter(function(c){return !parseNegHist(c).length&&!isGanho(c.funil,c.etapa)&&!isPerdido(c.funil,c.etapa);}).length;
-  var conversasWhats=lista.filter(function(c){return c.canal==='whatsapp';}).length;
-  var visitasAtelie=lista.filter(function(c){return c.canal==='atelie';}).length;
+  var canalBase=baseContatos.slice();
+  if(iFunil!=='todos')canalBase=canalBase.filter(function(c){return c.funil===iFunil;});
+  var contatoTeveEventoNoPeriodo=function(c){
+    var eventos=[];
+    if(c.data)eventos.push({d:c.data.slice(0,10)});
+    (Array.isArray(c.log_hist)?c.log_hist:[]).forEach(function(ev){if(ev.d)eventos.push({d:String(ev.d).slice(0,10)});});
+    parseNegHist(c).forEach(function(n){if(n.d)eventos.push({d:n.d});});
+    return filtNegsPer(eventos,false).length>0;
+  };
+  var conversasWhats=canalBase.filter(function(c){return c.canal==='whatsapp'&&contatoTeveEventoNoPeriodo(c);}).length;
+  var visitasAtelie=canalBase.filter(function(c){return c.canal==='atelie'&&contatoTeveEventoNoPeriodo(c);}).length;
   var hj=new Date();hj.setHours(0,0,0,0);
   var atvH=lista.filter(function(c){var d=normDate(c.atv_data);if(!d)return false;return new Date(d+'T00:00:00').getTime()===hj.getTime();}).length;
   var atvAt=lista.filter(function(c){var d=normDate(c.atv_data);if(!d)return false;return new Date(d+'T00:00:00')<hj;}).length;
