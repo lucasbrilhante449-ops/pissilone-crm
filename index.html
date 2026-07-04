@@ -177,6 +177,18 @@ textarea.fi{resize:vertical;min-height:60px}
 </style>
 </head>
 <body>
+<div id="tela-login" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--G);padding:1rem">
+  <div style="background:var(--W);border:1px solid var(--G2);border-radius:14px;padding:2rem;width:100%;max-width:360px;box-shadow:0 10px 30px rgba(0,0,0,.08)">
+    <div style="display:flex;justify-content:center;margin-bottom:1.5rem"><span class="hdr-logo" style="color:var(--L);font-size:1.5rem">✳ PSN <span style="color:var(--L2)">CRM</span> ✳</span></div>
+    <div id="login-form">
+      <div class="fg fg1"><div><label class="flbl">Email</label><input class="fi" type="email" id="f-login-email" placeholder="seu@email.com" autocomplete="username"></div></div>
+      <div class="fg fg1" style="margin-bottom:1rem"><div><label class="flbl">Senha</label><input class="fi" type="password" id="f-login-senha" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')fazerLogin()"></div></div>
+      <button class="btn primary full" id="btn-login" onclick="fazerLogin()">Entrar</button>
+      <div class="fb" id="fb-login"></div>
+    </div>
+  </div>
+</div>
+<div id="app-root" style="display:none">
 <header class="hdr">
   <div class="hdr-logo">✳ PSN <span>CRM</span> ✳</div>
   <div class="hdr-right">
@@ -186,6 +198,8 @@ textarea.fi{resize:vertical;min-height:60px}
       <span class="stxt" id="stxt">Conectando...</span>
     </div>
     <button class="hdr-sync" onclick="doSync()" title="Sincronizar">↻</button>
+    <span class="stxt" id="meu-usuario-lbl" style="white-space:nowrap"></span>
+    <button class="hdr-ubtn" onclick="logout()" title="Sair">Sair</button>
   </div>
 </header>
 <div class="app-body">
@@ -375,6 +389,7 @@ textarea.fi{resize:vertical;min-height:60px}
     <div style="font-size:11px;color:var(--G3)">Últimos 7 dias &middot; <span style="cursor:pointer;color:var(--L);text-decoration:underline" onclick="renderLog()">Atualizar</span></div>
   </div>
   <div id="log-content"><div class="empty">Carregando...</div></div>
+</div>
 </div>
 </div>
 </div>
@@ -749,6 +764,99 @@ async function sbDelete(table, id){
   return r.ok;
 }
 
+// ── AUTENTICAÇÃO ─────────────────────────────────────────
+// Versão simples: só exige estar logado (Supabase Auth) pra usar o CRM.
+// Sem distinção de papel/permissão por enquanto — os logins são criados
+// direto em Authentication → Users no painel do Supabase.
+let authSession = null; // {access_token, refresh_token, expires_at, user:{id,email}}
+
+function aplicarAuthHeader(){
+  SB_HDR.Authorization = 'Bearer ' + ((authSession && authSession.access_token) ? authSession.access_token : SB_KEY);
+}
+
+function salvarSessao(session){
+  authSession = session;
+  aplicarAuthHeader();
+  try{
+    if(session) localStorage.setItem('psn_auth_session', JSON.stringify(session));
+    else localStorage.removeItem('psn_auth_session');
+  }catch(e){}
+}
+
+function carregarSessaoSalva(){
+  try{
+    var s = localStorage.getItem('psn_auth_session');
+    if(s){ authSession = JSON.parse(s); aplicarAuthHeader(); return true; }
+  }catch(e){}
+  return false;
+}
+
+async function authFetch(path, body){
+  var r = await fetch(SB_URL+'/auth/v1/'+path, {
+    method:'POST',
+    headers:{'Content-Type':'application/json','apikey':SB_KEY},
+    body:JSON.stringify(body)
+  });
+  var data = await r.json().catch(function(){return {};});
+  return {ok:r.ok, data:data};
+}
+
+function sessaoDoToken(data){
+  return {
+    access_token:data.access_token,
+    refresh_token:data.refresh_token,
+    expires_at:Date.now()+((data.expires_in||3600)*1000),
+    user:{id:data.user.id, email:data.user.email}
+  };
+}
+
+async function fazerLogin(){
+  var email=document.getElementById('f-login-email').value.trim();
+  var senha=document.getElementById('f-login-senha').value;
+  if(!email||!senha){setFb('fb-login','Preencha email e senha','er');return;}
+  var btn=document.getElementById('btn-login');
+  if(btn)btn.disabled=true;
+  setFb('fb-login','Entrando...','info');
+  try{
+    var resp=await authFetch('token?grant_type=password',{email:email,password:senha});
+    if(!resp.ok||!resp.data.access_token){
+      setFb('fb-login',resp.data.error_description||resp.data.msg||'Email ou senha inválidos','er');
+      if(btn)btn.disabled=false;
+      return;
+    }
+    salvarSessao(sessaoDoToken(resp.data));
+    await entrarNoApp();
+  }catch(ex){setFb('fb-login','Erro de conexão','er');}
+  if(btn)btn.disabled=false;
+}
+
+async function renovarSessao(){
+  if(!authSession||!authSession.refresh_token)return false;
+  try{
+    var resp=await authFetch('token?grant_type=refresh_token',{refresh_token:authSession.refresh_token});
+    if(!resp.ok||!resp.data.access_token)return false;
+    salvarSessao(sessaoDoToken(resp.data));
+    return true;
+  }catch(ex){return false;}
+}
+
+function logout(){
+  salvarSessao(null);
+  document.getElementById('app-root').style.display='none';
+  document.getElementById('tela-login').style.display='flex';
+  var emailEl=document.getElementById('f-login-email');if(emailEl)emailEl.value='';
+  var senhaEl=document.getElementById('f-login-senha');if(senhaEl)senhaEl.value='';
+  setFb('fb-login','','');
+}
+
+async function entrarNoApp(){
+  document.getElementById('tela-login').style.display='none';
+  document.getElementById('app-root').style.display='block';
+  var lbl=document.getElementById('meu-usuario-lbl');
+  if(lbl&&authSession&&authSession.user)lbl.textContent=authSession.user.email;
+  await iniciarApp();
+}
+
 // ── STATE ────────────────────────────────────────────────
 let contatos = [];
 let cfg = {
@@ -1074,6 +1182,7 @@ function kcardHtml(c,busca){
   var camposBadgesHtml='';
   var corsCampos=[{bg:'var(--VD2)',cor:'var(--VD)'},{bg:'var(--VM2)',cor:'var(--VM)'},{bg:'var(--AM2)',cor:'var(--AM)'},{bg:'var(--G)',cor:'var(--G3)'}];
   if(c.campos)(cfg.campos_personalizados||[]).forEach(function(cp){var v=c.campos[cp.id]||'';if(v){var idx=cp.opcoes?cp.opcoes.indexOf(v):0;var clr=corsCampos[Math.min(Math.max(idx,0),corsCampos.length-1)];camposBadgesHtml+='<span style="background:'+clr.bg+';color:'+clr.cor+';border-radius:20px;padding:1px 6px;font-size:10px;font-weight:600">'+v+'</span>';}});
+  var delBtnHtml='<button class="btn xs danger" onclick="delC(\''+c.id+'\')">✕</button>';
   return`<div class="kc" draggable="true" data-id="${c.id}">
     <div class="kc-nome kc-nome-link" onclick="openContatoDetail('${c.id}')">${nomeHtml}</div>
     <div class="kc-sub" style="cursor:pointer" onclick="openContatoDetail('${c.id}')">
@@ -1090,7 +1199,7 @@ function kcardHtml(c,busca){
       <div class="kc-left">
         <button class="btn xs" onclick="openContatoDetail('${c.id}')">✎</button>
         <button class="btn xs" onclick="duplicarCard('${c.id}')" title="Duplicar para Pissifã">⧉</button>
-        <button class="btn xs danger" onclick="delC('${c.id}')">✕</button>
+        ${delBtnHtml}
       </div>
       ${atvDotHtml(c)}
     </div>
@@ -1439,7 +1548,15 @@ async function saveContato(){
   if(editCid&&prev.canal&&prev.canal!==c.canal){
     c.log_hist.push({tipo:'canal_atualizado',d:new Date().toISOString(),txt:'Canal atualizado para '+(CANAL_LABEL[c.canal]||c.canal)});
   }
-  try{await apiSave(c);logAction(editCid?'contato_editado':'contato_criado',nome);setFb('fb-c','Salvo!','ok');closeM('modal-c');await doSync();}
+  try{
+    await apiSave(c);
+    logAction(editCid?'contato_editado':'contato_criado',nome);
+    setFb('fb-c','Salvo!','ok');
+    closeM('modal-c');
+    await doSync();
+    var insPane=document.getElementById('pane-insights');
+    if(insPane&&insPane.classList.contains('active'))renderInsights();
+  }
   catch(ex){setFb('fb-c','Erro ao salvar','er');console.error(ex);}
   document.getElementById('btn-sc').disabled=false;
 }
@@ -1497,6 +1614,7 @@ function renderContatos(){
     const f=getFunil(c.funil);const e=f?f.etapas.find(x=>x.id===c.etapa):null;const u=cfg.usuarios.find(x=>x.id===c.usuario);
     const s=atvStatus(c);const atvCls={sem:'atv-vermelho',hoje:'atv-verde',atrasada:'atv-amarelo',agendada:'atv-cinza'};
     var anivBadge='';if(c.aniversario){var ab=normDate(c.aniversario);var isHjBday=ab&&ab.slice(5,7)===hojeISO().slice(5,7)&&ab.slice(8,10)===hojeISO().slice(8,10);anivBadge='<span style="background:'+(isHjBday?'#FDD835':'var(--AM2)')+';color:var(--AM);border-radius:20px;padding:1px 7px;font-size:11px;font-weight:600;white-space:nowrap">&#127874; '+ab.slice(8,10)+'/'+ab.slice(5,7)+'</span>';}
+    var delBtnHtml='<button class="btn xs danger" onclick="window.delC(\''+c.id+'\')">✕</button>';
     return`<div class="cc">
       <div class="cc-top">
         <div>
@@ -1511,7 +1629,7 @@ function renderContatos(){
         <div style="display:flex;gap:6px;align-items:center">
           <div class="atv-dot ${atvCls[s]}" onclick="openAtv('${c.id}')" title="Atividade"></div>
           <button class="btn xs" onclick="openContatoDetail('${c.id}')">✎</button>
-          <button class="btn xs danger" onclick="window.delC('${c.id}')">✕</button>
+          ${delBtnHtml}
         </div>
       </div>
       <div class="cc-info">
@@ -2819,13 +2937,25 @@ function renderGanhosModal(){
 
 // ── CONFIG ───────────────────────────────────────────────
 function renderConfig(){
-  document.getElementById('cfg-funis').innerHTML=cfg.funis.map(f=>`
-    <div class="fcard"><div class="ftitle"><span>${f.nome}</span><div style="display:flex;gap:6px"><button class="btn sm" onclick="openFunilModal('${f.id}')">Renomear</button><button class="btn sm danger" onclick="delFunil('${f.id}')">Apagar</button></div></div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px">
-      ${f.etapas.map(e=>`<div style="display:flex;align-items:center;gap:4px;background:var(--G);border-radius:6px;padding:4px 8px"><span style="font-size:12px">${e.nome}</span><button class="btn xs" onclick="openEtapaModal('${f.id}','${e.id}')">✎</button><button class="btn xs danger" onclick="delEtapa('${f.id}','${e.id}')">✕</button></div>`).join('')}
-      <button class="btn xs" onclick="openEtapaModal('${f.id}',null)">+ Etapa</button>
-    </div></div>`).join('');
-  document.getElementById('cfg-users').innerHTML=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.75rem">${cfg.usuarios.map(u=>`<div style="display:flex;align-items:center;gap:6px;background:var(--G);border-radius:20px;padding:5px 12px"><span style="font-size:12px">👤 ${u.nome}</span><button class="btn xs danger" onclick="delUser('${u.id}')">✕</button></div>`).join('')}</div>`;
+  var podeExcluir=true;
+  var funisHtml='';
+  cfg.funis.forEach(function(f){
+    var etapasHtml='';
+    f.etapas.forEach(function(e){
+      var delEtapaBtn=podeExcluir?'<button class="btn xs danger" onclick="delEtapa(\''+f.id+'\',\''+e.id+'\')">✕</button>':'';
+      etapasHtml+='<div style="display:flex;align-items:center;gap:4px;background:var(--G);border-radius:6px;padding:4px 8px"><span style="font-size:12px">'+e.nome+'</span><button class="btn xs" onclick="openEtapaModal(\''+f.id+'\',\''+e.id+'\')">✎</button>'+delEtapaBtn+'</div>';
+    });
+    var delFunilBtn=podeExcluir?'<button class="btn sm danger" onclick="delFunil(\''+f.id+'\')">Apagar</button>':'';
+    funisHtml+='<div class="fcard"><div class="ftitle"><span>'+f.nome+'</span><div style="display:flex;gap:6px"><button class="btn sm" onclick="openFunilModal(\''+f.id+'\')">Renomear</button>'+delFunilBtn+'</div></div>'
+      +'<div style="display:flex;flex-wrap:wrap;gap:6px">'+etapasHtml+'<button class="btn xs" onclick="openEtapaModal(\''+f.id+'\',null)">+ Etapa</button></div></div>';
+  });
+  document.getElementById('cfg-funis').innerHTML=funisHtml;
+  var usersHtml='';
+  cfg.usuarios.forEach(function(u){
+    var delUserBtn=podeExcluir?'<button class="btn xs danger" onclick="delUser(\''+u.id+'\')">✕</button>':'';
+    usersHtml+='<div style="display:flex;align-items:center;gap:6px;background:var(--G);border-radius:20px;padding:5px 12px"><span style="font-size:12px">👤 '+u.nome+'</span>'+delUserBtn+'</div>';
+  });
+  document.getElementById('cfg-users').innerHTML='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.75rem">'+usersHtml+'</div>';
   // campos personalizados
   var camposEl=document.getElementById('cfg-campos');
   if(camposEl){
@@ -2883,7 +3013,8 @@ function renderCatalogo(){
           h+='<label style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--G3);cursor:pointer"><input type="checkbox"'+(item.temVariacao?' checked':'')+' onchange="setVariacaoProduto(\''+item.id+'\',this.checked)"> estampa/cor/tam.</label>';
           h+='</div></div>';
         }else{
-          h+='<div style="display:flex;align-items:center;gap:5px;background:var(--G);border-radius:20px;padding:5px 10px"><span style="font-size:12px;color:var(--K)">'+item.nome+'</span><button class="btn xs danger" onclick="delCatalogoItem(\''+item.id+'\',\''+tipo+'\')">&#10005;</button></div>';
+          var delChipBtn='<button class="btn xs danger" onclick="delCatalogoItem(\''+item.id+'\',\''+tipo+'\')">&#10005;</button>';
+          h+='<div style="display:flex;align-items:center;gap:5px;background:var(--G);border-radius:20px;padding:5px 10px"><span style="font-size:12px;color:var(--K)">'+item.nome+'</span>'+delChipBtn+'</div>';
         }
       });
       h+='</div>';
@@ -3203,7 +3334,7 @@ function setFb(id,msg,type){const el=document.getElementById(id);if(el){el.textC
 function renderAll(){renderFunil();renderContatos();renderUbtns();updateBdayNotif();}
 
 // ── INIT ─────────────────────────────────────────────────
-(async function(){
+async function iniciarApp(){
   ss('ld','Carregando...');
   try{await loadCfg();}catch(e){console.warn('loadCfg error:',e);}
   try{await loadCatalogo();}catch(e){console.warn('loadCatalogo error:',e);}
@@ -3213,6 +3344,23 @@ function renderAll(){renderFunil();renderContatos();renderUbtns();updateBdayNoti
   updateBdayNotif();
   // Auto-save config a cada 5 minutos
   setInterval(()=>saveCfg().catch(()=>{}),300000);
+  // Renova o token de sessão antes de expirar (a cada 1 min, checa se falta <2min)
+  setInterval(async function(){
+    if(authSession&&authSession.expires_at&&authSession.expires_at<Date.now()+120000){
+      var ok=await renovarSessao();
+      if(!ok)logout();
+    }
+  },60000);
+}
+
+(async function(){
+  if(carregarSessaoSalva()){
+    if(authSession.expires_at && authSession.expires_at < Date.now()+30000){
+      var ok=await renovarSessao();
+      if(!ok){logout();return;}
+    }
+    await entrarNoApp();
+  }
 })();
 </script>
 </body>
