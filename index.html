@@ -229,6 +229,10 @@ textarea.fi{resize:vertical;min-height:60px}
     <span class="snav-lbl">Aniver.</span>
     <div class="snav-badge" id="bday-notif-badge" style="display:none"></div>
   </button>
+  <button class="snav" id="snav-oficinas" onclick="showTab('oficinas')" title="Oficinas">
+    <svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 19 19"><circle cx="9.5" cy="9.5" r="8"/><circle cx="7" cy="7.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="7" r="1.1" fill="currentColor" stroke="none"/><circle cx="13" cy="11.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="8" cy="13" r="1.1" fill="currentColor" stroke="none"/></svg>
+    <span class="snav-lbl">Oficinas</span>
+  </button>
   <button class="snav" id="snav-log" onclick="showTab('log')" title="Log de uso">
     <svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 19 19"><rect x="2" y="2" width="15" height="15" rx="1.5"/><line x1="5.5" y1="6.5" x2="13.5" y2="6.5" stroke-linecap="round"/><line x1="5.5" y1="9.5" x2="13.5" y2="9.5" stroke-linecap="round"/><line x1="5.5" y1="12.5" x2="10" y2="12.5" stroke-linecap="round"/></svg>
     <span class="snav-lbl">Log</span>
@@ -271,6 +275,7 @@ textarea.fi{resize:vertical;min-height:60px}
         </div>
       </div>
     </div>
+    <select class="fi" id="filtro-oficina-funil" style="width:auto;font-size:12px;height:32px;display:none" onchange="setFiltroOficinaFunil(this.value)"><option value="">Todas oficinas</option></select>
   </div>
   <div class="board-wrap"><div class="board" id="board"></div></div>
 </div>
@@ -310,6 +315,7 @@ textarea.fi{resize:vertical;min-height:60px}
       <option value="11">Novembro</option>
       <option value="12">Dezembro</option>
     </select>
+    <select class="fi" id="filtro-oficina-c" style="width:auto;font-size:12px;height:32px" onchange="setFiltroOficinaContatos(this.value)"><option value="">🎨 Todas oficinas</option></select>
   </div>
   <div id="lista-c"></div>
 </div>
@@ -390,6 +396,10 @@ textarea.fi{resize:vertical;min-height:60px}
   </div>
   <div id="log-content"><div class="empty">Carregando...</div></div>
 </div>
+<div id="pane-oficinas" class="pane">
+  <div style="font-size:16px;font-weight:700;color:var(--K);margin-bottom:1rem">🎨 Oficinas</div>
+  <div id="oficinas-content"></div>
+</div>
 </div>
 </div>
 </div>
@@ -400,7 +410,7 @@ textarea.fi{resize:vertical;min-height:60px}
 <div class="modal">
   <div class="mtitle"><span id="mc-title">Novo contato</span><button class="mcl" onclick="closeM('modal-c')">✕</button></div>
   <div class="fg fg2">
-    <div><label class="flbl">Nome *</label><input class="fi" id="f-nome" placeholder="Nome do cliente"></div>
+    <div class="cat-sw"><label class="flbl">Nome *</label><input class="fi" id="f-nome" placeholder="Nome do cliente" oninput="buscarClienteExistente()" onblur="setTimeout(function(){fecharClienteSug();},220)" autocomplete="off"><div class="cat-sd" id="csd-cliente"></div></div>
     <div><label class="flbl">Telefone</label><input class="fi" id="f-tel" placeholder="(84) 9..."></div>
   </div>
   <div class="fg fg3">
@@ -421,7 +431,8 @@ textarea.fi{resize:vertical;min-height:60px}
     <div><label class="flbl">Próx. atividade</label><input class="fi" type="date" id="f-atv-data-modal"></div>
   </div>
   <div class="fg fg1"><div><label class="flbl">Descrição da atividade</label><input class="fi" id="f-atv-desc-modal" placeholder="Ex: Ligar, enviar proposta..."></div></div>
-  <div class="fg fg1"><div><label class="flbl">Produto</label><input class="fi" id="f-produto" placeholder="Kit Nordeste Vivo..."></div></div>
+  <div class="fg fg1" id="wrap-produto-normal"><div><label class="flbl">Produto</label><input class="fi" id="f-produto" placeholder="Kit Nordeste Vivo..."></div></div>
+  <div class="fg fg1" id="wrap-oficina" style="display:none"><div><label class="flbl">Oficina</label><select class="fi" id="selOficina" onchange="onOficinaChange()"><option value="">Selecione uma oficina...</option></select></div></div>
   <div class="fg fg1"><div><label class="flbl">Observação</label><textarea class="fi" id="f-obs"></textarea></div></div>
   <div class="fg fg2">
     <div><label class="flbl">Email</label><input class="fi" id="f-email" type="email" placeholder="email@exemplo.com"></div>
@@ -506,6 +517,7 @@ textarea.fi{resize:vertical;min-height:60px}
 <div class="modal" style="max-width:360px">
   <div class="mtitle"><span id="mcat-title">Novo item</span><button class="mcl" onclick="closeM('modal-catalogo')">&#10005;</button></div>
   <div class="fg fg1" style="margin-bottom:.75rem"><div><label class="flbl">Nome</label><input class="fi" id="f-cat-nome" placeholder="Ex: Camiseta..."></div></div>
+  <div class="fg fg1" id="cat-natureza-wrap" style="margin-bottom:.75rem;display:none"><div><label class="flbl">Natureza</label><select class="fi" id="f-cat-natureza" onchange="onNaturezaChange()"><option value="produto">🛍️ Produto</option><option value="servico">🎨 Serviço</option></select></div></div>
   <div class="fg fg1" id="cat-categoria-wrap" style="margin-bottom:.75rem;display:none"><div><label class="flbl">Categoria</label><select class="fi" id="f-cat-categoria"><option value="">-- Sem categoria --</option><option value="moda">Moda</option><option value="decor_home">Decor/Home</option><option value="acessorios">Acessórios</option></select></div></div>
   <div id="cat-variacao-wrap" style="margin-bottom:.75rem;display:none">
     <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--K);cursor:pointer"><input type="checkbox" id="f-cat-variacao"> Tem estampa, cor e tamanho (ex: camiseta)</label>
@@ -606,6 +618,11 @@ textarea.fi{resize:vertical;min-height:60px}
       <div id="det-custom">
         <div style="font-size:11px;color:var(--G3);font-style:italic;margin-bottom:6px">Nenhum campo adicionado</div>
         <button class="btn xs" style="color:var(--G3)" title="Em breve">+ Adicionar</button>
+      </div>
+      <div id="det-oficinas-wrap" style="display:none">
+        <div class="divider" style="margin:.875rem 0"></div>
+        <div class="det-slbl">Participações em Oficinas</div>
+        <div id="det-oficinas"></div>
       </div>
     </div>
     <div class="det-center">
@@ -875,12 +892,17 @@ let cfg = {
     {id:'pissifa',nome:'Pissifã',etapas:[
       {id:'psf-ativo',nome:'Ativo 🟢'},{id:'psf-contato',nome:'Em contato 📞'},
       {id:'psf-neg',nome:'Negociando 🤑'},{id:'psf-inativo',nome:'Inativo 😴'}
+    ]},
+    {id:'servicos',nome:'Serviços',etapas:[
+      {id:'ser-int',nome:'Interessados'},{id:'ser-pre',nome:'Pré-inscrição'},
+      {id:'ser-ins',nome:'Inscrito'},{id:'ser-part',nome:'Participou'}
     ]}
   ],
   usuarios:[{id:'lucas',nome:'Lucas'},{id:'ana',nome:'Ana'}],
   campos_personalizados:[]
 };
 let funilAtivo='d2c', filtroC='todos', filtroAtv='todos', filtroRes='todos', filtroTier='todos', filtroGL='todos', filtroAniversario='';
+let filtroOficinaFunil='', filtroOficinaContatos='';
 let periodo='0', periodoCustom={ativo:false,de:null,ate:null};
 let userAtivo='todos';
 let editCid=null, editFid=null, editEfid=null, editEid=null;
@@ -917,11 +939,24 @@ function diasAtras(iso){if(!iso)return null;const d=new Date(iso.slice(0,10)+'T1
 
 function isNegociacao(fid,eid){
   if(eid==='psf-neg'||eid==='d2c-neg'||eid==='b2b-neg')return true;
-  for(const f of cfg.funis){const e=f.etapas.find(x=>x.id===eid);if(e){const n=e.nome.toLowerCase();return n.includes('negociação comercial')||n.includes('negociando');}}
+  for(const f of cfg.funis){const e=f.etapas.find(x=>x.id===eid);if(e){const n=e.nome.toLowerCase();if(n.includes('negociação comercial')||n.includes('negociando'))return true;if(f.id==='servicos'&&(n.includes('inscrição')||n.includes('inscrito')))return true;return false;}}
   return false;
 }
-function isGanho(fid,eid){const e=getEtapa(fid,eid);return e&&e.nome.toLowerCase().includes('fechado');}
+function isGanho(fid,eid){
+  const e=getEtapa(fid,eid);if(!e)return false;
+  const n=e.nome.toLowerCase();
+  if(fid==='servicos')return n.includes('inscrito')||n.includes('participou');
+  return n.includes('fechado');
+}
 function isPerdido(fid,eid){const e=getEtapa(fid,eid);return e&&e.nome.toLowerCase().includes('perdido');}
+// Acha o id da etapa do funil Serviços cujo NOME bate com o matcher — nunca por ID fixo,
+// porque o usuário edita/renomeia/apaga essas etapas livremente na aba Config e os IDs
+// internos deixam de corresponder ao que está escrito no card.
+function acharEtapaServicosPorNome(matcher){
+  var f=getFunil('servicos');if(!f)return null;
+  var found=f.etapas.find(function(e){return matcher(e.nome.toLowerCase());});
+  return found?found.id:null;
+}
 
 function getTierCliente(nCompras,ltv){
   if(nCompras>4&&ltv>600)return{label:'Pissifã Ouro',icone:'🥇',cor:'#9A6F00',bg:'#FFFAEB',borda:'#D4AF37',sub:nCompras+' compras · LTV R$'+Math.round(ltv)};
@@ -933,6 +968,11 @@ function getTierCliente(nCompras,ltv){
 function parseNegHist(c){
   try{if(c.neg_hist&&c.neg_hist!=='')return JSON.parse(c.neg_hist);}catch(e){}
   return[];
+}
+
+function registrarParticipacao(c,status){
+  if(!Array.isArray(c.oficinas_hist))c.oficinas_hist=[];
+  c.oficinas_hist.push({oficina:c.produto||'',data_inscricao:hojeISO(),status:status,data_oficina:''});
 }
 
 function getNps(c){
@@ -978,15 +1018,24 @@ function ultimaCompraHtml(c){
 }
 
 // ── CONFIG ───────────────────────────────────────────────
+async function seedServicosFunil(){
+  if(cfg.funis.find(function(f){return f.id==='servicos';}))return;
+  cfg.funis.push({id:'servicos',nome:'Serviços',etapas:[
+    {id:'ser-int',nome:'Interessados'},{id:'ser-pre',nome:'Pré-inscrição'},
+    {id:'ser-ins',nome:'Inscrito'},{id:'ser-part',nome:'Participou'}
+  ]});
+  try{await saveCfg();}catch(e){}
+}
 async function loadCfg(){
   try{
     const rows=await sbGet('config','id=eq.1&select=dados');
     if(rows&&rows[0]&&rows[0].dados){
       const p=JSON.parse(rows[0].dados);
-      if(p&&p.funis&&p.funis.length>0){cfg=p;if(!cfg.campos_personalizados)cfg.campos_personalizados=[];return;}
+      if(p&&p.funis&&p.funis.length>0){cfg=p;if(!cfg.campos_personalizados)cfg.campos_personalizados=[];await seedServicosFunil();return;}
     }
   }catch(e){console.warn('loadCfg error:',e);}
   try{const s=localStorage.getItem('psn_cfg4');if(s){const p=JSON.parse(s);if(p&&p.funis){cfg=p;if(!cfg.campos_personalizados)cfg.campos_personalizados=[];}}}catch(e){}
+  await seedServicosFunil();
 }
 async function saveCfg(){
   try{
@@ -1006,7 +1055,7 @@ async function loadCatalogo(){
       if(r.tipo==='estampa')catalogo.estampas.push({id:r.id,nome:r.nome});
       else if(r.tipo==='cor')catalogo.cores.push({id:r.id,nome:r.nome});
       else if(r.tipo==='tamanho')catalogo.tamanhos.push({id:r.id,nome:r.nome});
-      else if(r.tipo==='produto')catalogo.produtos.push({id:r.id,nome:r.nome,categoria:r.categoria||'',temVariacao:Boolean(r.tem_variacao)});
+      else if(r.tipo==='produto')catalogo.produtos.push({id:r.id,nome:r.nome,categoria:r.categoria||'',temVariacao:Boolean(r.tem_variacao),natureza:r.natureza||'produto'});
     });
   }catch(e){console.warn('loadCatalogo error:',e);}
 }
@@ -1038,7 +1087,9 @@ async function doSync(){
         aniversario:normDate(String(r.aniversario||'')),
         cod_marketup:String(r.cod_marketup||''),nf_emitida:Boolean(r.nf_emitida)||false,
         nps:(meta.nps!==undefined&&meta.nps!==null&&meta.nps!=='')?parseInt(meta.nps):null,
-        campos:(meta.campos&&typeof meta.campos==='object'&&!Array.isArray(meta.campos))?meta.campos:{}
+        campos:(meta.campos&&typeof meta.campos==='object'&&!Array.isArray(meta.campos))?meta.campos:{},
+        oficinas_hist:Array.isArray(meta.oficinas_hist)?meta.oficinas_hist:[],
+        oficina_atual:String(meta.oficina_atual||'')
       };
     });
     ss('ok',contatos.length+' contato'+(contatos.length!==1?'s':''));
@@ -1055,13 +1106,13 @@ async function apiSave(c){
     atv_desc:c.atv_desc||'',resultado:c.resultado||'',
     atv_hist:c.atv_hist||0,neg_hist:c.neg_hist||'',
     aniversario:c.aniversario||null,cod_marketup:c.cod_marketup||'',nf_emitida:c.nf_emitida||false,
-    meta:JSON.stringify({email:c.email||'',cpf:c.cpf||'',endereco:c.endereco||'',notas:c.notas||'',log_hist:c.log_hist||[],campos:c.campos||{},cidade:c.cidade||'',uf:c.uf||'',cep:c.cep||'',nps:(c.nps!=null)?c.nps:null})
+    meta:JSON.stringify({email:c.email||'',cpf:c.cpf||'',endereco:c.endereco||'',notas:c.notas||'',log_hist:c.log_hist||[],campos:c.campos||{},cidade:c.cidade||'',uf:c.uf||'',cep:c.cep||'',nps:(c.nps!=null)?c.nps:null,oficinas_hist:c.oficinas_hist||[],oficina_atual:c.oficina_atual||''})
   });
 }
 
 // ── TABS ─────────────────────────────────────────────────
 function showTab(id){
-  ['funil','contatos','insights','catalogo','config','aniversario','log'].forEach(function(t){
+  ['funil','contatos','insights','catalogo','config','aniversario','log','oficinas'].forEach(function(t){
     var btn=document.getElementById('snav-'+t);
     if(btn)btn.classList.toggle('active',t===id);
     var pane=document.getElementById('pane-'+t);
@@ -1074,6 +1125,7 @@ function showTab(id){
   if(id==='config')renderConfig();
   if(id==='aniversario')renderAniversario();
   if(id==='log')renderLog();
+  if(id==='oficinas')renderOficinas();
 }
 
 // ── FILTROS DROPDOWN ─────────────────────────────────────
@@ -1102,6 +1154,7 @@ function renderFunilTabs(){document.getElementById('funil-tabs').innerHTML=cfg.f
 function setFunil(id){funilAtivo=id;renderFunil();renderUbtns();}
 function setFiltroAtv(btn,f){document.querySelectorAll('[id^="fatv-"]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');filtroAtv=f;renderFunil();updFiltroBtn();}
 function setFiltroRes(btn,f){document.querySelectorAll('[id^="fres-"]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');filtroRes=f;renderFunil();updFiltroBtn();}
+function setFiltroOficinaFunil(v){filtroOficinaFunil=v;renderFunil();}
 
 function renderFunil(){
   renderFunilTabs();
@@ -1109,6 +1162,17 @@ function renderFunil(){
   const board=document.getElementById('board');
   board.innerHTML='';
   if(!funil){board.innerHTML='<div class="empty">Nenhum funil</div>';return;}
+  const selOficinaFunil=document.getElementById('filtro-oficina-funil');
+  if(selOficinaFunil){
+    if(funilAtivo==='servicos'){
+      selOficinaFunil.style.display='inline-block';
+      var oficinasFunil=catalogo.produtos.filter(function(p){return p.natureza==='servico';});
+      selOficinaFunil.innerHTML='<option value="">Todas oficinas</option>'+oficinasFunil.map(function(o){return'<option value="'+o.nome+'">'+o.nome+'</option>';}).join('');
+      selOficinaFunil.value=filtroOficinaFunil;
+    }else{
+      selOficinaFunil.style.display='none';
+    }
+  }
   const busca=(document.getElementById('funil-busca')||{value:''}).value.toLowerCase().trim();
   funil.etapas.forEach(etapa=>{
     const cards=contatos.filter(c=>{
@@ -1124,6 +1188,7 @@ function renderFunil(){
         if(filtroRes==='perda'&&res!=='perda')return false;
         if(filtroRes==='aberto'&&(res==='ganho'||res==='perda'))return false;
       }
+      if(funilAtivo==='servicos'&&filtroOficinaFunil&&c.produto!==filtroOficinaFunil)return false;
       if(busca&&!c.nome.toLowerCase().includes(busca))return false;
       return true;
     });
@@ -1211,10 +1276,10 @@ async function dropCard(etapaId){
   if(!dragId)return;
   const c=contatos.find(x=>x.id===dragId);if(!c)return;
   const wasInNeg=isNegociacao(c.funil,c.etapa);
+  const eAlvo=getEtapa(c.funil,etapaId);
+  const nAlvo=eAlvo?eAlvo.nome.toLowerCase():'';
   if(wasInNeg){
-    const eAlvo=getEtapa(c.funil,etapaId);
-    const nAlvo=eAlvo?eAlvo.nome.toLowerCase():'';
-    const isGanhoAlvo=nAlvo.includes('cliente novo')||nAlvo.includes('fechado')||etapaId==='d2c-cn'||etapaId==='b2b-fech';
+    const isGanhoAlvo=nAlvo.includes('cliente novo')||nAlvo.includes('fechado')||etapaId==='d2c-cn'||etapaId==='b2b-fech'||(c.funil==='servicos'&&nAlvo.includes('inscrito'));
     const isPerdaAlvo=nAlvo.includes('perdido')||nAlvo.includes('inativo')||etapaId==='b2b-perd'||etapaId==='psf-inativo';
     if(isGanhoAlvo){
       var hist=parseNegHist(c);
@@ -1224,6 +1289,7 @@ async function dropCard(etapaId){
     }
     if(isPerdaAlvo){perdaCid=dragId;dragId=null;document.getElementById('modal-perda').style.display='flex';return;}
   }
+  if(c.funil==='servicos'&&nAlvo.includes('participou'))registrarParticipacao(c,'participou');
   c.etapa=etapaId;c.et='atendimento';dragId=null;
   ss('ld','Movendo...');try{await apiSave(c);await doSync();}catch(ex){ss('er','Erro ao mover');}
 }
@@ -1315,6 +1381,7 @@ async function confirmarGanho(){
   c.valor=valorNeg;c.et='fechado';c.motivo_perda='';c.resultado='';
   if(c.funil==='pissifa'){c.etapa='psf-ativo';}
   else if(c.funil==='d2c'){c.etapa='d2c-cn';}
+  else if(c.funil==='servicos'){var eidInscrito=acharEtapaServicosPorNome(function(n){return n.includes('inscrito');});if(eidInscrito)c.etapa=eidInscrito;registrarParticipacao(c,'inscrito');}
   closeM('modal-valor-neg');pedidoItens=[];
   ss('ld','Salvando...');
   try{
@@ -1346,6 +1413,7 @@ async function confirmPerda(){
   c.motivo_perda=motivo;c.et='perdido';c.resultado='perda';
   if(c.funil==='pissifa'){c.etapa='psf-inativo';c.resultado='';}
   else if(c.funil==='d2c'){c.etapa='d2c-cr';c.resultado='';}
+  else if(c.funil==='servicos'){registrarParticipacao(c,'cancelado');}
   ss('ld','Salvando...');try{await apiSave(c);logAction('perda_confirmada',c.nome+' - '+motivo);await doSync();}catch(ex){ss('er','Erro');}
   closeM('modal-perda');motivoSel='';document.getElementById('f-motivo').value='';
   document.querySelectorAll('.chip').forEach(b=>b.classList.remove('sel'));perdaCid=null;
@@ -1434,8 +1502,51 @@ async function checkpointAtv(){
 }
 
 // ── CONTATO MODAL ────────────────────────────────────────
+// ── BUSCA DE CLIENTE EXISTENTE (ao criar novo contato) ───
+function buscarClienteExistente(){
+  if(editCid)return;
+  var q=document.getElementById('f-nome').value.trim().toLowerCase();
+  var el=document.getElementById('csd-cliente');
+  if(!el)return;
+  if(q.length<2){el.style.display='none';el.innerHTML='';return;}
+  var vistos={};
+  var matches=contatos.filter(function(c){
+    if(!c.nome||!c.nome.toLowerCase().includes(q))return false;
+    var chave=(c.tel||c.nome).toLowerCase();
+    if(vistos[chave])return false;
+    vistos[chave]=true;
+    return true;
+  }).slice(0,8);
+  if(!matches.length){el.style.display='none';el.innerHTML='';return;}
+  var h='';
+  matches.forEach(function(c){
+    var f=getFunil(c.funil);
+    var sub=(f?f.nome:'')+(c.tel?' · '+c.tel:'');
+    h+='<div class="cat-sd-opt" onmousedown="selecionarClienteExistente(\''+c.id+'\')"><div style="font-weight:600">'+c.nome+'</div><div style="font-size:10px;color:var(--G3)">'+sub+'</div></div>';
+  });
+  el.innerHTML=h;
+  el.style.display='block';
+}
+function fecharClienteSug(){var el=document.getElementById('csd-cliente');if(el)el.style.display='none';}
+function selecionarClienteExistente(cid){
+  var c=contatos.find(function(x){return x.id===cid;});if(!c)return;
+  document.getElementById('f-nome').value=c.nome;
+  document.getElementById('f-tel').value=c.tel||'';
+  document.getElementById('f-email').value=c.email||'';
+  document.getElementById('f-cpf').value=c.cpf||'';
+  document.getElementById('f-aniversario').value=c.aniversario||'';
+  document.getElementById('f-endereco').value=c.endereco||'';
+  document.getElementById('f-cidade').value=c.cidade||'';
+  document.getElementById('f-uf').value=c.uf||'';
+  document.getElementById('f-cep').value=c.cep||'';
+  document.getElementById('f-cod-marketup').value=c.cod_marketup||'';
+  fecharClienteSug();
+  setFb('fb-c','Dados copiados de um contato já cadastrado','ok');
+}
+
 function openContato(id=null,fid=null,eid=null){
   editCid=id;const c=id?contatos.find(x=>x.id===id):null;
+  fecharClienteSug();
   document.getElementById('mc-title').textContent=id?'Editar contato':'Novo contato';
   document.getElementById('btn-sc').textContent=id?'Salvar alterações':'Salvar contato';
   document.getElementById('fb-c').textContent='';document.getElementById('btn-sc').disabled=false;
@@ -1454,6 +1565,7 @@ function openContato(id=null,fid=null,eid=null){
     document.getElementById('f-atv-data-modal').value=normDate(c.atv_data)||'';
     document.getElementById('f-atv-desc-modal').value=c.atv_desc||'';
     document.getElementById('f-produto').value=c.produto||'';
+    updEtapas();
     document.getElementById('f-obs').value=c.obs||'';
     document.getElementById('f-user').value=c.usuario||'';
     document.getElementById('f-email').value=c.email||'';
@@ -1495,7 +1607,7 @@ function openContato(id=null,fid=null,eid=null){
       if(rb&&ultimaNeg){rb.className=ultimaNeg.r==='ganho'?'res-ganho':'res-perda';rb.textContent=ultimaNeg.r==='ganho'?'✓ Ganho':'✗ Perda';}
     }
   }else{
-    ['f-nome','f-tel','f-valor','f-atv-data-modal','f-atv-desc-modal','f-produto','f-obs','f-email','f-cpf','f-endereco','f-cod-marketup','f-cidade','f-uf','f-cep'].forEach(x=>document.getElementById(x).value='');
+    ['f-nome','f-tel','f-valor','f-atv-data-modal','f-atv-desc-modal','f-produto','f-obs','f-email','f-cpf','f-endereco','f-cod-marketup','f-cidade','f-uf','f-cep','selOficina'].forEach(x=>document.getElementById(x).value='');
     document.getElementById('f-canal').value='instagram';document.getElementById('f-user').value='';
     document.getElementById('f-aniversario').value='';
     const hw=document.getElementById('neg-hist-wrap');if(hw)hw.style.display='none';
@@ -1505,7 +1617,22 @@ function openContato(id=null,fid=null,eid=null){
   document.getElementById('modal-c').style.display='flex';
 }
 
-function updEtapas(){const funil=getFunil(document.getElementById('f-funil').value);document.getElementById('f-etapa').innerHTML=funil?funil.etapas.map(e=>`<option value="${e.id}">${e.nome}</option>`).join(''):'';}
+function updEtapas(){
+  const funil=getFunil(document.getElementById('f-funil').value);
+  document.getElementById('f-etapa').innerHTML=funil?funil.etapas.map(e=>`<option value="${e.id}">${e.nome}</option>`).join(''):'';
+  const isServ=funil&&funil.id==='servicos';
+  const wp=document.getElementById('wrap-produto-normal'),wo=document.getElementById('wrap-oficina');
+  if(wp)wp.style.display=isServ?'none':'block';
+  if(wo)wo.style.display=isServ?'block':'none';
+  if(isServ){
+    var sel=document.getElementById('selOficina');
+    var oficinas=catalogo.produtos.filter(function(p){return p.natureza==='servico';});
+    var cur=(document.getElementById('f-produto')||{value:''}).value;
+    sel.innerHTML='<option value="">Selecione uma oficina...</option>'+oficinas.map(function(o){return'<option value="'+o.nome+'">'+o.nome+'</option>';}).join('');
+    sel.value=cur||'';
+  }
+}
+function onOficinaChange(){document.getElementById('f-produto').value=document.getElementById('selOficina').value;}
 
 async function saveContato(){
   const nome=document.getElementById('f-nome').value.trim();
@@ -1543,7 +1670,9 @@ async function saveContato(){
     cod_marketup:document.getElementById('f-cod-marketup').value.trim(),
     nf_emitida:prev.nf_emitida||false,
     nps:prev.nps!=null?prev.nps:null,
-    log_hist:Array.isArray(prev.log_hist)?prev.log_hist.slice():[]
+    log_hist:Array.isArray(prev.log_hist)?prev.log_hist.slice():[],
+    oficinas_hist:Array.isArray(prev.oficinas_hist)?prev.oficinas_hist.slice():[],
+    oficina_atual:fid==='servicos'?document.getElementById('f-produto').value.trim():(prev.oficina_atual||'')
   };
   if(editCid&&prev.canal&&prev.canal!==c.canal){
     c.log_hist.push({tipo:'canal_atualizado',d:new Date().toISOString(),txt:'Canal atualizado para '+(CANAL_LABEL[c.canal]||c.canal)});
@@ -1583,6 +1712,12 @@ function renderContatos(){
     ft.innerHTML=tiers.map(t=>`<button class="filtro${filtroTier===t.id?' active':''}" onclick="setFiltroTier(this,'${t.id}')">${t.label}</button>`).join('');
   }
   updFiltroCBtn();
+  var selOficinaC=document.getElementById('filtro-oficina-c');
+  if(selOficinaC){
+    var oficinasC=catalogo.produtos.filter(function(p){return p.natureza==='servico';});
+    selOficinaC.innerHTML='<option value="">🎨 Todas oficinas</option>'+oficinasC.map(function(o){return'<option value="'+o.nome+'">'+o.nome+'</option>';}).join('');
+    selOficinaC.value=filtroOficinaContatos;
+  }
   const busca=(document.getElementById('busca')||{value:''}).value.toLowerCase();
   const lista=contatos.filter(c=>{
     if(filtroC!=='todos'&&c.etapa!==filtroC)return false;
@@ -1602,6 +1737,9 @@ function renderContatos(){
       if(!anivFiltro)return false;
       var mesFiltro=filtroAniversario==='mes'?hojeISO().slice(5,7):filtroAniversario;
       if(anivFiltro.slice(5,7)!==mesFiltro)return false;
+    }
+    if(filtroOficinaContatos){
+      if(c.funil!=='servicos'||c.produto!==filtroOficinaContatos)return false;
     }
     return true;
   });
@@ -1644,6 +1782,7 @@ function renderContatos(){
 function setFiltroC(btn,f){document.querySelectorAll('#filtros-c .filtro').forEach(b=>b.classList.remove('active'));btn.classList.add('active');filtroC=f;renderContatos();}
 function setFiltroTier(btn,t){filtroTier=t;renderContatos();}
 function setFiltroAniversario(val){filtroAniversario=val;renderContatos();}
+function setFiltroOficinaContatos(val){filtroOficinaContatos=val;renderContatos();}
 function toggleFiltrosC(){const p=document.getElementById('fd-panel-c');if(p)p.classList.toggle('open');}
 function updFiltroCBtn(){
   const btn=document.getElementById('btn-filtros-c');
@@ -2494,6 +2633,27 @@ function openContatoDetail(id){
       customEl.innerHTML=ch;
     }
   }
+  // PARTICIPAÇÕES EM OFICINAS
+  var oficinasWrap=document.getElementById('det-oficinas-wrap');
+  var oficinasHist=Array.isArray(c.oficinas_hist)?c.oficinas_hist:[];
+  if(oficinasWrap){
+    if(!oficinasHist.length){oficinasWrap.style.display='none';}
+    else{
+      oficinasWrap.style.display='block';
+      var ofH='';
+      oficinasHist.slice().reverse().forEach(function(p){
+        var statusCor={inscrito:'var(--A2)',participou:'var(--VD)',cancelado:'var(--VM)'}[p.status]||'var(--G3)';
+        var statusLbl={inscrito:'Inscrito',participou:'Participou',cancelado:'Cancelado'}[p.status]||p.status;
+        ofH+='<div style="background:var(--G);border-radius:8px;padding:.5rem .625rem;margin-bottom:6px">';
+        ofH+='<div style="font-size:12px;font-weight:600;color:var(--K)">'+(p.oficina||'—')+'</div>';
+        ofH+='<div style="font-size:11px;margin-top:2px"><span style="color:'+statusCor+';font-weight:600">'+statusLbl+'</span>';
+        if(p.data_inscricao)ofH+=' <span style="color:var(--G3)">&middot; '+fmtDFull(p.data_inscricao)+'</span>';
+        if(p.data_oficina)ofH+=' <span style="color:var(--G3)">&middot; oficina em '+fmtDFull(p.data_oficina)+'</span>';
+        ofH+='</div></div>';
+      });
+      document.getElementById('det-oficinas').innerHTML=ofH;
+    }
+  }
   // NOTAS
   document.getElementById('det-notas-ta').value='';
   // LINHA DO TEMPO
@@ -3000,17 +3160,25 @@ function renderCatalogo(){
       h+='<div style="display:flex;flex-wrap:wrap;gap:6px;flex:1;margin-bottom:1rem">';
       itens.forEach(function(item){
         if(tipo==='produto'){
+          var isServ=item.natureza==='servico';
           h+='<div style="display:flex;flex-direction:column;gap:6px;background:var(--G);border-radius:8px;padding:8px;width:100%">';
           h+='<div style="display:flex;align-items:center;gap:6px">';
+          h+='<span style="font-size:11px" title="'+(isServ?'Serviço':'Produto')+'">'+(isServ?'🎨':'🛍️')+'</span>';
           h+='<span style="font-size:12px;color:var(--K);font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+item.nome+'</span>';
           h+='<button class="btn xs danger" onclick="delCatalogoItem(\''+item.id+'\',\''+tipo+'\')">&#10005;</button>';
           h+='</div>';
           h+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">';
-          h+='<select class="fi" style="width:auto;font-size:10px;padding:2px 6px;height:auto" onchange="setCategoriaProduto(\''+item.id+'\',this.value)">';
-          h+='<option value=""'+(!item.categoria?' selected':'')+'>Sem categoria</option>';
-          Object.keys(CATEGORIA_LABEL).forEach(function(ck){h+='<option value="'+ck+'"'+(item.categoria===ck?' selected':'')+'>'+CATEGORIA_LABEL[ck]+'</option>';});
+          h+='<select class="fi" style="width:auto;font-size:10px;padding:2px 6px;height:auto" onchange="setNaturezaProduto(\''+item.id+'\',this.value)">';
+          h+='<option value="produto"'+(!isServ?' selected':'')+'>🛍️ Produto</option>';
+          h+='<option value="servico"'+(isServ?' selected':'')+'>🎨 Serviço</option>';
           h+='</select>';
-          h+='<label style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--G3);cursor:pointer"><input type="checkbox"'+(item.temVariacao?' checked':'')+' onchange="setVariacaoProduto(\''+item.id+'\',this.checked)"> estampa/cor/tam.</label>';
+          if(!isServ){
+            h+='<select class="fi" style="width:auto;font-size:10px;padding:2px 6px;height:auto" onchange="setCategoriaProduto(\''+item.id+'\',this.value)">';
+            h+='<option value=""'+(!item.categoria?' selected':'')+'>Sem categoria</option>';
+            Object.keys(CATEGORIA_LABEL).forEach(function(ck){h+='<option value="'+ck+'"'+(item.categoria===ck?' selected':'')+'>'+CATEGORIA_LABEL[ck]+'</option>';});
+            h+='</select>';
+            h+='<label style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--G3);cursor:pointer"><input type="checkbox"'+(item.temVariacao?' checked':'')+' onchange="setVariacaoProduto(\''+item.id+'\',this.checked)"> estampa/cor/tam.</label>';
+          }
           h+='</div></div>';
         }else{
           var delChipBtn='<button class="btn xs danger" onclick="delCatalogoItem(\''+item.id+'\',\''+tipo+'\')">&#10005;</button>';
@@ -3032,12 +3200,22 @@ function openCatalogoModal(tipo){
   document.getElementById('f-cat-nome').value='';
   document.getElementById('f-cat-tipo').value=tipo;
   document.getElementById('fb-cat').textContent='';
+  var natWrap=document.getElementById('cat-natureza-wrap');
+  if(natWrap){natWrap.style.display=tipo==='produto'?'block':'none';document.getElementById('f-cat-natureza').value='produto';}
   var catWrap=document.getElementById('cat-categoria-wrap');
   if(catWrap){catWrap.style.display=tipo==='produto'?'block':'none';document.getElementById('f-cat-categoria').value='';}
   var varWrap=document.getElementById('cat-variacao-wrap');
   if(varWrap){varWrap.style.display=tipo==='produto'?'block':'none';document.getElementById('f-cat-variacao').checked=false;}
   document.getElementById('modal-catalogo').style.display='flex';
   setTimeout(function(){document.getElementById('f-cat-nome').focus();},50);
+}
+
+function onNaturezaChange(){
+  var isServ=document.getElementById('f-cat-natureza').value==='servico';
+  var varWrap=document.getElementById('cat-variacao-wrap');
+  if(varWrap){varWrap.style.display=isServ?'none':'block';if(isServ)document.getElementById('f-cat-variacao').checked=false;}
+  var catWrap=document.getElementById('cat-categoria-wrap');
+  if(catWrap)catWrap.style.display=isServ?'none':'block';
 }
 
 async function saveCatalogoItem(){
@@ -3048,8 +3226,14 @@ async function saveCatalogoItem(){
   try{
     var body={nome:nome,tipo:tipo};
     if(tipo==='produto'){
-      var catVal=document.getElementById('f-cat-categoria').value;if(catVal)body.categoria=catVal;
-      body.tem_variacao=document.getElementById('f-cat-variacao').checked;
+      var naturezaVal=document.getElementById('f-cat-natureza').value||'produto';
+      body.natureza=naturezaVal;
+      if(naturezaVal!=='servico'){
+        var catVal=document.getElementById('f-cat-categoria').value;if(catVal)body.categoria=catVal;
+        body.tem_variacao=document.getElementById('f-cat-variacao').checked;
+      }else{
+        body.tem_variacao=false;
+      }
     }
     var resp=await fetch(SB_URL+'/rest/v1/catalogo',{
       method:'POST',
@@ -3083,6 +3267,16 @@ async function setVariacaoProduto(id,temVariacao){
     await loadCatalogo();
     renderCatalogo();
   }catch(e){ss('er','Erro ao salvar');}
+}
+
+async function setNaturezaProduto(id,natureza){
+  try{
+    var body={natureza:natureza};
+    if(natureza==='servico')body.tem_variacao=false;
+    await fetch(SB_URL+'/rest/v1/catalogo?id=eq.'+id,{method:'PATCH',headers:SB_HDR,body:JSON.stringify(body)});
+    await loadCatalogo();
+    renderCatalogo();
+  }catch(e){ss('er','Erro ao salvar natureza');}
 }
 
 async function delCatalogoItem(id,tipo){
@@ -3314,6 +3508,84 @@ async function renderLog(){
     h+='</div>';
     el.innerHTML=h;
   }catch(e){el.innerHTML='<div class="empty">Erro ao carregar log</div>';}
+}
+
+// ── OFICINAS ─────────────────────────────────────────────
+// Colunas de etapa vêm de cfg.funis['servicos'].etapas (dinâmico — respeita o que foi configurado
+// na aba Config), mais uma coluna sintética "Cancelados" baseada em resultado==='perda' (não é mais
+// uma etapa própria — perda em Serviços não move o card, só marca o resultado, igual ao funil B2B).
+function renderOficinas(){
+  var el=document.getElementById('oficinas-content');if(!el)return;
+  var funilServ=getFunil('servicos');
+  var etapasServ=funilServ?funilServ.etapas:[];
+  var contatosServ=contatos.filter(function(c){return c.funil==='servicos';});
+  var nomes=catalogo.produtos.filter(function(p){return p.natureza==='servico';}).map(function(p){return p.nome;});
+  contatosServ.forEach(function(c){if(c.produto&&nomes.indexOf(c.produto)===-1)nomes.push(c.produto);});
+  if(!nomes.length){el.innerHTML='<div class="empty">Nenhuma oficina cadastrada ainda. Crie uma no Catálogo com natureza "Serviço".</div>';return;}
+  var nCols=etapasServ.length+1;
+  var gridCols='1.6fr repeat('+nCols+',1fr) .8fr';
+  var h='<div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;overflow:hidden"><div style="overflow-x:auto">';
+  h+='<div style="display:grid;grid-template-columns:'+gridCols+';gap:0;padding:.75rem 1rem;background:var(--G);font-size:10px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.05em;min-width:600px">';
+  h+='<div>Oficina</div>';
+  etapasServ.forEach(function(e){h+='<div style="text-align:center">'+e.nome+'</div>';});
+  h+='<div style="text-align:center">Cancelados</div>';
+  h+='<div style="text-align:center">Total</div>';
+  h+='</div>';
+  nomes.forEach(function(nome,i){
+    var contsOficina=contatosServ.filter(function(c){return c.produto===nome;});
+    var total=contsOficina.length;
+    var cancelados=contsOficina.filter(function(c){return c.resultado==='perda';}).length;
+    h+='<div style="display:grid;grid-template-columns:'+gridCols+';gap:0;padding:.75rem 1rem;align-items:center;min-width:600px;'+(i>0?'border-top:1px solid var(--G2)':'')+'">';
+    h+='<div style="font-size:13px;font-weight:600;color:var(--K);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+nome+'</div>';
+    etapasServ.forEach(function(e){
+      var cnt=contsOficina.filter(function(c){return c.etapa===e.id&&c.resultado!=='perda';}).length;
+      if(cnt>0)h+='<div class="mc-link" style="text-align:center;font-size:14px;font-weight:700;color:var(--K);cursor:pointer" onclick="showOficinaDetail(\''+nome.replace(/'/g,"\\'")+'\',\''+e.id+'\')">'+cnt+'</div>';
+      else h+='<div style="text-align:center;font-size:14px;color:var(--G2)">—</div>';
+    });
+    if(cancelados>0)h+='<div class="mc-link" style="text-align:center;font-size:14px;font-weight:700;color:var(--VM);cursor:pointer" onclick="showOficinaDetail(\''+nome.replace(/'/g,"\\'")+'\',\'CANCELADOS\')">'+cancelados+'</div>';
+    else h+='<div style="text-align:center;font-size:14px;color:var(--G2)">—</div>';
+    h+='<div style="text-align:center;font-size:14px;font-weight:700;color:var(--L)">'+total+'</div>';
+    h+='</div>';
+  });
+  h+='</div></div>';
+  el.innerHTML=h;
+}
+
+function showOficinaDetail(oficina,etapaId){
+  var lista,titulo;
+  if(etapaId==='CANCELADOS'){
+    lista=contatos.filter(function(c){return c.funil==='servicos'&&c.produto===oficina&&c.resultado==='perda';});
+    titulo='Cancelados';
+  }else{
+    var funilServ=getFunil('servicos');
+    var etapaInfo=funilServ?funilServ.etapas.find(function(e){return e.id===etapaId;}):null;
+    lista=contatos.filter(function(c){return c.funil==='servicos'&&c.produto===oficina&&c.etapa===etapaId&&c.resultado!=='perda';});
+    titulo=etapaInfo?etapaInfo.nome:etapaId;
+  }
+  document.getElementById('psf-detail-title').textContent=oficina+' — '+titulo+' ('+lista.length+')';
+  var html='';
+  if(!lista.length){html='<div class="empty">Nenhum contato nesta etapa</div>';}
+  else{
+    lista.forEach(function(c){
+      var u=cfg.usuarios.find(function(x){return x.id===c.usuario;});
+      var s=atvStatus(c);
+      var dotCls={sem:'atv-vermelho',hoje:'atv-verde',atrasada:'atv-amarelo',agendada:'atv-cinza'}[s]||'atv-cinza';
+      html+='<div style="background:var(--G);border-radius:10px;padding:.875rem 1rem;margin-bottom:8px">';
+      html+='<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">';
+      html+='<div style="min-width:0;flex:1">';
+      html+='<div style="font-size:13px;font-weight:700;color:var(--K)">'+c.nome+'</div>';
+      html+='<div style="font-size:11px;color:var(--G3);margin-top:2px">';
+      if(u)html+='&#128100; '+u.nome;
+      if(c.tel)html+=(u?' &middot; ':'')+'&#128222; '+c.tel;
+      html+='</div></div>';
+      html+='<div style="display:flex;align-items:center;gap:6px">';
+      html+='<div class="atv-dot '+dotCls+'" title="Atividade"></div>';
+      html+='<button class="btn xs" onclick="closeM(\'modal-psf-detail\');openContatoDetail(\''+c.id+'\')">&#9998; Abrir</button>';
+      html+='</div></div></div>';
+    });
+  }
+  document.getElementById('psf-detail-content').innerHTML=html;
+  document.getElementById('modal-psf-detail').style.display='flex';
 }
 
 // ── HEADER ───────────────────────────────────────────────
