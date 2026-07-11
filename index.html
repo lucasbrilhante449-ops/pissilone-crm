@@ -233,6 +233,11 @@ textarea.fi{resize:vertical;min-height:60px}
     <svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 19 19"><circle cx="9.5" cy="9.5" r="8"/><circle cx="7" cy="7.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="7" r="1.1" fill="currentColor" stroke="none"/><circle cx="13" cy="11.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="8" cy="13" r="1.1" fill="currentColor" stroke="none"/></svg>
     <span class="snav-lbl">Oficinas</span>
   </button>
+  <button class="snav" id="snav-encomendas" onclick="showTab('encomendas')" title="Encomendas">
+    <svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 19 19"><path d="M9.5 1.5l7.5 4.3v7.4l-7.5 4.3-7.5-4.3V5.8z"/><path d="M2 5.8l7.5 4.3 7.5-4.3M9.5 10.1v7.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span class="snav-lbl">Encom.</span>
+    <div class="snav-badge" id="encomendas-notif-badge" style="display:none"></div>
+  </button>
   <button class="snav" id="snav-log" onclick="showTab('log')" title="Log de uso">
     <svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 19 19"><rect x="2" y="2" width="15" height="15" rx="1.5"/><line x1="5.5" y1="6.5" x2="13.5" y2="6.5" stroke-linecap="round"/><line x1="5.5" y1="9.5" x2="13.5" y2="9.5" stroke-linecap="round"/><line x1="5.5" y1="12.5" x2="10" y2="12.5" stroke-linecap="round"/></svg>
     <span class="snav-lbl">Log</span>
@@ -399,6 +404,15 @@ textarea.fi{resize:vertical;min-height:60px}
 <div id="pane-oficinas" class="pane">
   <div style="font-size:16px;font-weight:700;color:var(--K);margin-bottom:1rem">🎨 Oficinas</div>
   <div id="oficinas-content"></div>
+</div>
+<div id="pane-encomendas" class="pane">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:1rem">
+    <div>
+      <div style="font-size:16px;font-weight:700;color:var(--K)">📦 Pedidos de Encomenda</div>
+      <div style="font-size:11px;color:var(--G3);margin-top:2px">Itens com estampa personalizada (cor + tamanho), gerados automaticamente a partir dos ganhos</div>
+    </div>
+  </div>
+  <div class="board-wrap"><div class="board" id="board-encomendas"></div></div>
 </div>
 </div>
 </div>
@@ -922,6 +936,8 @@ let motivoSel='', dragId=null, currentDetailId=null, detTimelineFilter='todos';
 let catalogo={estampas:[],cores:[],tamanhos:[],produtos:[]};
 let estoque=[];
 let estoqueProdutoAtual='';
+let encomendas=[];
+let dragEncomendaId=null;
 var pedidoItens=[];
 var editNegItens=[];
 
@@ -1130,6 +1146,156 @@ async function moverEstoquePedido(itens,sinal){
   }
 }
 
+// ── ENCOMENDAS (itens com estampa/cor/tamanho que precisam de produção) ──
+function addDiasUteis(isoDate,dias){
+  var d=new Date((isoDate||hojeISO())+'T12:00:00');
+  var add=0;
+  while(add<dias){
+    d.setDate(d.getDate()+1);
+    var dow=d.getDay();
+    if(dow!==0&&dow!==6)add++;
+  }
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+async function loadEncomendas(){
+  try{
+    var resp=await fetch(SB_URL+'/rest/v1/encomendas?select=*&order=prazo.asc',{headers:SB_HDR});
+    if(!resp.ok){console.warn('loadEncomendas HTTP error:',resp.status,await resp.text());return;}
+    var rows=await resp.json();
+    encomendas=(Array.isArray(rows)?rows:[]).map(function(r){
+      return{
+        id:r.id,contato_id:String(r.contato_id||''),contato_nome:String(r.contato_nome||''),
+        produto:String(r.produto||''),estampa:String(r.estampa||''),cor:String(r.cor||''),tamanho:String(r.tamanho||''),
+        qty:parseInt(r.qty)||1,data_pedido:normDate(r.data_pedido),prazo:normDate(r.prazo),
+        entregue:Boolean(r.entregue),data_entrega:normDate(r.data_entrega)
+      };
+    });
+  }catch(e){console.warn('loadEncomendas error:',e);}
+  updateEncomendasNotif();
+}
+
+// Gera uma encomenda para cada item do pedido que tenha cor+tamanho (peça sob produção,
+// diferente da peça lisa em estoque). Prazo padrão = 2 dias úteis a partir da data do ganho.
+async function criarEncomendasDoGanho(c,itensGanho,dataGanho){
+  var itensProducao=(itensGanho||[]).filter(function(it){return it&&it.cor&&it.tamanho;});
+  if(!itensProducao.length)return;
+  for(var i=0;i<itensProducao.length;i++){
+    var it=itensProducao[i];
+    try{
+      await fetch(SB_URL+'/rest/v1/encomendas',{
+        method:'POST',
+        headers:Object.assign({},SB_HDR,{'Prefer':'return=minimal'}),
+        body:JSON.stringify({
+          contato_id:c.id,contato_nome:c.nome,produto:it.produto||'',estampa:it.estampa||'',
+          cor:it.cor||'',tamanho:it.tamanho||'',qty:it.qty||1,
+          data_pedido:dataGanho,prazo:addDiasUteis(dataGanho,2),entregue:false
+        })
+      });
+    }catch(e){console.warn('criarEncomendasDoGanho error:',e);}
+  }
+  await loadEncomendas();
+}
+
+function encomendaStatus(o){
+  if(o.entregue)return'entregue';
+  if(o.prazo&&o.prazo<hojeISO())return'atrasado';
+  return'aberto';
+}
+
+async function apiSaveEncomenda(o){
+  try{
+    await fetch(SB_URL+'/rest/v1/encomendas?id=eq.'+o.id,{
+      method:'PATCH',headers:SB_HDR,
+      body:JSON.stringify({prazo:o.prazo,entregue:o.entregue,data_entrega:o.data_entrega||null})
+    });
+  }catch(e){console.warn('apiSaveEncomenda error:',e);}
+}
+
+async function editarPrazoEncomenda(id,novoPrazo){
+  var o=encomendas.find(function(x){return String(x.id)===String(id);});if(!o||!novoPrazo)return;
+  o.prazo=novoPrazo;
+  ss('ld','Salvando prazo...');
+  await apiSaveEncomenda(o);
+  await loadEncomendas();
+  renderEncomendas();
+  ss('ok',contatos.length+' contatos');
+}
+
+async function dropEncomenda(statusAlvo){
+  var id=dragEncomendaId;dragEncomendaId=null;if(!id)return;
+  var o=encomendas.find(function(x){return String(x.id)===String(id);});if(!o)return;
+  if(statusAlvo==='entregue'){o.entregue=true;o.data_entrega=hojeISO();}
+  else{o.entregue=false;o.data_entrega=null;}
+  ss('ld','Salvando...');
+  await apiSaveEncomenda(o);
+  await loadEncomendas();
+  renderEncomendas();
+  ss('ok',contatos.length+' contatos');
+}
+
+async function delEncomenda(id){
+  if(!confirm('Remover esta encomenda?'))return;
+  try{await sbDelete('encomendas',id);await loadEncomendas();renderEncomendas();}
+  catch(e){ss('er','Erro ao remover');}
+}
+
+function updateEncomendasNotif(){
+  var badge=document.getElementById('encomendas-notif-badge');if(!badge)return;
+  var n=encomendas.filter(function(o){return encomendaStatus(o)==='atrasado';}).length;
+  badge.style.display=n>0?'flex':'none';if(n>0)badge.textContent=String(n);
+}
+
+function encomendaCardHtml(o){
+  var status=encomendaStatus(o);
+  var desc=o.produto||'';
+  if(o.estampa)desc+=' &middot; '+o.estampa;
+  if(o.cor)desc+=' &middot; '+o.cor;
+  if(o.tamanho)desc+=' &middot; '+o.tamanho;
+  var atrasoHtml='';
+  if(status==='atrasado'){
+    var dias=diasAtras(o.prazo);
+    atrasoHtml='<div style="font-size:11px;color:var(--VM);font-weight:600;margin-top:4px">&#9888; '+dias+'d de atraso &middot; combinado p/ '+fmtDFull(o.prazo)+'</div>';
+  }
+  var entregueHtml=(o.entregue&&o.data_entrega)?'<div style="font-size:11px;color:var(--VD);font-weight:600;margin-top:4px">&#10003; Entregue em '+fmtDFull(o.data_entrega)+'</div>':'';
+  return'<div class="kc" draggable="true" data-id="'+o.id+'" data-tipo="encomenda">'
+    +'<div class="kc-nome kc-nome-link" onclick="openContatoDetail(\''+o.contato_id+'\')">'+o.contato_nome+'</div>'
+    +'<div class="kc-sub">'+desc+' &middot; &times;'+o.qty+'</div>'
+    +'<div style="font-size:11px;color:var(--G3);margin-top:4px">Pedido: '+fmtDFull(o.data_pedido)+'</div>'
+    +'<div style="font-size:11px;color:var(--K);margin-top:3px;display:flex;align-items:center;gap:5px">Prazo:'
+    +'<input type="date" class="fi" style="width:auto;padding:2px 5px;font-size:11px;height:auto" value="'+(o.prazo||'')+'" onmousedown="event.stopPropagation()" ondragstart="event.preventDefault();event.stopPropagation()" onchange="editarPrazoEncomenda('+o.id+',this.value)"></div>'
+    +atrasoHtml+entregueHtml
+    +'<div class="kc-actions"><div class="kc-left"></div><button class="btn xs danger" onclick="delEncomenda('+o.id+')">&#10005;</button></div>'
+    +'</div>';
+}
+
+function renderEncomendas(){
+  var board=document.getElementById('board-encomendas');if(!board)return;
+  board.innerHTML='';
+  var cols=[
+    {id:'aberto',nome:'&#128203; Pedidos',cor:'var(--A2)'},
+    {id:'atrasado',nome:'&#9888; Atrasados',cor:'var(--VM)'},
+    {id:'entregue',nome:'&#10003; Entregues',cor:'var(--VD)'}
+  ];
+  cols.forEach(function(col){
+    var itens=encomendas.filter(function(o){return encomendaStatus(o)===col.id;}).sort(function(a,b){return(a.prazo||'').localeCompare(b.prazo||'');});
+    var kcol=document.createElement('div');
+    kcol.className='kcol';kcol.dataset.status=col.id;
+    kcol.innerHTML='<div class="kcol-hdr"><div class="kcol-nome" style="color:'+col.cor+'">'+col.nome+'</div><span class="kcol-cnt">'+itens.length+'</span></div>'
+      +'<div class="kcol-body">'+(itens.length?itens.map(encomendaCardHtml).join(''):'<div class="empty" style="padding:1rem 0;font-size:12px">Nenhuma</div>')+'</div>';
+    var body=kcol.querySelector('.kcol-body');
+    body.addEventListener('dragover',function(e){e.preventDefault();kcol.classList.add('over');});
+    body.addEventListener('dragleave',function(e){if(!kcol.contains(e.relatedTarget))kcol.classList.remove('over');});
+    body.addEventListener('drop',function(e){e.preventDefault();kcol.classList.remove('over');if(dragEncomendaId)dropEncomenda(col.id==='entregue'?'entregue':'aberto');});
+    board.appendChild(kcol);
+  });
+  board.querySelectorAll('.kc[data-tipo="encomenda"]').forEach(function(el){
+    el.addEventListener('dragstart',function(e){if(e.target.closest('button')||e.target.closest('input')){e.preventDefault();return;}dragEncomendaId=el.dataset.id;el.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
+    el.addEventListener('dragend',function(){el.classList.remove('dragging');board.querySelectorAll('.kcol').forEach(function(c){c.classList.remove('over');});});
+  });
+  updateEncomendasNotif();
+}
+
 // ── SYNC ─────────────────────────────────────────────────
 async function doSync(){
   ss('ld','Sincronizando...');
@@ -1182,7 +1348,7 @@ async function apiSave(c){
 
 // ── TABS ─────────────────────────────────────────────────
 function showTab(id){
-  ['funil','contatos','insights','catalogo','config','aniversario','log','oficinas'].forEach(function(t){
+  ['funil','contatos','insights','catalogo','config','aniversario','log','oficinas','encomendas'].forEach(function(t){
     var btn=document.getElementById('snav-'+t);
     if(btn)btn.classList.toggle('active',t===id);
     var pane=document.getElementById('pane-'+t);
@@ -1196,6 +1362,7 @@ function showTab(id){
   if(id==='aniversario')renderAniversario();
   if(id==='log')renderLog();
   if(id==='oficinas')renderOficinas();
+  if(id==='encomendas')renderEncomendas();
 }
 
 // ── FILTROS DROPDOWN ─────────────────────────────────────
@@ -1458,6 +1625,7 @@ async function confirmarGanho(){
   try{
     await apiSave(c);
     await moverEstoquePedido(itensGanho,-1);
+    await criarEncomendasDoGanho(c,itensGanho,dataGanho);
     logAction('ganho_confirmado',c.nome+(valorNeg?' - R$'+valorNeg:'')+(fpNeg&&FORMA_PAG_LABEL[fpNeg]?' - '+FORMA_PAG_LABEL[fpNeg]:''));
     if(isSegundoGanhoD2c){await duplicarParaPissifaAuto(c);}
     await doSync();
@@ -3793,6 +3961,7 @@ async function iniciarApp(){
   try{await loadCfg();}catch(e){console.warn('loadCfg error:',e);}
   try{await loadCatalogo();}catch(e){console.warn('loadCatalogo error:',e);}
   try{await loadEstoque();}catch(e){console.warn('loadEstoque error:',e);}
+  try{await loadEncomendas();}catch(e){console.warn('loadEncomendas error:',e);}
   renderUbtns();
   try{await doSync();}catch(e){ss('er','Erro ao conectar — clique ↻ para tentar novamente');}
   try{await purgeLogs();}catch(e){}
