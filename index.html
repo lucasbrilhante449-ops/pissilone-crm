@@ -1092,7 +1092,7 @@ async function loadCatalogo(){
     catalogo={estampas:[],cores:[],tamanhos:[],produtos:[]};
     (Array.isArray(rows)?rows:[]).forEach(function(r){
       if(r.tipo==='estampa')catalogo.estampas.push({id:r.id,nome:r.nome});
-      else if(r.tipo==='cor')catalogo.cores.push({id:r.id,nome:r.nome});
+      else if(r.tipo==='cor')catalogo.cores.push({id:r.id,nome:r.nome,fotoUrl:r.foto_url||''});
       else if(r.tipo==='tamanho')catalogo.tamanhos.push({id:r.id,nome:r.nome});
       else if(r.tipo==='produto')catalogo.produtos.push({id:r.id,nome:r.nome,categoria:r.categoria||'',temVariacao:Boolean(r.tem_variacao),natureza:r.natureza||'produto'});
     });
@@ -3501,6 +3501,15 @@ function renderCatalogo(){
             }
           }
           h+='</div></div>';
+        }else if(tipo==='cor'){
+          var idEsc=String(item.id);
+          h+='<div style="display:flex;flex-direction:column;gap:4px;background:var(--G);border-radius:8px;padding:8px;width:100%">';
+          h+='<div style="display:flex;align-items:center;gap:6px">';
+          h+='<span style="font-size:12px;color:var(--K);font-weight:600;flex:1">'+item.nome+'</span>';
+          h+='<button class="btn xs danger" onclick="delCatalogoItem(\''+idEsc+'\',\''+tipo+'\')">&#10005;</button>';
+          h+='</div>';
+          h+='<input class="fi" style="font-size:10px;padding:3px 6px;height:auto" placeholder="📷 Link da foto (opcional)" value="'+(item.fotoUrl?item.fotoUrl.replace(/"/g,'&quot;'):'')+'" onchange="setFotoCor(\''+idEsc+'\',this.value)">';
+          h+='</div>';
         }else{
           var delChipBtn='<button class="btn xs danger" onclick="delCatalogoItem(\''+item.id+'\',\''+tipo+'\')">&#10005;</button>';
           h+='<div style="display:flex;align-items:center;gap:5px;background:var(--G);border-radius:20px;padding:5px 10px"><span style="font-size:12px;color:var(--K)">'+item.nome+'</span>'+delChipBtn+'</div>';
@@ -3588,6 +3597,14 @@ async function setVariacaoProduto(id,temVariacao){
     await loadCatalogo();
     renderCatalogo();
   }catch(e){ss('er','Erro ao salvar');}
+}
+
+async function setFotoCor(id,fotoUrl){
+  try{
+    await fetch(SB_URL+'/rest/v1/catalogo?id=eq.'+id,{method:'PATCH',headers:SB_HDR,body:JSON.stringify({foto_url:fotoUrl.trim()})});
+    await loadCatalogo();
+    renderCatalogo();
+  }catch(e){ss('er','Erro ao salvar foto');}
 }
 
 async function setNaturezaProduto(id,natureza){
