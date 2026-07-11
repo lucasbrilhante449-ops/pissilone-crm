@@ -930,8 +930,18 @@ const FORMA_PAG_LABEL={credito_vista:'Crédito à Vista',credito_parcelado:'Cré
 const FORMA_PAG_COR={credito_vista:'var(--L)',credito_parcelado:'var(--L2)',pix:'var(--A)',dinheiro:'var(--A2)',debito:'var(--AM)',bonificacao:'var(--VD)'};
 const CATEGORIA_LABEL={moda:'Moda',decor_home:'Decor/Home',acessorios:'Acessórios'};
 const CATEGORIA_COR={moda:'var(--L)',decor_home:'var(--A)',acessorios:'var(--VD)'};
+const TAMANHO_ORDEM=['infantil','pp','p','m','g','gg','xg','unico'];
 
 // ── HELPERS ──────────────────────────────────────────────
+function normTamanho(s){return String(s||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');}
+function ordenarTamanhos(lista){
+  return lista.slice().sort(function(a,b){
+    var ia=TAMANHO_ORDEM.indexOf(normTamanho(a.nome));if(ia===-1)ia=TAMANHO_ORDEM.length;
+    var ib=TAMANHO_ORDEM.indexOf(normTamanho(b.nome));if(ib===-1)ib=TAMANHO_ORDEM.length;
+    if(ia!==ib)return ia-ib;
+    return a.nome.localeCompare(b.nome);
+  });
+}
 function ss(s,m){document.getElementById('sdot').className='sdot'+(s==='ld'?' ld':s==='er'?' er':'');document.getElementById('stxt').textContent=m;}
 function getFunil(id){return cfg.funis.find(f=>f.id===id);}
 function getEtapa(fid,eid){const f=getFunil(fid);return f?f.etapas.find(e=>e.id===eid):null;}
@@ -1070,6 +1080,7 @@ async function loadCatalogo(){
       else if(r.tipo==='tamanho')catalogo.tamanhos.push({id:r.id,nome:r.nome});
       else if(r.tipo==='produto')catalogo.produtos.push({id:r.id,nome:r.nome,categoria:r.categoria||'',temVariacao:Boolean(r.tem_variacao),natureza:r.natureza||'produto'});
     });
+    catalogo.tamanhos=ordenarTamanhos(catalogo.tamanhos);
   }catch(e){console.warn('loadCatalogo error:',e);}
 }
 
