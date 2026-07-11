@@ -531,6 +531,16 @@ textarea.fi{resize:vertical;min-height:60px}
 </div>
 </div>
 
+<!-- MODAL ESTOQUE -->
+<div class="overlay" id="modal-estoque" style="display:none">
+<div class="modal" style="max-width:600px;max-height:90vh;overflow-y:auto">
+  <div class="mtitle"><span id="mest-title">Estoque</span><button class="mcl" onclick="closeM('modal-estoque')">&#10005;</button></div>
+  <div style="font-size:11px;color:var(--G3);margin-bottom:.75rem">Quantidade em estoque da peça lisa, por cor e tamanho. Edite o número da célula para atualizar. Sai automaticamente do estoque ao confirmar um ganho com essa cor/tamanho.</div>
+  <div id="estoque-grid"></div>
+  <div class="fb" id="fb-estoque"></div>
+</div>
+</div>
+
 <!-- MODAL PERDA -->
 <div class="overlay" id="modal-perda" style="display:none">
 <div class="modal">
@@ -910,6 +920,8 @@ let editCid=null, editFid=null, editEfid=null, editEid=null;
 let perdaCid=null, ganhoCid=null, atvCid=null, editNegCid=null, editNegIdx=null, editCampoId=null, editNegOrigin='detail';
 let motivoSel='', dragId=null, currentDetailId=null, detTimelineFilter='todos';
 let catalogo={estampas:[],cores:[],tamanhos:[],produtos:[]};
+let estoque=[];
+let estoqueProdutoAtual='';
 var pedidoItens=[];
 var editNegItens=[];
 
@@ -1059,6 +1071,52 @@ async function loadCatalogo(){
       else if(r.tipo==='produto')catalogo.produtos.push({id:r.id,nome:r.nome,categoria:r.categoria||'',temVariacao:Boolean(r.tem_variacao),natureza:r.natureza||'produto'});
     });
   }catch(e){console.warn('loadCatalogo error:',e);}
+}
+
+// ── ESTOQUE (camiseta lisa: produto + cor + tamanho) ──────
+async function loadEstoque(){
+  try{
+    var resp=await fetch(SB_URL+'/rest/v1/estoque?select=*&order=produto.asc,cor.asc,tamanho.asc',{headers:SB_HDR});
+    if(!resp.ok){console.warn('loadEstoque HTTP error:',resp.status,await resp.text());return;}
+    var rows=await resp.json();
+    estoque=(Array.isArray(rows)?rows:[]).map(function(r){
+      return{id:r.id,produto:String(r.produto||''),cor:String(r.cor||''),tamanho:String(r.tamanho||''),quantidade:parseInt(r.quantidade)||0};
+    });
+  }catch(e){console.warn('loadEstoque error:',e);}
+}
+
+function getEstoqueQtd(produto,cor,tamanho){
+  var row=estoque.find(function(e){return e.produto===produto&&e.cor===cor&&e.tamanho===tamanho;});
+  return row?row.quantidade:0;
+}
+
+async function upsertEstoque(produto,cor,tamanho,quantidade){
+  try{
+    await fetch(SB_URL+'/rest/v1/estoque?on_conflict=produto,cor,tamanho',{
+      method:'POST',
+      headers:Object.assign({},SB_HDR,{'Prefer':'resolution=merge-duplicates,return=representation'}),
+      body:JSON.stringify({produto:produto,cor:cor,tamanho:tamanho,quantidade:quantidade})
+    });
+    await loadEstoque();
+  }catch(e){console.warn('upsertEstoque error:',e);}
+}
+
+async function ajustarEstoque(produto,cor,tamanho,delta){
+  if(!produto||!cor||!tamanho||!delta)return;
+  var atual=getEstoqueQtd(produto,cor,tamanho);
+  await upsertEstoque(produto,cor,tamanho,atual+delta);
+}
+
+// Ajusta o estoque de todos os itens de um pedido que tenham cor+tamanho definidos
+// (estampa não importa — a peça lisa é a mesma). sinal=-1 (saída, ganho) ou +1 (volta, reabrir/edição)
+async function moverEstoquePedido(itens,sinal){
+  if(!Array.isArray(itens))return;
+  for(var i=0;i<itens.length;i++){
+    var it=itens[i];
+    if(it&&it.cor&&it.tamanho){
+      await ajustarEstoque(it.produto,it.cor,it.tamanho,sinal*(parseInt(it.qty)||1));
+    }
+  }
 }
 
 // ── SYNC ─────────────────────────────────────────────────
@@ -1377,7 +1435,8 @@ async function confirmarGanho(){
   var ganhosAnt=hist.filter(function(h){return h.r==='ganho';});
   var isSegundoGanhoD2c=ganhosAnt.length===1&&c.funil==='d2c';
   var dataGanho=(document.getElementById('f-neg-data')&&document.getElementById('f-neg-data').value)||hojeISO();
-  hist.push({r:'ganho',d:dataGanho,m:'',v:valorNeg,itens:pedidoItens.slice(),nf:false,fp:fpNeg});
+  var itensGanho=pedidoItens.slice();
+  hist.push({r:'ganho',d:dataGanho,m:'',v:valorNeg,itens:itensGanho,nf:false,fp:fpNeg});
   c.neg_hist=JSON.stringify(hist);
   c.valor=valorNeg;c.et='fechado';c.motivo_perda='';c.resultado='';
   if(c.funil==='pissifa'){c.etapa='psf-ativo';}
@@ -1387,6 +1446,7 @@ async function confirmarGanho(){
   ss('ld','Salvando...');
   try{
     await apiSave(c);
+    await moverEstoquePedido(itensGanho,-1);
     logAction('ganho_confirmado',c.nome+(valorNeg?' - R$'+valorNeg:'')+(fpNeg&&FORMA_PAG_LABEL[fpNeg]?' - '+FORMA_PAG_LABEL[fpNeg]:''));
     if(isSegundoGanhoD2c){await duplicarParaPissifaAuto(c);}
     await doSync();
@@ -1436,9 +1496,14 @@ async function duplicarCard(id){
 async function reabrirCard(){
   if(!editCid)return;const c=contatos.find(x=>x.id===editCid);if(!c)return;
   if(!confirm('Reabrir card? O último resultado será removido do histórico.'))return;
-  const hist=parseNegHist(c);if(hist.length>0)hist.pop();
+  const hist=parseNegHist(c);const ultimo=hist.length>0?hist[hist.length-1]:null;if(hist.length>0)hist.pop();
   c.neg_hist=JSON.stringify(hist);c.resultado='';c.et='atendimento';c.motivo_perda='';
-  ss('ld','Reabrindo...');try{await apiSave(c);await doSync();closeM('modal-c');}catch(ex){ss('er','Erro');}
+  ss('ld','Reabrindo...');
+  try{
+    await apiSave(c);
+    if(ultimo&&ultimo.r==='ganho')await moverEstoquePedido(ultimo.itens,1);
+    await doSync();closeM('modal-c');
+  }catch(ex){ss('er','Erro');}
 }
 
 // ── ATIVIDADE ────────────────────────────────────────────
@@ -2835,11 +2900,15 @@ async function saveEditNeg(){
   if(!editNegItens.length){setFb('fb-editneg','Adicione ao menos um produto','er');return;}
   var fpEdit=(document.getElementById('f-editneg-fp')||{value:''}).value;
   if(!fpEdit){setFb('fb-editneg','Selecione a forma de pagamento','er');return;}
-  neg.d=novaData;neg.v=novoValor;neg.itens=editNegItens.slice();neg.fp=fpEdit;
+  var itensAntigos=(neg.itens||[]).slice();
+  var itensNovos=editNegItens.slice();
+  neg.d=novaData;neg.v=novoValor;neg.itens=itensNovos;neg.fp=fpEdit;
   c.neg_hist=JSON.stringify(hist);
   setFb('fb-editneg','Salvando...','info');
   try{
     await apiSave(c);
+    await moverEstoquePedido(itensAntigos,1);
+    await moverEstoquePedido(itensNovos,-1);
     closeM('modal-edit-neg');
     var savedCid=editNegCid;
     var origem=editNegOrigin;
@@ -3233,6 +3302,10 @@ function renderCatalogo(){
             Object.keys(CATEGORIA_LABEL).forEach(function(ck){h+='<option value="'+ck+'"'+(item.categoria===ck?' selected':'')+'>'+CATEGORIA_LABEL[ck]+'</option>';});
             h+='</select>';
             h+='<label style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--G3);cursor:pointer"><input type="checkbox"'+(item.temVariacao?' checked':'')+' onchange="setVariacaoProduto(\''+item.id+'\',this.checked)"> estampa/cor/tam.</label>';
+            if(item.temVariacao){
+              var nomeEsc=item.nome.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+              h+='<button class="btn xs" onclick="openEstoqueModal(\''+nomeEsc+'\')">📦 Estoque</button>';
+            }
           }
           h+='</div></div>';
         }else{
@@ -3341,6 +3414,49 @@ async function delCatalogoItem(id,tipo){
     await loadCatalogo();
     renderCatalogo();
   }catch(ex){ss('er','Erro ao remover');}
+}
+
+// ── MODAL ESTOQUE (produto lisa: cor x tamanho) ───────────
+function openEstoqueModal(produtoNome){
+  estoqueProdutoAtual=produtoNome;
+  document.getElementById('mest-title').textContent='Estoque — '+produtoNome;
+  document.getElementById('fb-estoque').textContent='';
+  renderEstoqueGrid();
+  document.getElementById('modal-estoque').style.display='flex';
+}
+
+function renderEstoqueGrid(){
+  var el=document.getElementById('estoque-grid');if(!el)return;
+  var cores=catalogo.cores,tamanhos=catalogo.tamanhos;
+  if(!cores.length||!tamanhos.length){
+    el.innerHTML='<div style="font-size:12px;color:var(--G3);text-align:center;padding:1rem 0">Cadastre cores e tamanhos no catálogo antes de controlar o estoque.</div>';
+    return;
+  }
+  var h='<div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%;font-size:12px">';
+  h+='<tr><th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--G2)">Cor / Tam.</th>';
+  tamanhos.forEach(function(t){h+='<th style="padding:4px 8px;border-bottom:1px solid var(--G2)">'+t.nome+'</th>';});
+  h+='</tr>';
+  cores.forEach(function(cItem){
+    h+='<tr><td style="padding:4px 8px;font-weight:600;color:var(--K);border-bottom:1px solid var(--G2);white-space:nowrap">'+cItem.nome+'</td>';
+    tamanhos.forEach(function(tItem){
+      var qtd=getEstoqueQtd(estoqueProdutoAtual,cItem.nome,tItem.nome);
+      var estilo=qtd<=0?'color:var(--VM);font-weight:600':'color:var(--K)';
+      var corEsc=cItem.nome.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      var tamEsc=tItem.nome.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      h+='<td style="padding:4px 8px;border-bottom:1px solid var(--G2);text-align:center"><input type="number" class="fi" style="width:64px;text-align:center;padding:2px 4px;'+estilo+'" value="'+qtd+'" onchange="salvarEstoqueCelula(\''+corEsc+'\',\''+tamEsc+'\',this.value)"></td>';
+    });
+    h+='</tr>';
+  });
+  h+='</table></div>';
+  el.innerHTML=h;
+}
+
+async function salvarEstoqueCelula(cor,tamanho,valor){
+  var qtd=parseInt(valor)||0;
+  setFb('fb-estoque','Salvando...','info');
+  await upsertEstoque(estoqueProdutoAtual,cor,tamanho,qtd);
+  renderEstoqueGrid();
+  setFb('fb-estoque','Estoque atualizado','ok');
 }
 function openFunilModal(fid=null){editFid=fid;const f=fid?getFunil(fid):null;document.getElementById('mf-title').textContent=fid?'Renomear funil':'Novo funil';document.getElementById('f-funil-nome').value=f?f.nome:'';document.getElementById('fb-f').textContent='';document.getElementById('modal-funil').style.display='flex';}
 async function saveFunil(){
@@ -3665,6 +3781,7 @@ async function iniciarApp(){
   ss('ld','Carregando...');
   try{await loadCfg();}catch(e){console.warn('loadCfg error:',e);}
   try{await loadCatalogo();}catch(e){console.warn('loadCatalogo error:',e);}
+  try{await loadEstoque();}catch(e){console.warn('loadEstoque error:',e);}
   renderUbtns();
   try{await doSync();}catch(e){ss('er','Erro ao conectar — clique ↻ para tentar novamente');}
   try{await purgeLogs();}catch(e){}
