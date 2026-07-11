@@ -1165,7 +1165,7 @@ async function loadEncomendas(){
     var rows=await resp.json();
     encomendas=(Array.isArray(rows)?rows:[]).map(function(r){
       return{
-        id:r.id,contato_id:String(r.contato_id||''),contato_nome:String(r.contato_nome||''),
+        id:r.id,contato_id:String(r.contato_id||''),contato_nome:String(r.contato_nome||''),venda_id:String(r.venda_id||''),
         produto:String(r.produto||''),estampa:String(r.estampa||''),cor:String(r.cor||''),tamanho:String(r.tamanho||''),
         qty:parseInt(r.qty)||1,data_pedido:normDate(r.data_pedido),prazo:normDate(r.prazo),
         entregue:Boolean(r.entregue),data_entrega:normDate(r.data_entrega)
@@ -1177,7 +1177,7 @@ async function loadEncomendas(){
 
 // Gera uma encomenda para cada item do pedido que tenha cor+tamanho (peça sob produção,
 // diferente da peça lisa em estoque). Prazo padrão = 2 dias úteis a partir da data do ganho.
-async function criarEncomendasDoGanho(c,itensGanho,dataGanho){
+async function criarEncomendasDoGanho(c,itensGanho,dataGanho,vendaId){
   var itensProducao=(itensGanho||[]).filter(function(it){return it&&it.cor&&it.tamanho;});
   if(!itensProducao.length)return;
   for(var i=0;i<itensProducao.length;i++){
@@ -1187,7 +1187,7 @@ async function criarEncomendasDoGanho(c,itensGanho,dataGanho){
         method:'POST',
         headers:Object.assign({},SB_HDR,{'Prefer':'return=minimal'}),
         body:JSON.stringify({
-          contato_id:c.id,contato_nome:c.nome,produto:it.produto||'',estampa:it.estampa||'',
+          contato_id:c.id,contato_nome:c.nome,venda_id:vendaId||'',produto:it.produto||'',estampa:it.estampa||'',
           cor:it.cor||'',tamanho:it.tamanho||'',qty:it.qty||1,
           data_pedido:dataGanho,prazo:addDiasUteis(dataGanho,2),entregue:false
         })
@@ -1195,6 +1195,16 @@ async function criarEncomendasDoGanho(c,itensGanho,dataGanho){
     }catch(e){console.warn('criarEncomendasDoGanho error:',e);}
   }
   await loadEncomendas();
+}
+
+// Remove as encomendas ligadas a um Ganho desfeito (reabrirCard()) — evita produzir
+// peça de uma venda que foi revertida (desistência ou ganho marcado sem querer).
+async function removerEncomendasDoGanho(vendaId){
+  if(!vendaId)return;
+  try{
+    await fetch(SB_URL+'/rest/v1/encomendas?venda_id=eq.'+encodeURIComponent(vendaId),{method:'DELETE',headers:SB_HDR});
+    await loadEncomendas();
+  }catch(e){console.warn('removerEncomendasDoGanho error:',e);}
 }
 
 function encomendaStatus(o){
@@ -1614,7 +1624,8 @@ async function confirmarGanho(){
   var isSegundoGanhoD2c=ganhosAnt.length===1&&c.funil==='d2c';
   var dataGanho=(document.getElementById('f-neg-data')&&document.getElementById('f-neg-data').value)||hojeISO();
   var itensGanho=pedidoItens.slice();
-  hist.push({r:'ganho',d:dataGanho,m:'',v:valorNeg,itens:itensGanho,nf:false,fp:fpNeg});
+  var vendaId=c.id+'_'+Date.now();
+  hist.push({r:'ganho',d:dataGanho,m:'',v:valorNeg,itens:itensGanho,nf:false,fp:fpNeg,venda_id:vendaId});
   c.neg_hist=JSON.stringify(hist);
   c.valor=valorNeg;c.et='fechado';c.motivo_perda='';c.resultado='';
   if(c.funil==='pissifa'){c.etapa='psf-ativo';}
@@ -1625,7 +1636,7 @@ async function confirmarGanho(){
   try{
     await apiSave(c);
     await moverEstoquePedido(itensGanho,-1);
-    await criarEncomendasDoGanho(c,itensGanho,dataGanho);
+    await criarEncomendasDoGanho(c,itensGanho,dataGanho,vendaId);
     logAction('ganho_confirmado',c.nome+(valorNeg?' - R$'+valorNeg:'')+(fpNeg&&FORMA_PAG_LABEL[fpNeg]?' - '+FORMA_PAG_LABEL[fpNeg]:''));
     if(isSegundoGanhoD2c){await duplicarParaPissifaAuto(c);}
     await doSync();
@@ -1680,7 +1691,10 @@ async function reabrirCard(){
   ss('ld','Reabrindo...');
   try{
     await apiSave(c);
-    if(ultimo&&ultimo.r==='ganho')await moverEstoquePedido(ultimo.itens,1);
+    if(ultimo&&ultimo.r==='ganho'){
+      await moverEstoquePedido(ultimo.itens,1);
+      await removerEncomendasDoGanho(ultimo.venda_id);
+    }
     await doSync();closeM('modal-c');
   }catch(ex){ss('er','Erro');}
 }
