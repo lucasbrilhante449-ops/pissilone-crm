@@ -1,0 +1,10 @@
+{
+  "crons": [
+    { "path": "/api/cron/aniversarios", "schedule": "0 12 * * *" },
+    { "path": "/api/cron/pontos-contato", "schedule": "0 12 * * *" }
+  ],
+  "rewrites": [
+    { "source": "/avaliacao", "destination": "/api/avaliacao" },
+    { "source": "/avaliacao-enviar", "destination": "/api/avaliacao-enviar" }
+  ]
+}
