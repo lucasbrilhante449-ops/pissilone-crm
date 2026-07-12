@@ -34,19 +34,21 @@ module.exports = async (req, res) => {
     await patchContatoMeta(row.contato_id, { nps: nota });
     await logAction('nps_registrado', (row.contato_nome || row.contato_id) + ' - nota ' + nota);
 
+    const primeiroNome = (row.contato_nome || '').trim().split(/\s+/)[0] || '';
+
     if (nota > 8) {
       const corpo = `
         <div class="emoji">🎉</div>
-        <h1>Muito obrigada pela nota!</h1>
-        <p>Fico muito feliz que você teve uma boa experiência com a gente. Se puder, adoraríamos que deixasse uma avaliação no Google — ajuda demais a Pissilone a crescer.</p>
+        <h1>Eita que coisa boa!</h1>
+        <p>Ficamos todos tão felizes com essa sua nota. Nesse caso, sua opinião nos ajuda demais a sermos vistos. Você consegue deixar uma avaliação no Google da Pissilone? Leva no máximo 2 minutos, e eu te prometo pessoalmente um desconto de 10% na sua próxima compra. 💛 É só acessar o link:</p>
         <a class="btn-google" href="${GOOGLE_REVIEW_LINK}" target="_blank" rel="noopener">Avaliar no Google</a>
       `;
       res.status(200).send(renderPage('Obrigada!', corpo));
     } else {
       const corpo = `
         <div class="emoji">💛</div>
-        <h1>Obrigada pelo feedback!</h1>
-        <p>Sua opinião é muito importante pra gente melhorar cada vez mais. Um abraço da equipe Pissilone!</p>
+        <h1>${primeiroNome ? `Eita, ${primeiroNome}.` : 'Eita!'}</h1>
+        <p>Eu agradeço muito seu feedback, mas como uma das coisas que mais prezamos é a sua experiência, nos conta o que faltou para chegarmos ao 10.</p>
       `;
       res.status(200).send(renderPage('Obrigada!', corpo));
     }
