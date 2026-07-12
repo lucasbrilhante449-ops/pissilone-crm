@@ -3656,19 +3656,28 @@ function renderEstoqueGrid(){
   h+='<tr><th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--G2)">Cor / Tam.</th>';
   tamanhos.forEach(function(t){h+='<th style="padding:4px 8px;border-bottom:1px solid var(--G2)">'+t.nome+'</th>';});
   h+='</tr>';
-  cores.forEach(function(cItem){
+  cores.forEach(function(cItem,rIdx){
     h+='<tr><td style="padding:4px 8px;font-weight:600;color:var(--K);border-bottom:1px solid var(--G2);white-space:nowrap">'+cItem.nome+'</td>';
-    tamanhos.forEach(function(tItem){
+    tamanhos.forEach(function(tItem,cIdx){
       var qtd=getEstoqueQtd(estoqueProdutoAtual,cItem.nome,tItem.nome);
       var estilo=qtd<=0?'color:var(--VM);font-weight:600':'color:var(--K)';
       var corEsc=cItem.nome.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
       var tamEsc=tItem.nome.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-      h+='<td style="padding:4px 8px;border-bottom:1px solid var(--G2);text-align:center"><input type="number" class="fi" style="width:64px;text-align:center;padding:2px 4px;'+estilo+'" value="'+qtd+'" onchange="salvarEstoqueCelula(\''+corEsc+'\',\''+tamEsc+'\',this.value)"></td>';
+      h+='<td style="padding:4px 8px;border-bottom:1px solid var(--G2);text-align:center"><input type="number" id="est-cel-'+rIdx+'-'+cIdx+'" class="fi" style="width:64px;text-align:center;padding:2px 4px;'+estilo+'" value="'+qtd+'" onchange="salvarEstoqueCelula(\''+corEsc+'\',\''+tamEsc+'\',this.value)" onkeydown="estoqueGridNav(event,'+rIdx+','+cIdx+')"></td>';
     });
     h+='</tr>';
   });
   h+='</table></div>';
   el.innerHTML=h;
+}
+
+function estoqueGridNav(e,r,c){
+  var alvo={ArrowUp:[r-1,c],ArrowDown:[r+1,c],ArrowLeft:[r,c-1],ArrowRight:[r,c+1]}[e.key];
+  if(!alvo)return;
+  var next=document.getElementById('est-cel-'+alvo[0]+'-'+alvo[1]);
+  if(!next)return;
+  e.preventDefault();
+  next.focus();next.select();
 }
 
 async function salvarEstoqueCelula(cor,tamanho,valor){
