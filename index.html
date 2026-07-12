@@ -1335,7 +1335,8 @@ async function doSync(){
         nps:(meta.nps!==undefined&&meta.nps!==null&&meta.nps!=='')?parseInt(meta.nps):null,
         campos:(meta.campos&&typeof meta.campos==='object'&&!Array.isArray(meta.campos))?meta.campos:{},
         oficinas_hist:Array.isArray(meta.oficinas_hist)?meta.oficinas_hist:[],
-        oficina_atual:String(meta.oficina_atual||'')
+        oficina_atual:String(meta.oficina_atual||''),
+        aniversario_ano_enviado:String(meta.aniversario_ano_enviado||'')
       };
     });
     ss('ok',contatos.length+' contato'+(contatos.length!==1?'s':''));
@@ -1352,7 +1353,7 @@ async function apiSave(c){
     atv_desc:c.atv_desc||'',resultado:c.resultado||'',
     atv_hist:c.atv_hist||0,neg_hist:c.neg_hist||'',
     aniversario:c.aniversario||null,cod_marketup:c.cod_marketup||'',nf_emitida:c.nf_emitida||false,
-    meta:JSON.stringify({email:c.email||'',cpf:c.cpf||'',endereco:c.endereco||'',notas:c.notas||'',log_hist:c.log_hist||[],campos:c.campos||{},cidade:c.cidade||'',uf:c.uf||'',cep:c.cep||'',nps:(c.nps!=null)?c.nps:null,oficinas_hist:c.oficinas_hist||[],oficina_atual:c.oficina_atual||''})
+    meta:JSON.stringify({email:c.email||'',cpf:c.cpf||'',endereco:c.endereco||'',notas:c.notas||'',log_hist:c.log_hist||[],campos:c.campos||{},cidade:c.cidade||'',uf:c.uf||'',cep:c.cep||'',nps:(c.nps!=null)?c.nps:null,oficinas_hist:c.oficinas_hist||[],oficina_atual:c.oficina_atual||'',aniversario_ano_enviado:c.aniversario_ano_enviado||''})
   });
 }
 
@@ -1937,7 +1938,8 @@ async function saveContato(){
     nps:prev.nps!=null?prev.nps:null,
     log_hist:Array.isArray(prev.log_hist)?prev.log_hist.slice():[],
     oficinas_hist:Array.isArray(prev.oficinas_hist)?prev.oficinas_hist.slice():[],
-    oficina_atual:fid==='servicos'?document.getElementById('f-produto').value.trim():(prev.oficina_atual||'')
+    oficina_atual:fid==='servicos'?document.getElementById('f-produto').value.trim():(prev.oficina_atual||''),
+    aniversario_ano_enviado:prev.aniversario_ano_enviado||''
   };
   if(editCid&&prev.canal&&prev.canal!==c.canal){
     c.log_hist.push({tipo:'canal_atualizado',d:new Date().toISOString(),txt:'Canal atualizado para '+(CANAL_LABEL[c.canal]||c.canal)});
@@ -3668,7 +3670,12 @@ function renderEstoqueGrid(){
     h+='</tr>';
   });
   h+='</table></div>';
+  var focoAtualId=(document.activeElement&&document.activeElement.id&&document.activeElement.id.indexOf('est-cel-')===0)?document.activeElement.id:'';
   el.innerHTML=h;
+  if(focoAtualId){
+    var elFoco=document.getElementById(focoAtualId);
+    if(elFoco){elFoco.focus();elFoco.select();}
+  }
 }
 
 function estoqueGridNav(e,r,c){
@@ -3784,7 +3791,8 @@ function markBdaySent(cid){
 function updateBdayNotif(){
   var todayBdays=getTodayBirthdays();
   var sent=getBdaySentToday();
-  var pending=todayBdays.filter(function(c){return !sent[c.id];});
+  var anoAtual=hojeISO().slice(0,4);
+  var pending=todayBdays.filter(function(c){return !sent[c.id]&&c.aniversario_ano_enviado!==anoAtual;});
   var badge=document.getElementById('bday-notif-badge');
   if(badge){badge.style.display=pending.length>0?'flex':'none';if(pending.length>0)badge.textContent=String(pending.length);}
 }
@@ -3803,7 +3811,7 @@ function renderAniversario(){
     h+='<div style="background:var(--AM2);border:1px solid var(--AM);border-radius:10px;padding:.875rem 1rem;margin-bottom:1rem">';
     h+='<div style="font-size:11px;font-weight:700;color:var(--AM);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem">&#127881; Aniversariante'+(todayList.length>1?'s':'')+' de Hoje</div>';
     todayList.forEach(function(c){
-      var jaSent=sent[c.id];
+      var jaSent=sent[c.id]||(c.aniversario_ano_enviado===hj.slice(0,4));
       var aniv=normDate(c.aniversario);
       var anoNasc=aniv?aniv.slice(0,4):'';
       var anoAtual=hj.slice(0,4);
