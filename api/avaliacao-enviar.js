@@ -1,9 +1,15 @@
 // Grava a nota escolhida em /avaliacao. Idempotente: um token só pode ser respondido
-// uma vez (respondido_em trava reenvio/alteração da nota). Espelha a nota em
-// contatos.meta.nps pra alimentar o card de NPS que já existe na aba Insights do CRM,
-// sem precisar de UI nova.
+// uma vez (respondido_em trava reenvio/alteração da nota). Grava a nota no campo
+// personalizado "NPS - Experiência" (o mesmo que aparece no card do contato e alimenta
+// o NPS da aba Insights — getNps() no navegador prioriza campo personalizado sobre
+// contatos.nps) e, quando a nota é >8, marca "Fez avaliação no Google?" como "Pedido de
+// avaliação feito". Também espelha em contatos.meta.nps como fallback, caso algum
+// desses campos personalizados seja renomeado/apagado depois.
 
-const { sbGet, sbPatch, patchContatoMeta, logAction, GOOGLE_REVIEW_LINK } = require('./_lib/supabase');
+const {
+  sbGet, sbPatch, patchContatoMeta, patchContatoCampos, loadCfg, acharCampoPorNome,
+  logAction, GOOGLE_REVIEW_LINK,
+} = require('./_lib/supabase');
 const { renderPage } = require('./_lib/page');
 
 module.exports = async (req, res) => {
@@ -32,6 +38,15 @@ module.exports = async (req, res) => {
 
     await sbPatch('pontos_contato', `id=eq.${encodeURIComponent(tok)}`, { nota, respondido_em: new Date().toISOString() });
     await patchContatoMeta(row.contato_id, { nps: nota });
+
+    const cfg = await loadCfg();
+    const campoNps = acharCampoPorNome(cfg, (n) => n.includes('nps'));
+    const campoGoogle = acharCampoPorNome(cfg, (n) => n.includes('google'));
+    const camposUpdate = {};
+    if (campoNps) camposUpdate[campoNps.id] = String(nota);
+    if (campoGoogle && nota > 8) camposUpdate[campoGoogle.id] = 'Pedido de avaliação feito';
+    if (Object.keys(camposUpdate).length) await patchContatoCampos(row.contato_id, camposUpdate);
+
     await logAction('nps_registrado', (row.contato_nome || row.contato_id) + ' - nota ' + nota);
 
     const primeiroNome = (row.contato_nome || '').trim().split(/\s+/)[0] || '';

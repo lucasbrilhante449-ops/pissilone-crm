@@ -78,6 +78,33 @@ async function patchContatoMeta(id, partialMeta) {
   await sbPatch('contatos', `id=eq.${encodeURIComponent(id)}`, { meta: JSON.stringify(novo) });
 }
 
+// Mesma ideia, mas faz merge dentro de meta.campos (valores dos campos personalizados,
+// por id) sem apagar os outros campos preenchidos nem o resto de meta.
+async function patchContatoCampos(id, partialCampos) {
+  const rows = await sbGet('contatos', `id=eq.${encodeURIComponent(id)}&select=meta`);
+  const atual = rows && rows[0] ? parseMeta(rows[0]) : {};
+  const camposAtuais = (atual.campos && typeof atual.campos === 'object' && !Array.isArray(atual.campos)) ? atual.campos : {};
+  const novo = { ...atual, campos: { ...camposAtuais, ...partialCampos } };
+  await sbPatch('contatos', `id=eq.${encodeURIComponent(id)}`, { meta: JSON.stringify(novo) });
+}
+
+// Espelha loadCfg()/getFunil() do navegador — usado pra achar campos personalizados
+// PELO NOME (nunca por id fixo, já que o usuário pode renomear/recriar em Config).
+async function loadCfg() {
+  const rows = await sbGet('config', 'id=eq.1&select=dados');
+  try {
+    const cfg = JSON.parse(rows && rows[0] ? rows[0].dados : '{}');
+    if (!Array.isArray(cfg.campos_personalizados)) cfg.campos_personalizados = [];
+    return cfg;
+  } catch (e) {
+    return { campos_personalizados: [] };
+  }
+}
+
+function acharCampoPorNome(cfg, matcher) {
+  return (cfg.campos_personalizados || []).find((c) => matcher(String(c.nome || '').toLowerCase()));
+}
+
 async function logAction(action, details) {
   try { await sbPost('usage_log', { action, details: details || '' }); } catch (e) { /* fire-and-forget */ }
 }
@@ -112,6 +139,7 @@ module.exports = {
   GOOGLE_REVIEW_LINK,
   sbGet, sbPatch, sbPost,
   hojeISO, diasDesde, normTel,
-  parseNegHist, parseMeta, patchContatoMeta,
+  parseNegHist, parseMeta, patchContatoMeta, patchContatoCampos,
+  loadCfg, acharCampoPorNome,
   logAction, enviarWhatsapp, autorizadoCron,
 };
