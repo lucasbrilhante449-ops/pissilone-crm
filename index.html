@@ -3674,9 +3674,9 @@ function renderEstoqueGrid(){
 function estoqueGridNav(e,r,c){
   var alvo={ArrowUp:[r-1,c],ArrowDown:[r+1,c],ArrowLeft:[r,c-1],ArrowRight:[r,c+1]}[e.key];
   if(!alvo)return;
+  e.preventDefault();
   var next=document.getElementById('est-cel-'+alvo[0]+'-'+alvo[1]);
   if(!next)return;
-  e.preventDefault();
   next.focus();next.select();
 }
 
