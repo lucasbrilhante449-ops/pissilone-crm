@@ -1629,7 +1629,10 @@ async function confirmarGanho(){
   c.neg_hist=JSON.stringify(hist);
   c.valor=valorNeg;c.et='fechado';c.motivo_perda='';c.resultado='';
   if(c.funil==='pissifa'){c.etapa='psf-ativo';}
-  else if(c.funil==='d2c'){c.etapa='d2c-cn';}
+  else if(c.funil==='d2c'){
+    var movidoPissifa=isSegundoGanhoD2c&&moverParaPissifaAuto(c);
+    if(!movidoPissifa)c.etapa='d2c-cn';
+  }
   else if(c.funil==='servicos'){var eidInscrito=acharEtapaServicosPorNome(function(n){return n.includes('inscrito');});if(eidInscrito)c.etapa=eidInscrito;registrarParticipacao(c,'inscrito');}
   closeM('modal-valor-neg');pedidoItens=[];
   ss('ld','Salvando...');
@@ -1638,7 +1641,6 @@ async function confirmarGanho(){
     await moverEstoquePedido(itensGanho,-1);
     await criarEncomendasDoGanho(c,itensGanho,dataGanho,vendaId);
     logAction('ganho_confirmado',c.nome+(valorNeg?' - R$'+valorNeg:'')+(fpNeg&&FORMA_PAG_LABEL[fpNeg]?' - '+FORMA_PAG_LABEL[fpNeg]:''));
-    if(isSegundoGanhoD2c){await duplicarParaPissifaAuto(c);}
     await doSync();
     var insPane=document.getElementById('pane-insights');
     if(insPane&&insPane.classList.contains('active'))renderInsights();
@@ -1646,12 +1648,16 @@ async function confirmarGanho(){
   ganhoCid=null;
 }
 
-async function duplicarParaPissifaAuto(orig){
-  var funilPsf=getFunil('pissifa');if(!funilPsf)return;
-  var jaExiste=orig.tel&&contatos.some(function(x){return x.funil==='pissifa'&&x.tel===orig.tel;});
-  if(jaExiste)return;
-  var novo={id:String(Date.now()),nome:orig.nome,tel:orig.tel,et:'atendimento',canal:orig.canal,valor:orig.valor,produto:orig.produto,obs:orig.obs,data:new Date().toISOString(),compras:orig.compras,funil:'pissifa',etapa:funilPsf.etapas[0].id,usuario:orig.usuario,followup:'',motivo_perda:'',atv_data:'',atv_desc:'',resultado:'',atv_hist:0,neg_hist:'',email:orig.email||'',cpf:orig.cpf||'',endereco:orig.endereco||'',aniversario:orig.aniversario||'',notas:orig.notas||'',cod_marketup:orig.cod_marketup||'',nf_emitida:false};
-  await apiSave(novo);
+// Move (não duplica) o card do D2C pro Pissifã na 2ª compra, mantendo id/neg_hist únicos.
+// Se já existir outro card do mesmo telefone no Pissifã (ex: duplicado por uma venda antiga,
+// antes dessa mudança), não mexe — evita criar um 2º card no Pissifã pro mesmo cliente.
+function moverParaPissifaAuto(c){
+  var funilPsf=getFunil('pissifa');if(!funilPsf)return false;
+  var jaExiste=c.tel&&contatos.some(function(x){return x.id!==c.id&&x.funil==='pissifa'&&x.tel===c.tel;});
+  if(jaExiste)return false;
+  c.funil='pissifa';
+  c.etapa=funilPsf.etapas[0].id;
+  return true;
 }
 
 async function confirmPerda(){
@@ -2131,17 +2137,21 @@ function renderInsights(){
   baseContatos.forEach(function(c){
     var fb=c.data?c.data.slice(0,10):'';
     var negHist=parseNegHist(c);
-    negHist.forEach(function(x){allNegs.push({r:x.r,d:x.d||fb,m:x.m,v:x.v,itens:x.itens||[],fp:x.fp||'',cid:c.id,funil:c.funil,usuario:c.usuario});});
+    negHist.forEach(function(x){allNegs.push({r:x.r,d:x.d||fb,m:x.m,v:x.v,itens:x.itens||[],fp:x.fp||'',cid:c.id,tel:c.tel,funil:c.funil,usuario:c.usuario});});
     // Contatos em "Cliente Novo" (D2C) ou "Fechado" (B2B) sem entrada formal de ganho = ganho implícito
     var temGanho=negHist.some(function(x){return x.r==='ganho';});
     var eAlvo=getEtapa(c.funil,c.etapa);var nAlvo=eAlvo?eAlvo.nome.toLowerCase():'';
     var isGanhoFinal=nAlvo.includes('cliente novo')||nAlvo.includes('fechado')||c.etapa==='d2c-cn'||c.etapa==='b2b-fech';
-    if(!temGanho&&isGanhoFinal){allNegs.push({r:'ganho',d:fb,m:'',v:c.valor||0,itens:[],cid:c.id,funil:c.funil,usuario:c.usuario});}
+    if(!temGanho&&isGanhoFinal){allNegs.push({r:'ganho',d:fb,m:'',v:c.valor||0,itens:[],cid:c.id,tel:c.tel,funil:c.funil,usuario:c.usuario});}
   });
   if(iFunil!=='todos')allNegs=allNegs.filter(function(n){return n.funil===iFunil;});
   var ganhosPorCliente={};
-  allNegs.forEach(function(n){if(n.r!=='ganho')return;if(n.funil==='pissifa')return;if(!ganhosPorCliente[n.cid])ganhosPorCliente[n.cid]=[];ganhosPorCliente[n.cid].push(n.d);});
-  var primeiraCompraList=Object.keys(ganhosPorCliente).map(function(cid){var datas=ganhosPorCliente[cid].filter(Boolean).sort();return{d:datas[0]};});
+  // Agrupado por telefone (não por id de card): desde que o card passou a MOVER pro Pissifã na
+  // 2ª compra (em vez de duplicar), a 1ª compra pode acabar "dentro" de um card hoje com
+  // funil==='pissifa'. Agrupar por telefone garante 1 "primeira compra" por cliente real, e ainda
+  // funciona pra cards antigos duplicados (mesmo telefone em 2 cards = mesma chave, sem contar 2x).
+  allNegs.forEach(function(n){if(n.r!=='ganho')return;var chave=n.tel||n.cid;if(!ganhosPorCliente[chave])ganhosPorCliente[chave]=[];ganhosPorCliente[chave].push(n.d);});
+  var primeiraCompraList=Object.keys(ganhosPorCliente).map(function(chave){var datas=ganhosPorCliente[chave].filter(Boolean).sort();return{d:datas[0]};});
   var clientesNovos=filtNegsPer(primeiraCompraList,false).length;
   var todasNegs=filtNegsPer(allNegs,false);
   var prevNegs=filtNegsPer(allNegs,true);
