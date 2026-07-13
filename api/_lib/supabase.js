@@ -113,15 +113,20 @@ async function enviarWhatsapp(numero, mensagem) {
   const token = process.env.AA_SEND_TOKEN || '';
   const instanceName = process.env.AA_INSTANCE_NAME || '';
   if (!token || !instanceName) { console.warn('AA_SEND_TOKEN/AA_INSTANCE_NAME não configurados — pulando envio.'); return false; }
+  const numeroNormalizado = normTel(numero);
   try {
     const resp = await fetch('https://aa.app.br/api/v1/send', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ instanceName, number: normTel(numero), type: 'text', message: mensagem }),
+      body: JSON.stringify({ instanceName, number: numeroNormalizado, type: 'text', message: mensagem }),
     });
+    if (!resp.ok) {
+      const corpo = await resp.text().catch(() => '');
+      console.error(`enviarWhatsapp falhou: HTTP ${resp.status} pra número ${numeroNormalizado} (instanceName=${instanceName}) — ${corpo}`);
+    }
     return resp.ok;
   } catch (e) {
-    console.error('enviarWhatsapp error:', e);
+    console.error(`enviarWhatsapp error pra número ${numeroNormalizado}:`, e);
     return false;
   }
 }
