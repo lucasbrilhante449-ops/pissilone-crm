@@ -9,7 +9,7 @@ const { sbGet, hojeISO, patchContatoMeta, logAction, enviarWhatsapp, parseMeta, 
 function mensagemAniversario(nome) {
   const primeiroNome = (nome || '').trim().split(/\s+/)[0] || '';
   const saudacao = primeiroNome ? `Parabéns, ${primeiroNome}!` : 'Parabéns!';
-  return `${saudacao} 🎂 A equipe da Pissilone deseja um dia muito especial pra você, com todo carinho do sertão. Um abraço da gente! Para celebrar esse momento, queremos te dar um mimo de presente que você pode buscar pessoalmente no ateliê em até 30 dias. Será um prazer te receber pra tomar um café.`;
+  return `${saudacao} 🎂\n\nA equipe da Pissilone deseja um dia muito especial pra você, com todo carinho do sertão e o carinho que temos por você. Um abraço e um dia abençoado 🧡🙌\n\nPara celebrar esse momento, queremos te dar um mimo de presente que você pode buscar pessoalmente no ateliê em até 30 dias. Será um prazer te receber pra tomar um café.`;
 }
 
 module.exports = async (req, res) => {

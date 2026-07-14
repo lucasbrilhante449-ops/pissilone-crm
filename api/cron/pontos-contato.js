@@ -11,7 +11,7 @@ const crypto = require('crypto');
 function mensagemPontoContato(nome, link) {
   const primeiroNome = (nome || '').trim().split(/\s+/)[0] || '';
   const saudacao = primeiroNome ? `Oi, ${primeiroNome}!` : 'Oi!';
-  return `${saudacao} Aqui é a Maria da Pissilone 💛 Tudo bem com você? A opinião dos nossos pissifãs é muito importante pra gente, e a sua principalmente. Por isso queria te perguntar: se você pudesse avaliar sua experiência com a Pissilone com uma nota de 0 a 10, qual seria? Deixa sua nota aqui: ${link}`;
+  return `${saudacao} Aqui é a Maria da Pissilone 💛 Tudo bem com você? A opinião dos nossos pissifãs é muito importante pra gente, e a sua principalmente. Por isso queria te perguntar: se você pudesse avaliar sua experiência com a Pissilone com uma nota de 0 a 10, qual seria? Deixa sua nota aqui: ${link}\n\nSua opinião é muito importante.`;
 }
 
 module.exports = async (req, res) => {
