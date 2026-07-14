@@ -13,13 +13,14 @@
 import { ApiError, corsHeaders, getSupabase, jsonResponse } from './lib.ts'
 import {
   adicionarItemPedido, agendarAtividade, cadastrarCliente, concluirAtividade,
-  criarCard, darGanho, darPerda, moverCard, verificarEstoque,
+  criarCard, darGanho, darPerda, localizarOuCriarCatalogo, moverCard, verificarEstoque,
 } from './routes.ts'
 
 const ROTAS: Record<string, (supabase: ReturnType<typeof getSupabase>, body: any) => Promise<unknown>> = {
   '/criar-card': criarCard,
   '/cadastrar-cliente': cadastrarCliente,
   '/estoque': verificarEstoque,
+  '/catalogo/localizar-ou-criar': localizarOuCriarCatalogo,
   '/adicionar-item-pedido': adicionarItemPedido,
   '/dar-ganho': darGanho,
   '/dar-perda': darPerda,

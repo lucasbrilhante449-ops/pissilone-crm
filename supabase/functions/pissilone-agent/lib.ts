@@ -88,6 +88,22 @@ export function normTel(s: unknown): string {
   return String(s || '').replace(/\D/g, '')
 }
 
+// {{contact_phone}} às vezes chega sem o 9º dígito de celular brasileiro
+// (55 + DDD + 8 dígitos, 12 no total, em vez de 55 + DDD + 9 + 8 dígitos, 13 no
+// total) — depende de como o número foi registrado no WhatsApp. Como todo
+// contato daqui é atendido por WhatsApp (não linha fixa), é seguro assumir que
+// um número de 12 dígitos com DDI 55 é um celular faltando o 9, e completar
+// antes de salvar — senão esse contato nunca mais casa por telSuffixMatch()
+// com o mesmo número já formatado certo (o deslocamento de 1 dígito quebra o
+// comparador de sufixo).
+export function normTelBR(s: unknown): string {
+  const digits = normTel(s)
+  if (digits.length === 12 && digits.startsWith('55')) {
+    return digits.slice(0, 4) + '9' + digits.slice(4)
+  }
+  return digits
+}
+
 // Compara telefone normalizado pelos últimos N dígitos (não igualdade exata),
 // porque {{contact_phone}} sempre vem com código de país (55...) e o `tel`
 // salvo no CRM geralmente não tem — igual ao raciocínio de marcarDuplicados()

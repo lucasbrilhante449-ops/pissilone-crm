@@ -3,7 +3,7 @@ import {
   ApiError, Contato, ItemPedido,
   acharEtapaPorNome, apiSaveContato, criarEncomendasDoGanho,
   duplicarParaPissifaAuto, enviarImagemWhatsapp, findContatoByTel, getFunil, hojeISO, loadCfg,
-  logAction, moverEstoquePedido, normDateAgente, normTel, novoContato, parseNegHist, parseValorBR,
+  logAction, moverEstoquePedido, normDateAgente, normTel, normTelBR, novoContato, parseNegHist, parseValorBR,
   registrarParticipacao, rowToContato,
 } from './lib.ts'
 
@@ -24,7 +24,7 @@ async function exigirContato(supabase: SupabaseClient, telefone: string): Promis
 
 // ── /criar-card ──────────────────────────────────────────
 export async function criarCard(supabase: SupabaseClient, body: any) {
-  const telefone = reqStr(body, 'telefone')
+  const telefone = normTelBR(reqStr(body, 'telefone'))
   const nome = reqStr(body, 'nome')
   const canal = (body?.canal ? String(body.canal).trim() : '') || 'whatsapp'
 
@@ -46,7 +46,7 @@ export async function criarCard(supabase: SupabaseClient, body: any) {
 
 // ── /cadastrar-cliente ───────────────────────────────────
 export async function cadastrarCliente(supabase: SupabaseClient, body: any) {
-  const telefone = reqStr(body, 'telefone')
+  const telefone = normTelBR(reqStr(body, 'telefone'))
   const existente = await findContatoByTel(supabase, telefone)
 
   let c: Contato
@@ -135,6 +135,36 @@ async function lerCarrinho(supabase: SupabaseClient, telefone: string): Promise<
 }
 async function limparCarrinho(supabase: SupabaseClient, telefone: string): Promise<void> {
   await supabase.from('pedido_agente_pendente').delete().eq('telefone', normTel(telefone))
+}
+
+// ── /catalogo/localizar-ou-criar ─────────────────────────
+// Espelha catSelAddNew() do navegador: acha um item do catálogo por tipo+nome
+// (case-insensitive) e, se não existir, cria um item "bare" (sem categoria/
+// tem_variacao — quem quiser categorizar ajusta depois na aba Catálogo).
+// Existe pra o agente nunca vender um item de nome livre que não bate com
+// nada no catálogo (isso quebrava os Insights: a venda entrava, mas o
+// produto/estampa não aparecia em nenhum relatório por não estar cadastrado).
+export async function localizarOuCriarCatalogo(supabase: SupabaseClient, body: any) {
+  const tipo = reqStr(body, 'tipo').toLowerCase()
+  if (!['produto', 'estampa', 'cor', 'tamanho'].includes(tipo)) {
+    throw new ApiError(400, `Campo "tipo" inválido: "${tipo}". Use produto, estampa, cor ou tamanho.`)
+  }
+  const nome = reqStr(body, 'nome')
+
+  const { data: existentes, error: selErr } = await supabase.from('catalogo').select('id,nome').eq('tipo', tipo)
+  if (selErr) throw new ApiError(500, 'Erro ao consultar catálogo: ' + selErr.message)
+
+  const nomeNorm = nome.trim().toLowerCase()
+  const achado = (existentes || []).find((r: any) => String(r.nome || '').trim().toLowerCase() === nomeNorm)
+  if (achado) {
+    return { ok: true, criado: false, id: achado.id, tipo, nome: achado.nome }
+  }
+
+  const { data: novo, error: insErr } = await supabase.from('catalogo').insert({ tipo, nome: nome.trim() }).select('id,nome').single()
+  if (insErr) throw new ApiError(500, 'Erro ao cadastrar item no catálogo: ' + insErr.message)
+
+  await logAction(supabase, 'catalogo_item_criado_por_agente', `${tipo}: ${novo.nome}`)
+  return { ok: true, criado: true, id: novo.id, tipo, nome: novo.nome }
 }
 
 // ── /dar-ganho ───────────────────────────────────────────

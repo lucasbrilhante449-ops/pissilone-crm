@@ -58,7 +58,7 @@ Colunas efetivamente lidas/escritas por `doSync()`/`apiSave()`:
 | aniversario | text | Data de aniversário (YYYY-MM-DD), coluna própria |
 | cod_marketup | text | Código do cliente no MarketUp (ERP), coluna própria |
 | nf_emitida | boolean | Legado — hoje o controle de nota fiscal é por negociação dentro de `neg_hist[].nf` (ver seção 6), não neste campo |
-| meta | text | JSON string "guarda-chuva" com campos que não têm coluna própria: `email`, `cpf`, `endereco`, `notas`, `cidade`, `uf`, `cep`, `nps`, `log_hist` (timeline de notas/atividades), `campos` (valores dos campos personalizados, por id), `oficinas_hist` (histórico de participações em oficinas — array de `{oficina, data_inscricao, status, data_oficina}`, ver seção 5) e `oficina_atual` (nome da oficina selecionada, espelha `produto` quando `funil==='servicos'`) |
+| meta | text | JSON string "guarda-chuva" com campos que não têm coluna própria: `email`, `cpf`, `endereco`, `notas`, `cidade`, `uf`, `cep`, `nps`, `log_hist` (timeline de notas/atividades), `campos` (valores dos campos personalizados, por id), `oficinas_hist` (histórico de participações em oficinas — array de `{oficina, data_inscricao, status, data_oficina}`, ver seção 5), `oficina_atual` (nome da oficina selecionada, espelha `produto` quando `funil==='servicos'`) e `aniversario_ano_enviado` (ano, string tipo `"2026"`, em que a mensagem automática de aniversário já foi mandada — evita reenvio no mesmo ano; escrito pela automação da Vercel, ver seção 16) |
 
 **Importante:** vários campos exibidos no modal de contato (email, CPF, endereço, cidade, UF, CEP, notas, NPS, campos personalizados, timeline) **não** têm coluna própria no Supabase — são serializados dentro da coluna `meta`. Ao adicionar um campo novo no formulário, decida se ele entra em `meta` (mais simples, sem migração de schema) ou vira coluna nova (só se precisar de filtro/index no banco).
 
@@ -103,6 +103,20 @@ Controle de estoque da **peça lisa** (produto + cor + tamanho, sem estampa — 
 
 #### Tabela `pedido_agente_pendente`
 Carrinho temporário do **agente de IA** (seção 15), por telefone — não é usada pelo navegador. Guarda os itens que o agente foi adicionando numa conversa (via rota `/adicionar-item-pedido`) até o cliente fechar a compra (`/dar-ganho`, que lê tudo, aplica a venda e limpa o carrinho). Criada via `supabase-migration-agente-ia.sql`, RLS habilitado sem nenhuma policy — só a Edge Function (service_role) acessa.
+
+#### Tabela `pontos_contato`
+Uma linha por venda que já gerou (ou vai gerar) uma pesquisa de satisfação 5 dias após a compra — usada pela **automação da Vercel** (seção 16), não pelo navegador nem pelo agente de IA. Criada via `supabase-migration-pontos-contato.sql`, RLS habilitado sem nenhuma policy — só as funções serverless da Vercel (service_role) acessam.
+
+| Coluna | Tipo | Descrição |
+|--------|------|-----------|
+| id | text (PK) | Token opaco (`crypto.randomUUID()`) — é o `?tok=` da URL pública `/avaliacao` mandada por WhatsApp |
+| contato_id | text | `id` do contato em `contatos` |
+| contato_nome / contato_tel | text | Copiados no momento da criação (evita um join a mais nas páginas públicas) |
+| venda_id | text (unique) | `venda_id` do evento de ganho em `neg_hist` que originou esse ponto de contato — a constraint `unique` impede a mesma venda gerar duas pesquisas |
+| data_compra | date | Data do ganho (`neg_hist[].d`) |
+| nota | integer | Nota 0–10 escolhida pelo cliente na página `/avaliacao` — `null` até responder |
+| respondido_em | timestamptz | Preenchido quando a nota é registrada — trava o token contra reenvio/alteração |
+| criado_em | timestamptz | Default `now()` |
 
 | Coluna | Tipo | Descrição |
 |--------|------|-----------|
@@ -842,10 +856,11 @@ Estrutura interna do arquivo, para orientação rápida:
 
 Arquivos adicionais na raiz do projeto (fora do `index-github.html`):
 - `supabase-setup-auth.sql` — script de setup do login (rodar no SQL Editor do Supabase); exige estar logado pra ler/escrever, sem distinção de papel
-- `supabase-migration-estoque.sql` / `supabase-migration-encomendas.sql` / `supabase-migration-oficinas.sql` / `supabase-migration-agente-ia.sql` — migrações incrementais rodadas uma vez cada no SQL Editor (a REST API do Supabase não faz DDL), na ordem em que as funcionalidades foram adicionadas
-- `integracao-agente-http-e-api.md` — doc **da plataforma aa.app.br** (não escrito por nós) descrevendo como a ferramenta HTTP do agente de IA e a API de envio de mensagens funcionam; é o contrato que `supabase/functions/pissilone-agent/` implementa do lado do CRM (ver seção 15)
+- `supabase-migration-estoque.sql` / `supabase-migration-encomendas.sql` / `supabase-migration-oficinas.sql` / `supabase-migration-agente-ia.sql` / `supabase-migration-pontos-contato.sql` — migrações incrementais rodadas uma vez cada no SQL Editor (a REST API do Supabase não faz DDL), na ordem em que as funcionalidades foram adicionadas
+- `integracao-agente-http-e-api.md` — doc **da plataforma aa.app.br** (não escrito por nós) descrevendo como a ferramenta HTTP do agente de IA e a API de envio de mensagens funcionam; é o contrato que `supabase/functions/pissilone-agent/` (seção 15) **e** `api/` (seção 16) implementam do lado do CRM
 - `supabase/functions/manage-access/index.ts` — **não usado atualmente**, rascunho de uma versão com papéis (superadmin/gerente/consultor) que foi descartada por complexidade desnecessária pra 2 pessoas (ver seção 2.3); fica no repo pronto pra retomar se um dia for preciso
 - `supabase/functions/pissilone-agent/` — Edge Function em uso, ponte entre o agente de IA e o CRM (ver seção 15)
+- `api/`, `vercel.json`, `package.json` — funções serverless da Vercel (cron de aniversário + ponto de contato pós-venda, fora do escopo do agente de IA — ver seção 16)
 
 Ao editar o código, siga as regras da seção 10 e depois de testar localmente, faça commit e aguarde o deploy do GitHub Pages (seção 10.5).
 
@@ -857,7 +872,9 @@ Ao editar o código, siga as regras da seção 10 e depois de testar localmente,
 
 O CRM inteiro é client-side (navegador → Supabase REST direto). O agente de IA do WhatsApp (plataforma `aa.app.br`) não roda JS no navegador nem loga como usuário humano — ele só chama uma **ferramenta HTTP com URL/método/headers fixos**, configurada por quem monta o agente (contrato completo em `integracao-agente-http-e-api.md`). Por isso existe uma Edge Function nova, `supabase/functions/pissilone-agent/`, que é o único lugar do stack com código server-side.
 
-**Fase 1** (implementada) cobre as ações que o agente usa **durante a conversa**: criar card, cadastrar cliente, verificar estoque (com envio de foto), montar um pedido com vários itens, dar ganho, dar perda, mover card, e atividades. **Fica pra uma Fase 2** (não implementada ainda): parabéns de aniversário e follow-up pós-venda automáticos — isso exige um cron rodando sozinho todo dia (infraestrutura de agendamento nova), e uma forma de marcar uma atividade como "pós-venda" (hoje não existe distinção de tipo de atividade no CRM).
+**Fase 1** (implementada) cobre as ações que o agente usa **durante a conversa**: criar card, cadastrar cliente, verificar estoque (com envio de foto), localizar/cadastrar item de catálogo, montar um pedido com vários itens, dar ganho, dar perda, mover card, e atividades.
+
+Parabéns de aniversário e follow-up pós-venda (ponto de contato) **foram implementados**, mas **fora do escopo do agente de IA** — orientação do admin da aa.app.br, já que a ferramenta HTTP do agente só cobre chamadas *durante* uma conversa, sem webhook de resposta pra automações proativas. Essas duas automações rodam como cron jobs separados na Vercel — ver seção 16.
 
 ### 15.2 Arquitetura
 
@@ -879,6 +896,7 @@ Todas em `POST`, corpo em JSON, exigem `Authorization: Bearer <AGENT_API_TOKEN>`
 | `/criar-card` | `{telefone, nome, canal?}` | `saveContato()` (criação) — idempotente por telefone, não duplica |
 | `/cadastrar-cliente` | `{telefone, nome?, email?, cpf?, aniversario?, endereco?, cidade?, uf?, cep?, cod_marketup?}` | `saveContato()` (edição) — só sobrescreve campos enviados |
 | `/estoque` | `{telefone, tamanho, produto?}` | `getEstoqueQtd()` + envia foto de cada cor disponível via API de mensagens (Parte 2) |
+| `/catalogo/localizar-ou-criar` | `{tipo, nome}` | `catSelAddNew()` — acha um item do catálogo por `tipo`+`nome` (case-insensitive); se não existir, cria "bare" (sem categoria/tem_variacao). Usado pelo agente antes de vender uma estampa/produto pra garantir que ela existe no catálogo (senão a venda entra mas não aparece nos Insights) |
 | `/adicionar-item-pedido` | `{telefone, produto, estampa?, cor?, tamanho?, qty?}` | `adicionarItemPedido()` — grava no carrinho (`pedido_agente_pendente`) |
 | `/dar-ganho` | `{telefone, valor, forma_pagamento, data?}` | `confirmarGanho()` completo — usa o carrinho acumulado, roteia etapa por funil, desconta estoque, cria encomendas, duplica pro Pissifã se for a 2ª compra D2C |
 | `/dar-perda` | `{telefone, motivo}` | `confirmPerda()` |
@@ -902,3 +920,47 @@ Todas em `POST`, corpo em JSON, exigem `Authorization: Bearer <AGENT_API_TOKEN>`
 supabase functions deploy pissilone-agent --no-verify-jwt --project-ref wrczcdroekxqsdwdbquf
 ```
 Rodar `supabase-migration-agente-ia.sql` no SQL Editor **antes** do primeiro deploy (cria `pedido_agente_pendente`, a coluna `catalogo.foto_url` e a função `estoque_ajustar`).
+
+---
+
+## 16. Automações Vercel (aniversário + ponto de contato pós-venda)
+
+### 16.1 Por quê
+
+Duas automações proativas — mensagem automática de aniversário e ponto de contato 5 dias após a compra (nota de satisfação + link de avaliação no Google se a nota for >8) — ficaram **fora do escopo do agente de IA** (orientação do admin da aa.app.br): a ferramenta HTTP do agente (seção 15) só é chamada *pela própria IA, durante uma conversa*; não existe um webhook que dispare o agente em um horário agendado, nem um jeito de capturar a resposta do cliente fora de uma conversa ativa. A doc `integracao-agente-http-e-api.md` só documenta duas coisas: a ferramenta HTTP (seção 15) e uma API de **envio** de mensagem (`POST https://aa.app.br/api/v1/send`), sem nenhum webhook de resposta.
+
+Como o repositório já está linkado a um projeto Vercel via GitHub (push → deploy automático), essas duas automações viraram funções serverless na pasta `api/`, disparadas por **Vercel Cron** — sem nenhum envolvimento da Maria.
+
+### 16.2 Arquitetura
+
+```
+Vercel Cron (vercel.json) — 09:00 BRT / 12:00 UTC todo dia
+  ├─► api/cron/aniversarios.js    → manda parabéns automático via aa.app.br /send
+  └─► api/cron/pontos-contato.js  → 5+ dias após um ganho em neg_hist, cria uma linha
+                                      em pontos_contato e manda o link /avaliacao?tok=...
+
+Cliente toca no link → api/avaliacao.js (GET, página com notas 0–10, sem JS)
+                      → api/avaliacao-enviar.js (GET, grava a nota; se >8, mostra o
+                        link fixo de avaliação do Google; sempre espelha a nota em
+                        contatos.meta.nps, alimentando o card de NPS que já existe
+                        na aba Insights)
+```
+
+- `api/_lib/supabase.js` — helpers por `fetch` direto no REST do Supabase com `SUPABASE_SERVICE_ROLE_KEY` (bypassa RLS, mesmo padrão do `lib.ts` da Edge Function), no mesmo espírito zero-dependência do resto do projeto (sem SDK do Supabase instalado). Inclui `enviarWhatsapp()` (Parte 2 da doc da aa.app.br), `patchContatoMeta()` (merge seguro dentro do JSON de `meta`, pra nunca apagar `notas`/`log_hist`/etc. de outros campos) e `autorizadoCron()` (confere o header que a própria Vercel manda quando `CRON_SECRET` está configurado).
+- `api/_lib/page.js` — template HTML simples (inline CSS, sem framework/JS) usado pelas páginas públicas de avaliação.
+- Link do Google fixo: `https://g.page/r/CdbBaO5k62FVEAE/review` (constante `GOOGLE_REVIEW_LINK`) — nunca inventado, mesmo tratamento dado à chave Pix no prompt da Maria.
+- **Idempotência:** aniversário controla por `contatos.meta.aniversario_ano_enviado` (não manda duas vezes no mesmo ano); ponto de contato controla pela constraint `unique(venda_id)` em `pontos_contato` (não gera duas pesquisas pra mesma venda) e por `respondido_em` (token de avaliação só pode ser respondido uma vez).
+
+### 16.3 Env vars (Vercel → Project Settings → Environment Variables)
+
+| Nome | Pra quê |
+|---|---|
+| `SUPABASE_URL` | `https://wrczcdroekxqsdwdbquf.supabase.co` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Mesma service_role key usada pela Edge Function — bypassa RLS |
+| `AA_SEND_TOKEN` / `AA_INSTANCE_NAME` | Mesmos valores já usados como secret na Edge Function (seção 15.4) |
+| `CRON_SECRET` | String aleatória — a Vercel manda automaticamente `Authorization: Bearer <CRON_SECRET>` só nas chamadas de cron; cada função confere isso antes de mandar qualquer mensagem |
+| `PUBLIC_SITE_URL` | Domínio público do deploy (usado pra montar o link `/avaliacao?tok=...`) |
+
+### 16.4 Deploy
+
+Sem passo manual de deploy — é `git push` na branch conectada à Vercel. Antes do primeiro push com essas mudanças: rodar `supabase-migration-pontos-contato.sql` no SQL Editor (cria a tabela `pontos_contato`) e configurar as env vars da seção 16.3 no projeto Vercel.
