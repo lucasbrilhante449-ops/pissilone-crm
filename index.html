@@ -1207,6 +1207,22 @@ async function removerEncomendasDoGanho(vendaId){
   }catch(e){console.warn('removerEncomendasDoGanho error:',e);}
 }
 
+// Reflete uma edição de ganho (saveEditNeg()) nas encomendas já criadas pra essa venda —
+// sem isso, mudar cor/tamanho/produto no card não atualiza o pedido de produção, e a
+// fábrica acaba com a cor/tamanho antigo. Recria do zero (apaga e insere de novo) em vez
+// de reconciliar item a item, pra cobrir igual qualquer tipo de mudança (item trocado,
+// adicionado ou removido). Não mexe se algum item dessa venda já foi marcado como
+// entregue — nesse caso a produção já aconteceu, então retorna true pro chamador avisar
+// o usuário em vez de sobrescrever o registro de entrega.
+async function syncEncomendasDoGanho(c,itensNovos,dataGanho,vendaId){
+  if(!vendaId)return false;
+  var existentes=encomendas.filter(function(o){return o.venda_id===vendaId;});
+  if(existentes.some(function(o){return o.entregue;}))return true;
+  await removerEncomendasDoGanho(vendaId);
+  await criarEncomendasDoGanho(c,itensNovos,dataGanho,vendaId);
+  return false;
+}
+
 function encomendaStatus(o){
   if(o.entregue)return'entregue';
   if(o.prazo&&o.prazo<hojeISO())return'atrasado';
@@ -3114,6 +3130,7 @@ async function saveEditNeg(){
     await apiSave(c);
     await moverEstoquePedido(itensAntigos,1);
     await moverEstoquePedido(itensNovos,-1);
+    var jaEntregue=await syncEncomendasDoGanho(c,itensNovos,novaData,neg.venda_id);
     closeM('modal-edit-neg');
     var savedCid=editNegCid;
     var origem=editNegOrigin;
@@ -3123,6 +3140,7 @@ async function saveEditNeg(){
     if(insPane&&insPane.classList.contains('active'))renderInsights();
     if(origem==='ganhos')openGanhosModal();
     else openContatoDetail(savedCid);
+    if(jaEntregue)alert('Ganho atualizado, mas a encomenda dessa venda já está marcada como entregue — não foi alterada automaticamente. Se precisar, ajuste manualmente na aba Encomendas.');
   }catch(ex){setFb('fb-editneg','Erro ao salvar','er');}
 }
 
