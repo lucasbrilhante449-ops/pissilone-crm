@@ -94,6 +94,12 @@ textarea.fi{resize:vertical;min-height:60px}
 .kc:hover{border-color:var(--L4);box-shadow:0 2px 8px rgba(209,117,67,.1)}
 .kc.dragging{opacity:.4;cursor:grabbing}
 .kc-nome{font-size:13px;font-weight:500;color:var(--K);margin-bottom:2px}
+.kc-nome-row{display:flex;align-items:center;gap:4px}
+.kc-nome-row .kc-nome{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:0}
+.kc-edit-titulo{flex-shrink:0;border:none;background:none;color:var(--G3);font-size:11px;line-height:1;cursor:pointer;padding:2px 3px;border-radius:4px;opacity:0;transition:opacity .15s}
+.kc:hover .kc-edit-titulo{opacity:.55}
+.kc-edit-titulo:hover{opacity:1!important;background:var(--G)}
+.kc-nome-input{width:100%;font-size:13px;font-weight:500;color:var(--K);border:1px solid var(--L4);border-radius:4px;padding:1px 4px;font-family:'Barlow',sans-serif;outline:none;background:var(--W)}
 .kc-sub{font-size:11px;color:var(--G3);display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:4px}
 .kc-actions{display:flex;gap:4px;align-items:center;justify-content:space-between;margin-top:4px}
 .kc-left{display:flex;gap:4px;flex-wrap:wrap}
@@ -426,6 +432,9 @@ textarea.fi{resize:vertical;min-height:60px}
   <div class="fg fg2">
     <div class="cat-sw"><label class="flbl">Nome *</label><input class="fi" id="f-nome" placeholder="Nome do cliente" oninput="buscarClienteExistente()" onblur="setTimeout(function(){fecharClienteSug();},220)" autocomplete="off"><div class="cat-sd" id="csd-cliente"></div></div>
     <div><label class="flbl">Telefone</label><input class="fi" id="f-tel" placeholder="(84) 9..."></div>
+  </div>
+  <div class="fg fg1" style="margin-bottom:.75rem">
+    <div><label class="flbl">Título do card (opcional)</label><input class="fi" id="f-card-titulo" placeholder="Deixe vazio para mostrar o nome do cliente"><div style="font-size:10px;color:var(--G3);margin-top:3px">Aparece só no card do funil. Não altera o nome do cliente.</div></div>
   </div>
   <div class="fg fg3">
     <div><label class="flbl">Funil</label><select class="fi" id="f-funil" onchange="updEtapas()"></select></div>
@@ -1091,10 +1100,10 @@ async function loadCatalogo(){
     var rows=await resp.json();
     catalogo={estampas:[],cores:[],tamanhos:[],produtos:[]};
     (Array.isArray(rows)?rows:[]).forEach(function(r){
-      if(r.tipo==='estampa')catalogo.estampas.push({id:r.id,nome:r.nome});
+      if(r.tipo==='estampa')catalogo.estampas.push({id:r.id,nome:r.nome,descricao:r.descricao||'',fotoUrl:r.foto_url||''});
       else if(r.tipo==='cor')catalogo.cores.push({id:r.id,nome:r.nome,fotoUrl:r.foto_url||''});
       else if(r.tipo==='tamanho')catalogo.tamanhos.push({id:r.id,nome:r.nome});
-      else if(r.tipo==='produto')catalogo.produtos.push({id:r.id,nome:r.nome,categoria:r.categoria||'',temVariacao:Boolean(r.tem_variacao),natureza:r.natureza||'produto'});
+      else if(r.tipo==='produto')catalogo.produtos.push({id:r.id,nome:r.nome,categoria:r.categoria||'',temVariacao:Boolean(r.tem_variacao),natureza:r.natureza||'produto',valor:(r.valor!==null&&r.valor!==undefined)?parseFloat(r.valor):null});
     });
     catalogo.tamanhos=ordenarTamanhos(catalogo.tamanhos);
   }catch(e){console.warn('loadCatalogo error:',e);}
@@ -1352,7 +1361,8 @@ async function doSync(){
         campos:(meta.campos&&typeof meta.campos==='object'&&!Array.isArray(meta.campos))?meta.campos:{},
         oficinas_hist:Array.isArray(meta.oficinas_hist)?meta.oficinas_hist:[],
         oficina_atual:String(meta.oficina_atual||''),
-        aniversario_ano_enviado:String(meta.aniversario_ano_enviado||'')
+        aniversario_ano_enviado:String(meta.aniversario_ano_enviado||''),
+        card_titulo:String(meta.card_titulo||'')
       };
     });
     ss('ok',contatos.length+' contato'+(contatos.length!==1?'s':''));
@@ -1369,7 +1379,7 @@ async function apiSave(c){
     atv_desc:c.atv_desc||'',resultado:c.resultado||'',
     atv_hist:c.atv_hist||0,neg_hist:c.neg_hist||'',
     aniversario:c.aniversario||null,cod_marketup:c.cod_marketup||'',nf_emitida:c.nf_emitida||false,
-    meta:JSON.stringify({email:c.email||'',cpf:c.cpf||'',endereco:c.endereco||'',notas:c.notas||'',log_hist:c.log_hist||[],campos:c.campos||{},cidade:c.cidade||'',uf:c.uf||'',cep:c.cep||'',nps:(c.nps!=null)?c.nps:null,oficinas_hist:c.oficinas_hist||[],oficina_atual:c.oficina_atual||'',aniversario_ano_enviado:c.aniversario_ano_enviado||''})
+    meta:JSON.stringify({email:c.email||'',cpf:c.cpf||'',endereco:c.endereco||'',notas:c.notas||'',log_hist:c.log_hist||[],campos:c.campos||{},cidade:c.cidade||'',uf:c.uf||'',cep:c.cep||'',nps:(c.nps!=null)?c.nps:null,oficinas_hist:c.oficinas_hist||[],oficina_atual:c.oficina_atual||'',aniversario_ano_enviado:c.aniversario_ano_enviado||'',card_titulo:c.card_titulo||''})
   });
 }
 
@@ -1453,7 +1463,7 @@ function renderFunil(){
         if(filtroRes==='aberto'&&(res==='ganho'||res==='perda'))return false;
       }
       if(funilAtivo==='servicos'&&filtroOficinaFunil&&c.produto!==filtroOficinaFunil)return false;
-      if(busca&&!c.nome.toLowerCase().includes(busca))return false;
+      if(busca&&!c.nome.toLowerCase().includes(busca)&&!(c.card_titulo&&c.card_titulo.toLowerCase().includes(busca)))return false;
       return true;
     });
     const soma=cards.reduce((a,c)=>a+(c.valor||0),0);
@@ -1506,14 +1516,20 @@ function kcardHtml(c,busca){
   const mktBadge=c.cod_marketup?`<span style="font-size:10px;background:var(--A3);border:1px solid var(--A);border-radius:20px;padding:1px 6px;color:var(--A2)">#${c.cod_marketup}</span>`:'';
   const nfBadge=c.nf_emitida?`<span style="font-size:10px;background:var(--VD2);border:1px solid var(--VD);border-radius:20px;padding:1px 6px;color:var(--VD)">NF ✓</span>`:'';
   const b=busca||'';
-  const nomeHtml=b&&c.nome.toLowerCase().includes(b)?c.nome.replace(new RegExp('('+b.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<mark style="background:#F2E618;border-radius:2px;padding:0 1px">$1</mark>'):c.nome;
+  const tituloCard=(c.card_titulo&&c.card_titulo.trim())?c.card_titulo.trim():c.nome;
+  const nomeHtml=b&&tituloCard.toLowerCase().includes(b)?tituloCard.replace(new RegExp('('+b.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<mark style="background:#F2E618;border-radius:2px;padding:0 1px">$1</mark>'):tituloCard;
+  const clienteSubHtml=(c.card_titulo&&c.card_titulo.trim()&&c.card_titulo.trim()!==c.nome)?`<div style="font-size:10px;color:var(--G3);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">👤 ${c.nome}</div>`:'';
   const ucHtml=ultimaCompraHtml(c);
   var camposBadgesHtml='';
   var corsCampos=[{bg:'var(--VD2)',cor:'var(--VD)'},{bg:'var(--VM2)',cor:'var(--VM)'},{bg:'var(--AM2)',cor:'var(--AM)'},{bg:'var(--G)',cor:'var(--G3)'}];
   if(c.campos)(cfg.campos_personalizados||[]).forEach(function(cp){var v=c.campos[cp.id]||'';if(v){var idx=cp.opcoes?cp.opcoes.indexOf(v):0;var clr=corsCampos[Math.min(Math.max(idx,0),corsCampos.length-1)];camposBadgesHtml+='<span style="background:'+clr.bg+';color:'+clr.cor+';border-radius:20px;padding:1px 6px;font-size:10px;font-weight:600">'+v+'</span>';}});
   var delBtnHtml='<button class="btn xs danger" onclick="delC(\''+c.id+'\')">✕</button>';
   return`<div class="kc" draggable="true" data-id="${c.id}">
-    <div class="kc-nome kc-nome-link" onclick="openContatoDetail('${c.id}')">${nomeHtml}</div>
+    <div class="kc-nome-row">
+      <div class="kc-nome kc-nome-link" onclick="openContatoDetail('${c.id}')">${nomeHtml}</div>
+      <button class="kc-edit-titulo" onclick="editarTituloCard(event,'${c.id}')" title="Editar título do card">✎</button>
+    </div>
+    ${clienteSubHtml}
     <div class="kc-sub" style="cursor:pointer" onclick="openContatoDetail('${c.id}')">
       ${vl?`<span>${vl}</span>`:''}
       ${c.canal?`<span>${CANAL_LABEL[c.canal]||c.canal}</span>`:''}
@@ -1533,6 +1549,43 @@ function kcardHtml(c,busca){
       ${atvDotHtml(c)}
     </div>
   </div>`;
+}
+
+function editarTituloCard(ev,id){
+  if(ev){ev.preventDefault();ev.stopPropagation();}
+  const cardEl=document.querySelector('.kc[data-id="'+id+'"]');
+  const row=cardEl&&cardEl.querySelector('.kc-nome-row');
+  const c=contatos.find(x=>x.id===id);
+  if(!row||!c)return;
+  const atual=(c.card_titulo&&c.card_titulo.trim())?c.card_titulo.trim():c.nome;
+  row.innerHTML='';
+  const inp=document.createElement('input');
+  inp.className='kc-nome-input';
+  inp.value=atual;
+  inp.placeholder=c.nome;
+  inp.addEventListener('click',e=>e.stopPropagation());
+  inp.addEventListener('mousedown',e=>e.stopPropagation());
+  inp.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){e.preventDefault();inp.blur();}
+    else if(e.key==='Escape'){inp.dataset.cancel='1';inp.blur();}
+  });
+  inp.addEventListener('blur',()=>{
+    if(inp.dataset.cancel==='1'){renderFunil();return;}
+    salvarTituloCard(id,inp.value);
+  });
+  row.appendChild(inp);
+  inp.focus();inp.select();
+}
+
+async function salvarTituloCard(id,valor){
+  const c=contatos.find(x=>x.id===id);if(!c)return;
+  const novo=(valor||'').trim();
+  const antigo=c.card_titulo||'';
+  if(novo===antigo){renderFunil();return;}
+  c.card_titulo=novo;
+  renderFunil();
+  try{await apiSave(c);logAction('card_titulo_editado',novo||c.nome);}
+  catch(ex){c.card_titulo=antigo;renderFunil();console.error(ex);}
 }
 
 // ── DRAG & DROP ──────────────────────────────────────────
@@ -1839,6 +1892,7 @@ function openContato(id=null,fid=null,eid=null){
   us.innerHTML='<option value="">Nenhum</option>'+cfg.usuarios.map(u=>`<option value="${u.id}">${u.nome}</option>`).join('');
   if(c){
     document.getElementById('f-nome').value=c.nome;
+    document.getElementById('f-card-titulo').value=c.card_titulo||'';
     document.getElementById('f-tel').value=c.tel||'';
     document.getElementById('f-funil').value=c.funil;updEtapas();
     setTimeout(()=>{document.getElementById('f-etapa').value=c.etapa;},20);
@@ -1889,7 +1943,7 @@ function openContato(id=null,fid=null,eid=null){
       if(rb&&ultimaNeg){rb.className=ultimaNeg.r==='ganho'?'res-ganho':'res-perda';rb.textContent=ultimaNeg.r==='ganho'?'✓ Ganho':'✗ Perda';}
     }
   }else{
-    ['f-nome','f-tel','f-valor','f-atv-data-modal','f-atv-desc-modal','f-produto','f-obs','f-email','f-cpf','f-endereco','f-cod-marketup','f-cidade','f-uf','f-cep','selOficina'].forEach(x=>document.getElementById(x).value='');
+    ['f-nome','f-card-titulo','f-tel','f-valor','f-atv-data-modal','f-atv-desc-modal','f-produto','f-obs','f-email','f-cpf','f-endereco','f-cod-marketup','f-cidade','f-uf','f-cep','selOficina'].forEach(x=>document.getElementById(x).value='');
     document.getElementById('f-canal').value='instagram';document.getElementById('f-user').value='';
     document.getElementById('f-aniversario').value='';
     const hw=document.getElementById('neg-hist-wrap');if(hw)hw.style.display='none';
@@ -1926,7 +1980,9 @@ async function saveContato(){
   const atvDataModal=normDate(document.getElementById('f-atv-data-modal').value);
   const atvDescModal=document.getElementById('f-atv-desc-modal').value.trim();
   const c={
-    id:editCid||String(Date.now()),nome,tel:document.getElementById('f-tel').value.trim(),
+    id:editCid||String(Date.now()),nome,
+    card_titulo:document.getElementById('f-card-titulo').value.trim(),
+    tel:document.getElementById('f-tel').value.trim(),
     et:isGanho(fid,eid)?'fechado':isPerdido(fid,eid)?'perdido':'atendimento',
     canal:document.getElementById('f-canal').value,
     valor:parseFloat(document.getElementById('f-valor').value)||0,
@@ -3514,6 +3570,9 @@ function renderCatalogo(){
           h+='<span style="font-size:12px;color:var(--K);font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+item.nome+'</span>';
           h+='<button class="btn xs danger" onclick="delCatalogoItem(\''+item.id+'\',\''+tipo+'\')">&#10005;</button>';
           h+='</div>';
+          if(!isServ){
+            h+='<input class="fi" style="font-size:10px;padding:3px 6px;height:auto;width:100px" placeholder="R$ 0,00" value="'+(item.valor!=null?String(item.valor).replace('.',','):'')+'" onchange="setValorProduto(\''+item.id+'\',this.value)">';
+          }
           h+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">';
           h+='<select class="fi" style="width:auto;font-size:10px;padding:2px 6px;height:auto" onchange="setNaturezaProduto(\''+item.id+'\',this.value)">';
           h+='<option value="produto"'+(!isServ?' selected':'')+'>🛍️ Produto</option>';
@@ -3539,6 +3598,18 @@ function renderCatalogo(){
           h+='<button class="btn xs danger" onclick="delCatalogoItem(\''+idEsc+'\',\''+tipo+'\')">&#10005;</button>';
           h+='</div>';
           h+='<input class="fi" style="font-size:10px;padding:3px 6px;height:auto" placeholder="📷 Link da foto (opcional)" value="'+(item.fotoUrl?item.fotoUrl.replace(/"/g,'&quot;'):'')+'" onchange="setFotoCor(\''+idEsc+'\',this.value)">';
+          h+='<input type="file" accept="image/*" style="font-size:10px" onchange="uploadFotoCatalogo(\''+idEsc+'\',\'cor\',this)">';
+          h+='</div>';
+        }else if(tipo==='estampa'){
+          var idEscE=String(item.id);
+          h+='<div style="display:flex;flex-direction:column;gap:4px;background:var(--G);border-radius:8px;padding:8px;width:100%">';
+          h+='<div style="display:flex;align-items:center;gap:6px">';
+          h+='<span style="font-size:12px;color:var(--K);font-weight:600;flex:1">'+item.nome+'</span>';
+          h+='<button class="btn xs danger" onclick="delCatalogoItem(\''+idEscE+'\',\''+tipo+'\')">&#10005;</button>';
+          h+='</div>';
+          h+='<textarea class="fi" style="font-size:10px;padding:3px 6px;height:auto;min-height:32px;resize:vertical" placeholder="📖 História/descrição (opcional)" onchange="setDescricaoEstampa(\''+idEscE+'\',this.value)">'+(item.descricao?item.descricao.replace(/</g,'&lt;'):'')+'</textarea>';
+          h+='<input class="fi" style="font-size:10px;padding:3px 6px;height:auto" placeholder="📷 Link da foto (opcional)" value="'+(item.fotoUrl?item.fotoUrl.replace(/"/g,'&quot;'):'')+'" onchange="setFotoEstampa(\''+idEscE+'\',this.value)">';
+          h+='<input type="file" accept="image/*" style="font-size:10px" onchange="uploadFotoCatalogo(\''+idEscE+'\',\'estampa\',this)">';
           h+='</div>';
         }else{
           var delChipBtn='<button class="btn xs danger" onclick="delCatalogoItem(\''+item.id+'\',\''+tipo+'\')">&#10005;</button>';
@@ -3635,6 +3706,57 @@ async function setFotoCor(id,fotoUrl){
     await loadCatalogo();
     renderCatalogo();
   }catch(e){ss('er','Erro ao salvar foto');}
+}
+
+async function setValorProduto(id,valor){
+  try{
+    var v=String(valor||'').trim().replace(',','.');
+    var num=v===''?null:parseFloat(v);
+    if(num!==null&&isNaN(num)){ss('er','Valor inválido');return;}
+    await fetch(SB_URL+'/rest/v1/catalogo?id=eq.'+id,{method:'PATCH',headers:SB_HDR,body:JSON.stringify({valor:num})});
+    await loadCatalogo();
+    renderCatalogo();
+  }catch(e){ss('er','Erro ao salvar valor');}
+}
+
+async function setDescricaoEstampa(id,descricao){
+  try{
+    await fetch(SB_URL+'/rest/v1/catalogo?id=eq.'+id,{method:'PATCH',headers:SB_HDR,body:JSON.stringify({descricao:descricao.trim()})});
+    await loadCatalogo();
+    renderCatalogo();
+  }catch(e){ss('er','Erro ao salvar descrição');}
+}
+
+async function setFotoEstampa(id,fotoUrl){
+  try{
+    await fetch(SB_URL+'/rest/v1/catalogo?id=eq.'+id,{method:'PATCH',headers:SB_HDR,body:JSON.stringify({foto_url:fotoUrl.trim()})});
+    await loadCatalogo();
+    renderCatalogo();
+  }catch(e){ss('er','Erro ao salvar foto');}
+}
+
+// Upload direto pro Storage REST (sem SDK) — reaproveitado por 'cor' e 'estampa'.
+// Path fixo por id (ex: "estampa/12.jpg") com x-upsert:true, pra sobrescrever ao
+// trocar a foto em vez de acumular arquivo órfão no bucket a cada troca.
+async function uploadFotoCatalogo(id,tipo,fileInput){
+  var file=fileInput.files&&fileInput.files[0];
+  if(!file)return;
+  try{
+    ss('ld','Enviando foto...');
+    var ext=(file.name.split('.').pop()||'jpg').toLowerCase();
+    var path=tipo+'/'+id+'.'+ext;
+    var upResp=await fetch(SB_URL+'/storage/v1/object/catalogo/'+path,{
+      method:'POST',
+      headers:{'apikey':SB_KEY,'Authorization':SB_HDR.Authorization,'x-upsert':'true','Content-Type':file.type||'application/octet-stream'},
+      body:file
+    });
+    if(!upResp.ok){var eBody=await upResp.json().catch(function(){return{};});ss('er','Erro ao enviar foto: '+(eBody.message||upResp.status));return;}
+    var publicUrl=SB_URL+'/storage/v1/object/public/catalogo/'+path+'?v='+Date.now();
+    await fetch(SB_URL+'/rest/v1/catalogo?id=eq.'+id,{method:'PATCH',headers:SB_HDR,body:JSON.stringify({foto_url:publicUrl})});
+    await loadCatalogo();
+    renderCatalogo();
+    ss('ok','Foto enviada!');
+  }catch(e){ss('er','Erro ao enviar foto');}
 }
 
 async function setNaturezaProduto(id,natureza){
