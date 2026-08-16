@@ -287,6 +287,7 @@ textarea.fi{resize:vertical;min-height:60px}
       </div>
     </div>
     <select class="fi" id="filtro-oficina-funil" style="width:auto;font-size:12px;height:32px;display:none" onchange="setFiltroOficinaFunil(this.value)"><option value="">Todas oficinas</option></select>
+    <select class="fi" id="filtro-turma-funil" style="width:auto;font-size:12px;height:32px;display:none" onchange="setFiltroTurmaFunil(this.value)"><option value="">Todas turmas</option></select>
   </div>
   <div class="board-wrap"><div class="board" id="board"></div></div>
 </div>
@@ -392,10 +393,20 @@ textarea.fi{resize:vertical;min-height:60px}
   <div id="cfg-users"></div>
   <button class="btn sm" onclick="openUserModal()">+ Novo usuário</button>
   <div class="divider" style="margin:1.25rem 0"></div>
+  <div class="slbl">Turmas de Oficina</div>
+  <div style="font-size:11px;color:var(--G3);margin-bottom:.75rem">Turmas disponíveis para selecionar nos cards do funil Serviços</div>
+  <div id="cfg-turmas"></div>
+  <button class="btn sm" onclick="openTurmaModal()">+ Nova turma</button>
+  <div class="divider" style="margin:1.25rem 0"></div>
   <div class="slbl">Campos Personalizados</div>
   <div style="font-size:11px;color:var(--G3);margin-bottom:.75rem">Campos extras exibidos em todos os cards de todos os funis</div>
   <div id="cfg-campos"></div>
   <button class="btn sm" onclick="openCampoModal()">+ Novo campo</button>
+  <div class="divider" style="margin:1.25rem 0"></div>
+  <div class="slbl">Manutenção</div>
+  <div style="font-size:11px;color:var(--G3);margin-bottom:.75rem">Extrai a turma do título de cards antigos no padrão "[Turma] - Nome" (funil Serviços) e preenche o campo Turma automaticamente. Pode rodar mais de uma vez sem duplicar.</div>
+  <button class="btn sm" onclick="migrarTurmasDeTitulos()">🔄 Migrar turmas dos títulos antigos</button>
+  <div id="fb-migra-turmas" class="fb"></div>
 </div>
 <div id="pane-aniversario" class="pane">
   <div id="aniversario-content"></div>
@@ -456,6 +467,7 @@ textarea.fi{resize:vertical;min-height:60px}
   <div class="fg fg1"><div><label class="flbl">Descrição da atividade</label><input class="fi" id="f-atv-desc-modal" placeholder="Ex: Ligar, enviar proposta..."></div></div>
   <div class="fg fg1" id="wrap-produto-normal"><div><label class="flbl">Produto</label><input class="fi" id="f-produto" placeholder="Kit Nordeste Vivo..."></div></div>
   <div class="fg fg1" id="wrap-oficina" style="display:none"><div><label class="flbl">Oficina</label><select class="fi" id="selOficina" onchange="onOficinaChange()"><option value="">Selecione uma oficina...</option></select></div></div>
+  <div class="fg fg1" id="wrap-turma" style="display:none"><div><label class="flbl">Turma</label><div style="display:flex;gap:6px"><select class="fi" id="f-turma" style="flex:1"><option value="">Sem turma</option></select><button type="button" class="btn sm" onclick="openTurmaModal()" style="white-space:nowrap">+ Nova</button></div></div></div>
   <div class="fg fg1"><div><label class="flbl">Observação</label><textarea class="fi" id="f-obs"></textarea></div></div>
   <div class="fg fg2">
     <div><label class="flbl">Email</label><input class="fi" id="f-email" type="email" placeholder="email@exemplo.com"></div>
@@ -779,6 +791,15 @@ textarea.fi{resize:vertical;min-height:60px}
 </div>
 </div>
 
+<!-- MODAL TURMA -->
+<div class="overlay" id="modal-turma" style="display:none">
+<div class="modal">
+  <div class="mtitle"><span>Nova turma</span><button class="mcl" onclick="closeM('modal-turma')">✕</button></div>
+  <div class="fg fg1" style="margin-bottom:1rem"><div><label class="flbl">Nome da turma</label><input class="fi" id="f-turma-nome" placeholder="Ex: Carmorita 2..."></div></div>
+  <button class="btn primary full" onclick="saveTurma()">Salvar</button>
+</div>
+</div>
+
 <!-- MODAL CAMPO PERSONALIZADO -->
 <div class="overlay" id="modal-campo" style="display:none">
 <div class="modal" style="max-width:440px">
@@ -933,10 +954,11 @@ let cfg = {
     ]}
   ],
   usuarios:[{id:'lucas',nome:'Lucas'},{id:'ana',nome:'Ana'}],
-  campos_personalizados:[]
+  campos_personalizados:[],
+  turmas:[]
 };
 let funilAtivo='d2c', filtroC='todos', filtroAtv='todos', filtroRes='todos', filtroTier='todos', filtroGL='todos', filtroAniversario='';
-let filtroOficinaFunil='', filtroOficinaContatos='';
+let filtroOficinaFunil='', filtroOficinaContatos='', filtroTurmaFunil='', filtroTurmaOficinas='';
 let periodo='0', periodoCustom={ativo:false,de:null,ate:null};
 let userAtivo='todos';
 let editCid=null, editFid=null, editEfid=null, editEid=null;
@@ -1079,10 +1101,10 @@ async function loadCfg(){
     const rows=await sbGet('config','id=eq.1&select=dados');
     if(rows&&rows[0]&&rows[0].dados){
       const p=JSON.parse(rows[0].dados);
-      if(p&&p.funis&&p.funis.length>0){cfg=p;if(!cfg.campos_personalizados)cfg.campos_personalizados=[];await seedServicosFunil();return;}
+      if(p&&p.funis&&p.funis.length>0){cfg=p;if(!cfg.campos_personalizados)cfg.campos_personalizados=[];if(!cfg.turmas)cfg.turmas=[];await seedServicosFunil();return;}
     }
   }catch(e){console.warn('loadCfg error:',e);}
-  try{const s=localStorage.getItem('psn_cfg4');if(s){const p=JSON.parse(s);if(p&&p.funis){cfg=p;if(!cfg.campos_personalizados)cfg.campos_personalizados=[];}}}catch(e){}
+  try{const s=localStorage.getItem('psn_cfg4');if(s){const p=JSON.parse(s);if(p&&p.funis){cfg=p;if(!cfg.campos_personalizados)cfg.campos_personalizados=[];if(!cfg.turmas)cfg.turmas=[];}}}catch(e){}
   await seedServicosFunil();
 }
 async function saveCfg(){
@@ -1362,7 +1384,8 @@ async function doSync(){
         oficinas_hist:Array.isArray(meta.oficinas_hist)?meta.oficinas_hist:[],
         oficina_atual:String(meta.oficina_atual||''),
         aniversario_ano_enviado:String(meta.aniversario_ano_enviado||''),
-        card_titulo:String(meta.card_titulo||'')
+        card_titulo:String(meta.card_titulo||''),
+        turma:String(meta.turma||'')
       };
     });
     ss('ok',contatos.length+' contato'+(contatos.length!==1?'s':''));
@@ -1379,7 +1402,7 @@ async function apiSave(c){
     atv_desc:c.atv_desc||'',resultado:c.resultado||'',
     atv_hist:c.atv_hist||0,neg_hist:c.neg_hist||'',
     aniversario:c.aniversario||null,cod_marketup:c.cod_marketup||'',nf_emitida:c.nf_emitida||false,
-    meta:JSON.stringify({email:c.email||'',cpf:c.cpf||'',endereco:c.endereco||'',notas:c.notas||'',log_hist:c.log_hist||[],campos:c.campos||{},cidade:c.cidade||'',uf:c.uf||'',cep:c.cep||'',nps:(c.nps!=null)?c.nps:null,oficinas_hist:c.oficinas_hist||[],oficina_atual:c.oficina_atual||'',aniversario_ano_enviado:c.aniversario_ano_enviado||'',card_titulo:c.card_titulo||''})
+    meta:JSON.stringify({email:c.email||'',cpf:c.cpf||'',endereco:c.endereco||'',notas:c.notas||'',log_hist:c.log_hist||[],campos:c.campos||{},cidade:c.cidade||'',uf:c.uf||'',cep:c.cep||'',nps:(c.nps!=null)?c.nps:null,oficinas_hist:c.oficinas_hist||[],oficina_atual:c.oficina_atual||'',aniversario_ano_enviado:c.aniversario_ano_enviado||'',card_titulo:c.card_titulo||'',turma:c.turma||''})
   });
 }
 
@@ -1429,6 +1452,7 @@ function setFunil(id){funilAtivo=id;renderFunil();renderUbtns();}
 function setFiltroAtv(btn,f){document.querySelectorAll('[id^="fatv-"]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');filtroAtv=f;renderFunil();updFiltroBtn();}
 function setFiltroRes(btn,f){document.querySelectorAll('[id^="fres-"]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');filtroRes=f;renderFunil();updFiltroBtn();}
 function setFiltroOficinaFunil(v){filtroOficinaFunil=v;renderFunil();}
+function setFiltroTurmaFunil(v){filtroTurmaFunil=v;renderFunil();}
 
 function renderFunil(){
   renderFunilTabs();
@@ -1447,6 +1471,17 @@ function renderFunil(){
       selOficinaFunil.style.display='none';
     }
   }
+  const selTurmaFunil=document.getElementById('filtro-turma-funil');
+  if(selTurmaFunil){
+    if(funilAtivo==='servicos'){
+      selTurmaFunil.style.display='inline-block';
+      var turmasFunil=turmasConhecidas(contatos.filter(function(c){return c.funil==='servicos';}));
+      selTurmaFunil.innerHTML='<option value="">Todas turmas</option>'+turmasFunil.map(function(t){return'<option value="'+t.replace(/"/g,'&quot;')+'">'+t+'</option>';}).join('');
+      selTurmaFunil.value=filtroTurmaFunil;
+    }else{
+      selTurmaFunil.style.display='none';
+    }
+  }
   const busca=(document.getElementById('funil-busca')||{value:''}).value.toLowerCase().trim();
   funil.etapas.forEach(etapa=>{
     const cards=contatos.filter(c=>{
@@ -1463,6 +1498,10 @@ function renderFunil(){
         if(filtroRes==='aberto'&&(res==='ganho'||res==='perda'))return false;
       }
       if(funilAtivo==='servicos'&&filtroOficinaFunil&&c.produto!==filtroOficinaFunil)return false;
+      if(funilAtivo==='servicos'&&filtroTurmaFunil){
+        if(filtroTurmaFunil==='Sem turma'){if(c.turma)return false;}
+        else if(c.turma!==filtroTurmaFunil)return false;
+      }
       if(busca&&!c.nome.toLowerCase().includes(busca)&&!(c.card_titulo&&c.card_titulo.toLowerCase().includes(busca)))return false;
       return true;
     });
@@ -1534,6 +1573,7 @@ function kcardHtml(c,busca){
       ${vl?`<span>${vl}</span>`:''}
       ${c.canal?`<span>${CANAL_LABEL[c.canal]||c.canal}</span>`:''}
       ${usr?`<span>👤 ${usr.nome}</span>`:''}
+      ${c.funil==='servicos'&&(c.produto||c.turma)?`<span>🎨 ${[c.produto,c.turma].filter(Boolean).join(' · ')}</span>`:''}
       ${histBadge}${mktBadge}${nfBadge}
     </div>
     ${ucHtml?`<div style="margin-bottom:3px">${ucHtml}</div>`:''}
@@ -1902,6 +1942,7 @@ function openContato(id=null,fid=null,eid=null){
     document.getElementById('f-atv-desc-modal').value=c.atv_desc||'';
     document.getElementById('f-produto').value=c.produto||'';
     updEtapas();
+    popularSelectTurma(c.turma||'');
     document.getElementById('f-obs').value=c.obs||'';
     document.getElementById('f-user').value=c.usuario||'';
     document.getElementById('f-email').value=c.email||'';
@@ -1943,7 +1984,7 @@ function openContato(id=null,fid=null,eid=null){
       if(rb&&ultimaNeg){rb.className=ultimaNeg.r==='ganho'?'res-ganho':'res-perda';rb.textContent=ultimaNeg.r==='ganho'?'✓ Ganho':'✗ Perda';}
     }
   }else{
-    ['f-nome','f-card-titulo','f-tel','f-valor','f-atv-data-modal','f-atv-desc-modal','f-produto','f-obs','f-email','f-cpf','f-endereco','f-cod-marketup','f-cidade','f-uf','f-cep','selOficina'].forEach(x=>document.getElementById(x).value='');
+    ['f-nome','f-card-titulo','f-tel','f-valor','f-atv-data-modal','f-atv-desc-modal','f-produto','f-obs','f-email','f-cpf','f-endereco','f-cod-marketup','f-cidade','f-uf','f-cep','selOficina','f-turma'].forEach(x=>document.getElementById(x).value='');
     document.getElementById('f-canal').value='instagram';document.getElementById('f-user').value='';
     document.getElementById('f-aniversario').value='';
     const hw=document.getElementById('neg-hist-wrap');if(hw)hw.style.display='none';
@@ -1957,15 +1998,17 @@ function updEtapas(){
   const funil=getFunil(document.getElementById('f-funil').value);
   document.getElementById('f-etapa').innerHTML=funil?funil.etapas.map(e=>`<option value="${e.id}">${e.nome}</option>`).join(''):'';
   const isServ=funil&&funil.id==='servicos';
-  const wp=document.getElementById('wrap-produto-normal'),wo=document.getElementById('wrap-oficina');
+  const wp=document.getElementById('wrap-produto-normal'),wo=document.getElementById('wrap-oficina'),wt=document.getElementById('wrap-turma');
   if(wp)wp.style.display=isServ?'none':'block';
   if(wo)wo.style.display=isServ?'block':'none';
+  if(wt)wt.style.display=isServ?'block':'none';
   if(isServ){
     var sel=document.getElementById('selOficina');
     var oficinas=catalogo.produtos.filter(function(p){return p.natureza==='servico';});
     var cur=(document.getElementById('f-produto')||{value:''}).value;
     sel.innerHTML='<option value="">Selecione uma oficina...</option>'+oficinas.map(function(o){return'<option value="'+o.nome+'">'+o.nome+'</option>';}).join('');
     sel.value=cur||'';
+    popularSelectTurma();
   }
 }
 function onOficinaChange(){document.getElementById('f-produto').value=document.getElementById('selOficina').value;}
@@ -1987,6 +2030,7 @@ async function saveContato(){
     canal:document.getElementById('f-canal').value,
     valor:parseFloat(document.getElementById('f-valor').value)||0,
     produto:document.getElementById('f-produto').value.trim(),
+    turma:document.getElementById('f-turma').value,
     obs:document.getElementById('f-obs').value.trim(),
     data:prev.data||new Date().toISOString(),compras:prev.compras||0,
     funil:fid,etapa:eid,usuario:document.getElementById('f-user').value,
@@ -2110,7 +2154,7 @@ function renderContatos(){
         </div>
       </div>
       <div class="cc-info">
-        ${c.tel?`📞 ${c.tel} &nbsp;`:''}${c.produto?`👕 ${c.produto} &nbsp;`:''}📅 ${fmtD(c.data)}
+        ${c.tel?`📞 ${c.tel} &nbsp;`:''}${c.produto?`👕 ${c.produto} &nbsp;`:''}${c.turma?`🎓 ${c.turma} &nbsp;`:''}📅 ${fmtD(c.data)}
         ${ultimaCompraHtml(c)}
         ${c.motivo_perda?`<div style="color:var(--VM);margin-top:2px">⚠ ${c.motivo_perda}</div>`:''}
         ${c.obs?`<div style="font-style:italic;margin-top:2px">"${c.obs}"</div>`:''}
@@ -3519,6 +3563,20 @@ function renderConfig(){
     usersHtml+='<div style="display:flex;align-items:center;gap:6px;background:var(--G);border-radius:20px;padding:5px 12px"><span style="font-size:12px">👤 '+u.nome+'</span>'+delUserBtn+'</div>';
   });
   document.getElementById('cfg-users').innerHTML='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.75rem">'+usersHtml+'</div>';
+  // turmas
+  var turmasEl=document.getElementById('cfg-turmas');
+  if(turmasEl){
+    var turmasArr=cfg.turmas||[];
+    if(!turmasArr.length){
+      turmasEl.innerHTML='<div style="font-size:11px;color:var(--G3);font-style:italic;margin-bottom:.75rem">Nenhuma turma criada ainda</div>';
+    }else{
+      var th='';
+      turmasArr.forEach(function(t){
+        th+='<div style="display:flex;align-items:center;gap:6px;background:var(--G);border-radius:20px;padding:5px 12px"><span style="font-size:12px">🎓 '+t.nome+'</span><button class="btn xs danger" onclick="delTurma(\''+t.id+'\')">✕</button></div>';
+      });
+      turmasEl.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.75rem">'+th+'</div>';
+    }
+  }
   // campos personalizados
   var camposEl=document.getElementById('cfg-campos');
   if(camposEl){
@@ -3855,6 +3913,72 @@ async function delFunil(id){if(!confirm('Apagar funil?'))return;cfg.funis=cfg.fu
 async function delEtapa(fid,eid){if(!confirm('Apagar etapa?'))return;const f=getFunil(fid);if(f)f.etapas=f.etapas.filter(e=>e.id!==eid);await saveCfg();renderAll();}
 async function delUser(id){if(!confirm('Remover usuário?'))return;cfg.usuarios=cfg.usuarios.filter(u=>u.id!==id);await saveCfg();renderConfig();renderUbtns();}
 
+// ── TURMAS ───────────────────────────────────────────────
+function openTurmaModal(){document.getElementById('f-turma-nome').value='';document.getElementById('modal-turma').style.display='flex';setTimeout(function(){document.getElementById('f-turma-nome').focus();},50);}
+async function saveTurma(){
+  var nome=document.getElementById('f-turma-nome').value.trim();
+  if(!nome)return;
+  if(!cfg.turmas)cfg.turmas=[];
+  var existente=cfg.turmas.find(function(t){return t.nome.toLowerCase()===nome.toLowerCase();});
+  if(!existente){cfg.turmas.push({id:'tm'+Date.now(),nome:nome});await saveCfg();}
+  closeM('modal-turma');
+  popularSelectTurma(nome);
+  if(document.getElementById('cfg-turmas'))renderConfig();
+  var paneOf=document.getElementById('pane-oficinas');
+  if(paneOf&&paneOf.classList.contains('active'))renderOficinas();
+}
+async function delTurma(id){
+  if(!confirm('Apagar esta turma? Os cards que já usam essa turma mantêm o valor salvo, mas ela deixa de aparecer na lista de seleção.'))return;
+  cfg.turmas=(cfg.turmas||[]).filter(function(t){return t.id!==id;});
+  await saveCfg();renderConfig();
+}
+function popularSelectTurma(valor){
+  var sel=document.getElementById('f-turma');if(!sel)return;
+  var cur=(valor!==undefined)?valor:sel.value;
+  var turmas=cfg.turmas||[];
+  sel.innerHTML='<option value="">Sem turma</option>'+turmas.map(function(t){return'<option value="'+t.nome.replace(/"/g,'&quot;')+'">'+t.nome+'</option>';}).join('');
+  sel.value=cur||'';
+}
+// Lista, na ordem cadastrada em cfg.turmas + extras achados só nos dados, os nomes de turma
+// presentes na lista de cards passada — usada pra popular filtros e a quebra da pág. Oficinas.
+function turmasConhecidas(lista){
+  var vistos={};var out=[];
+  (cfg.turmas||[]).forEach(function(t){
+    if(!vistos[t.nome]&&lista.some(function(c){return (c.turma||'')===t.nome;})){vistos[t.nome]=1;out.push(t.nome);}
+  });
+  lista.forEach(function(c){
+    var t=c.turma||'';
+    if(t&&!vistos[t]){vistos[t]=1;out.push(t);}
+  });
+  if(lista.some(function(c){return !c.turma;}))out.push('Sem turma');
+  return out;
+}
+async function migrarTurmasDeTitulos(){
+  var re=/^\[([^\]]+)\]\s*-?\s*(.*)$/;
+  var alvos=contatos.filter(function(c){return c.funil==='servicos'&&!c.turma&&c.card_titulo&&re.test(c.card_titulo.trim());});
+  if(!alvos.length){setFb('fb-migra-turmas','Nenhum card com título no padrão "[Turma] - Nome" encontrado.','info');return;}
+  if(!confirm('Migrar '+alvos.length+' card(s)? A turma será extraída do título e o título será limpo quando sobrar só o nome do cliente.'))return;
+  setFb('fb-migra-turmas','Migrando...','info');
+  if(!cfg.turmas)cfg.turmas=[];
+  var turmasNovas=false;
+  try{
+    for(var i=0;i<alvos.length;i++){
+      var c=alvos[i];
+      var m=c.card_titulo.trim().match(re);
+      var turmaNome=m[1].trim();
+      var resto=(m[2]||'').trim();
+      c.turma=turmaNome;
+      c.card_titulo=(resto&&resto.toLowerCase()!==c.nome.toLowerCase())?resto:'';
+      if(!cfg.turmas.find(function(t){return t.nome.toLowerCase()===turmaNome.toLowerCase();})){cfg.turmas.push({id:'tm'+Date.now()+i,nome:turmaNome});turmasNovas=true;}
+      await apiSave(c);
+    }
+    if(turmasNovas)await saveCfg();
+    await doSync();
+    setFb('fb-migra-turmas','✓ '+alvos.length+' card(s) migrados!','ok');
+    renderConfig();
+  }catch(ex){setFb('fb-migra-turmas','Erro na migração','er');console.error(ex);}
+}
+
 // ── CAMPOS PERSONALIZADOS ────────────────────────────────
 function openCampoModal(campoId){
   editCampoId=campoId||null;
@@ -4064,45 +4188,78 @@ function renderOficinas(){
   if(!nomes.length){el.innerHTML='<div class="empty">Nenhuma oficina cadastrada ainda. Crie uma no Catálogo com natureza "Serviço".</div>';return;}
   var nCols=etapasServ.length+1;
   var gridCols='1.6fr repeat('+nCols+',1fr) .8fr';
+  var h='';
+
+  h+='<div class="slbl">Geral</div>';
+  h+=tabelaOficinasHtml(nomes,etapasServ,contatosServ,gridCols,null);
+
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:1.5rem 0 .75rem">';
+  h+='<div class="slbl" style="margin:0">Por turma</div>';
+  var todasTurmas=turmasConhecidas(contatosServ);
+  h+='<select class="fi" style="width:auto;font-size:12px;height:32px" id="filtro-turma-oficinas" onchange="setFiltroTurmaOficinas(this.value)"><option value="">Todas as turmas</option>'+todasTurmas.map(function(t){return'<option value="'+t.replace(/"/g,'&quot;')+'"'+(filtroTurmaOficinas===t?' selected':'')+'>'+t+'</option>';}).join('')+'</select>';
+  h+='</div>';
+  var algumaTurma=false;
+  nomes.forEach(function(nome){
+    var contsOficina=contatosServ.filter(function(c){return c.produto===nome;});
+    if(!contsOficina.length)return;
+    var turmasDaOficina=turmasConhecidas(contsOficina);
+    if(filtroTurmaOficinas)turmasDaOficina=turmasDaOficina.filter(function(t){return t===filtroTurmaOficinas;});
+    if(!turmasDaOficina.length)return;
+    algumaTurma=true;
+    h+='<div style="font-size:12px;font-weight:700;color:var(--K);margin:1rem 0 .5rem">'+nome+'</div>';
+    h+=tabelaOficinasHtml(turmasDaOficina,etapasServ,contsOficina,gridCols,nome);
+  });
+  if(!algumaTurma)h+='<div class="empty">Nenhuma turma registrada ainda. Selecione a turma ao criar/editar um card do funil Serviços.</div>';
+
+  el.innerHTML=h;
+}
+
+function tabelaOficinasHtml(linhas,etapasServ,contatosServ,gridCols,oficinaCtx){
   var h='<div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;overflow:hidden"><div style="overflow-x:auto">';
   h+='<div style="display:grid;grid-template-columns:'+gridCols+';gap:0;padding:.75rem 1rem;background:var(--G);font-size:10px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.05em;min-width:600px">';
-  h+='<div>Oficina</div>';
+  h+='<div>'+(oficinaCtx?'Turma':'Oficina')+'</div>';
   etapasServ.forEach(function(e){h+='<div style="text-align:center">'+e.nome+'</div>';});
   h+='<div style="text-align:center">Cancelados</div>';
   h+='<div style="text-align:center">Total</div>';
   h+='</div>';
-  nomes.forEach(function(nome,i){
-    var contsOficina=contatosServ.filter(function(c){return c.produto===nome;});
-    var total=contsOficina.length;
-    var cancelados=contsOficina.filter(function(c){return c.resultado==='perda';}).length;
+  linhas.forEach(function(rowNome,i){
+    var contsRow=oficinaCtx
+      ?contatosServ.filter(function(c){return rowNome==='Sem turma'?!c.turma:c.turma===rowNome;})
+      :contatosServ.filter(function(c){return c.produto===rowNome;});
+    var total=contsRow.length;
+    var cancelados=contsRow.filter(function(c){return c.resultado==='perda';}).length;
+    var oficinaArg=oficinaCtx?oficinaCtx.replace(/'/g,"\\'"):rowNome.replace(/'/g,"\\'");
+    var turmaArg=oficinaCtx?",'"+rowNome.replace(/'/g,"\\'")+"'":'';
     h+='<div style="display:grid;grid-template-columns:'+gridCols+';gap:0;padding:.75rem 1rem;align-items:center;min-width:600px;'+(i>0?'border-top:1px solid var(--G2)':'')+'">';
-    h+='<div style="font-size:13px;font-weight:600;color:var(--K);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+nome+'</div>';
+    h+='<div style="font-size:13px;font-weight:600;color:var(--K);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+rowNome+'</div>';
     etapasServ.forEach(function(e){
-      var cnt=contsOficina.filter(function(c){return c.etapa===e.id&&c.resultado!=='perda';}).length;
-      if(cnt>0)h+='<div class="mc-link" style="text-align:center;font-size:14px;font-weight:700;color:var(--K);cursor:pointer" onclick="showOficinaDetail(\''+nome.replace(/'/g,"\\'")+'\',\''+e.id+'\')">'+cnt+'</div>';
+      var cnt=contsRow.filter(function(c){return c.etapa===e.id&&c.resultado!=='perda';}).length;
+      if(cnt>0)h+='<div class="mc-link" style="text-align:center;font-size:14px;font-weight:700;color:var(--K);cursor:pointer" onclick="showOficinaDetail(\''+oficinaArg+'\',\''+e.id+'\''+turmaArg+')">'+cnt+'</div>';
       else h+='<div style="text-align:center;font-size:14px;color:var(--G2)">—</div>';
     });
-    if(cancelados>0)h+='<div class="mc-link" style="text-align:center;font-size:14px;font-weight:700;color:var(--VM);cursor:pointer" onclick="showOficinaDetail(\''+nome.replace(/'/g,"\\'")+'\',\'CANCELADOS\')">'+cancelados+'</div>';
+    if(cancelados>0)h+='<div class="mc-link" style="text-align:center;font-size:14px;font-weight:700;color:var(--VM);cursor:pointer" onclick="showOficinaDetail(\''+oficinaArg+'\',\'CANCELADOS\''+turmaArg+')">'+cancelados+'</div>';
     else h+='<div style="text-align:center;font-size:14px;color:var(--G2)">—</div>';
     h+='<div style="text-align:center;font-size:14px;font-weight:700;color:var(--L)">'+total+'</div>';
     h+='</div>';
   });
   h+='</div></div>';
-  el.innerHTML=h;
+  return h;
 }
+function setFiltroTurmaOficinas(v){filtroTurmaOficinas=v;renderOficinas();}
 
-function showOficinaDetail(oficina,etapaId){
+function showOficinaDetail(oficina,etapaId,turma){
+  var matchTurma=function(c){return turma===undefined?true:(turma==='Sem turma'?!c.turma:c.turma===turma);};
   var lista,titulo;
   if(etapaId==='CANCELADOS'){
-    lista=contatos.filter(function(c){return c.funil==='servicos'&&c.produto===oficina&&c.resultado==='perda';});
+    lista=contatos.filter(function(c){return c.funil==='servicos'&&c.produto===oficina&&c.resultado==='perda'&&matchTurma(c);});
     titulo='Cancelados';
   }else{
     var funilServ=getFunil('servicos');
     var etapaInfo=funilServ?funilServ.etapas.find(function(e){return e.id===etapaId;}):null;
-    lista=contatos.filter(function(c){return c.funil==='servicos'&&c.produto===oficina&&c.etapa===etapaId&&c.resultado!=='perda';});
+    lista=contatos.filter(function(c){return c.funil==='servicos'&&c.produto===oficina&&c.etapa===etapaId&&c.resultado!=='perda'&&matchTurma(c);});
     titulo=etapaInfo?etapaInfo.nome:etapaId;
   }
-  document.getElementById('psf-detail-title').textContent=oficina+' — '+titulo+' ('+lista.length+')';
+  document.getElementById('psf-detail-title').textContent=oficina+(turma?' — '+turma:'')+' — '+titulo+' ('+lista.length+')';
   var html='';
   if(!lista.length){html='<div class="empty">Nenhum contato nesta etapa</div>';}
   else{
