@@ -1306,8 +1306,10 @@ async function sincronizarTudoNuvemshop(){
     });
     var data=await resp.json().catch(function(){return{};});
     if(!resp.ok||!data.ok){ss('er','Erro ao sincronizar com a Nuvemshop');console.warn('sincronizarTudoNuvemshop falhou:',data);return;}
-    if(data.falhou>0){ss('er','Sincronização parcial: '+data.falhou+' variação(ões) falharam');console.warn(data.detalhes);}
-    else ss('ok','Estoque sincronizado ('+data.produtos+' produtos)'+(data.webhooks_criados&&data.webhooks_criados.length?' · cadastro automático pela Nuvemshop ativado':''));
+    var extra=(data.variacoes_criadas?' · '+data.variacoes_criadas+' variações de cor criadas':'')+(data.webhooks_criados&&data.webhooks_criados.length?' · cadastro automático pela Nuvemshop ativado':'');
+    if(data.parcial){ss('ok','Ainda não terminou ('+data.produtos+' produtos feitos'+extra+') — clique em Sincronizar de novo pra continuar');if(data.falhou>0)console.warn(data.detalhes);}
+    else if(data.falhou>0){ss('er','Sincronização parcial: '+data.falhou+' falharam'+extra);console.warn(data.detalhes);}
+    else ss('ok','Estoque sincronizado ('+data.produtos+' produtos)'+extra);
   }catch(e){ss('er','Erro ao sincronizar com a Nuvemshop');console.warn(e);}
   finally{if(btn)btn.disabled=false;}
 }

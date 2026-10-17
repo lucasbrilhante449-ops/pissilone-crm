@@ -574,6 +574,7 @@ export async function broadcastEstoqueNuvemshop(supabase: SupabaseClient, produt
   let ok = 0, falhou = 0
   const detalhes: string[] = []
   const idsVistos = new Set<string>()
+  let ctx: ContextoEspelho | null = null
   for (const e of estampas || []) {
     let ids: string[] = []
     try { ids = JSON.parse(e.nuvemshop_produto_ids || '[]') } catch (_err) { continue }
@@ -582,6 +583,14 @@ export async function broadcastEstoqueNuvemshop(supabase: SupabaseClient, produt
       idsVistos.add(produtoId)
       try {
         const variantId = await acharVariantId(produtoId, cor, tamanho)
+        if (!variantId && quantidade > 0) {
+          // Cor que acabou de ganhar estoque e o produto ainda não oferece → cria
+          // a variação (a estampa é feita sob medida, então vale em qualquer cor lisa).
+          ctx = ctx || await carregarContextoEspelho(supabase)
+          const produtoNs = await nsFetch(`/products/${produtoId}?fields=id,name,attributes,variants`)
+          const r = await completarCoresDoEstoque(produtoNs, classificarProdutoNs(produtoNs, ctx.catalogo), ctx)
+          if (r.criadas.length) { ok++; continue }
+        }
         if (!variantId) { falhou++; detalhes.push(`${e.nome} (produto ${produtoId}): sem variação ${cor}/${tamanho}`); continue }
         await nsFetch(`/products/${produtoId}/variants/${variantId}`, 'PUT', { stock_management: true, stock: quantidade })
         ok++
@@ -625,6 +634,102 @@ function classificarProdutoNs(produtoNs: any, catalogo: any[]): ProdutoNsClassif
     return { id: v.id, valores, cor, tamanho, stock: v.stock, stock_management: v.stock_management }
   })
   return { nome, produto, temProdutoBase: Boolean(produtoBase), estampa, variantes }
+}
+
+// Grafia que a LOJA já usa pra cada cor do CRM (ex: CRM "Preta" → loja "Preto"),
+// pra variação nova não aparecer como uma cor diferente no filtro do site.
+// Calculada uma vez por contexto, a partir do catálogo da Nuvemshop.
+async function grafiaCorNaLoja(ctx: ContextoEspelho, corCrm: string): Promise<string> {
+  if (!ctx.grafiasCor) {
+    ctx.grafiasCor = new Map()
+    const contagem = new Map<string, Map<string, number>>()
+    const cores = ctx.catalogo.filter((c: any) => c.tipo === 'cor').map((c: any) => String(c.nome))
+    const produtos: any[] = (await nsFetch('/products?per_page=200&fields=id,variants')) || []
+    for (const p of produtos) for (const v of p.variants || []) for (const x of v.values || []) {
+      const valor = nsText(x).trim()
+      const c = cores.find((nome) => corBate(valor, nome))
+      if (!c) continue
+      const m = contagem.get(c) || new Map<string, number>()
+      m.set(valor, (m.get(valor) || 0) + 1)
+      contagem.set(c, m)
+    }
+    for (const [c, m] of contagem) ctx.grafiasCor.set(c, [...m.entries()].sort((a, b) => b[1] - a[1])[0][0])
+  }
+  return ctx.grafiasCor.get(corCrm) || corCrm
+}
+
+
+function estoqueCrm(ctx: ContextoEspelho, produto: string, cor: string, tamanho: string): number {
+  if (!cor || !tamanho) return 0
+  const row = ctx.estoque.find((e: any) => e.produto === produto && e.cor === cor && e.tamanho === tamanho)
+  return row ? Math.max(0, parseInt(row.quantidade) || 0) : 0
+}
+
+// Campos de variação reenviados no PUT em lote — o PUT /products/{id}/variants
+// substitui a coleção inteira, então toda variação existente vai de volta com
+// tudo que ela já tinha (foto, SKU, preço...), senão poderia perder dado.
+const CAMPOS_VARIANTE = ['values', 'image_id', 'price', 'promotional_price', 'compare_at_price', 'weight', 'width', 'height', 'depth', 'sku', 'barcode', 'mpn', 'age_group', 'gender', 'cost']
+
+// Toda cor lisa que tem estoque no CRM vira variação em toda camiseta — a
+// estampa é aplicada sob medida, então qualquer cor com peça lisa disponível
+// pode ser vendida. Cria só o que falta, em todos os tamanhos que o produto já
+// oferece, com o estoque do CRM (0 nos tamanhos sem peça) e o preço/peso/medidas
+// copiados de uma variação existente do mesmo tamanho.
+// Um único PUT /products/{id}/variants por produto (existentes + novas): criar
+// uma a uma eram ~15 POSTs por camiseta, cada um disparando um product/updated
+// de volta pra cá — estourava o limite de requisições da Nuvemshop.
+// Não mexe em produto cujo nome já fixa a cor (ex: "Camiseta Básica | Cor Preta")
+// nem em produto com atributos além de Cor e Tamanho. Cor sem estoque não é
+// removida — só fica 0 (esgotada).
+async function completarCoresDoEstoque(produtoNs: any, cls: ProdutoNsClassificado, ctx: ContextoEspelho): Promise<{ criadas: string[]; detalhes: string[]; produtoAtualizado?: any }> {
+  const criadas: string[] = [], detalhes: string[] = []
+  if (/\bcor\b/i.test(cls.nome)) return { criadas, detalhes }
+  const attrs: string[] = (produtoNs?.attributes || []).map((a: any) => normComparar(nsText(a)))
+  const iCor = attrs.findIndex((a) => a.startsWith('cor'))
+  const iTam = attrs.findIndex((a) => a.startsWith('tamanho'))
+  if (attrs.length !== 2 || iCor < 0 || iTam < 0) return { criadas, detalhes }
+
+  const variantsNs: any[] = produtoNs.variants || []
+  const tamanhos = [...new Set(cls.variantes.map((v) => v.tamanho).filter(Boolean))]
+  const coresComEstoque = [...new Set(ctx.estoque
+    .filter((e: any) => e.produto === cls.produto && (parseInt(e.quantidade) || 0) > 0)
+    .map((e: any) => String(e.cor)))]
+
+  const novas: Record<string, unknown>[] = []
+  for (const cor of coresComEstoque) {
+    for (const tamanho of tamanhos) {
+      if (cls.variantes.some((v) => v.cor === cor && v.tamanho === tamanho)) continue
+      const modelo = variantsNs[cls.variantes.findIndex((v) => v.tamanho === tamanho)]
+      const values: any[] = []
+      values[iCor] = { pt: await grafiaCorNaLoja(ctx, cor) }
+      values[iTam] = modelo?.values?.[iTam] ?? { pt: tamanho }
+      const nova: Record<string, unknown> = { values, stock_management: true, stock: estoqueCrm(ctx, cls.produto, cor, tamanho) }
+      for (const campo of ['price', 'promotional_price', 'compare_at_price', 'weight', 'width', 'height', 'depth', 'cost']) {
+        if (modelo?.[campo] !== null && modelo?.[campo] !== undefined) nova[campo] = modelo[campo]
+      }
+      novas.push(nova)
+      criadas.push(`${cor}/${tamanho}`)
+    }
+  }
+  if (!novas.length) return { criadas, detalhes }
+
+  const existentes = variantsNs.map((v: any, i: number) => {
+    const o: Record<string, unknown> = {}
+    for (const campo of CAMPOS_VARIANTE) if (v[campo] !== null && v[campo] !== undefined) o[campo] = v[campo]
+    // Já manda o estoque do CRM também — o sync logo depois não precisa reescrever.
+    o.stock_management = true
+    o.stock = estoqueCrm(ctx, cls.produto, cls.variantes[i].cor, cls.variantes[i].tamanho)
+    return o
+  })
+  try {
+    await nsFetch(`/products/${produtoNs.id}/variants`, 'PUT', [...existentes, ...novas])
+  } catch (err) {
+    detalhes.push(`${cls.nome} (criar ${criadas.join(', ')}): ${err instanceof Error ? err.message : 'erro'}`)
+    return { criadas: [], detalhes }
+  }
+  // Recarrega: o sync seguinte precisa dos ids/estoques atuais das variações.
+  const produtoAtualizado = await nsFetch(`/products/${produtoNs.id}?fields=id,name,attributes,variants,images`)
+  return { criadas, detalhes, produtoAtualizado }
 }
 
 async function sincronizarProdutoNuvemshopCompleto(
@@ -693,7 +798,7 @@ async function garantirWebhooksProduto(): Promise<string[]> {
   return criados
 }
 
-interface ContextoEspelho { catalogo: any[]; estoque: any[]; estampas: any[] }
+interface ContextoEspelho { catalogo: any[]; estoque: any[]; estampas: any[]; grafiasCor?: Map<string, string> }
 
 async function carregarContextoEspelho(supabase: SupabaseClient): Promise<ContextoEspelho> {
   const [{ catalogo, estoque }, { data: estampas }] = await Promise.all([
@@ -746,8 +851,12 @@ async function espelharProdutoNs(supabase: SupabaseClient, produtoNs: any, ctx: 
     estampaRow.foto_url = fotoUrl
   }
 
-  const estoque_sincronizado = await sincronizarProdutoNuvemshopCompleto(produtoId, ctx.catalogo, ctx.estoque, produtoNs)
-  return { ok: true, estampa: estampaRow.nome, produto: cls.produto, estoque_sincronizado }
+  // Variações novas já nascem com o estoque certo; o sync abaixo cuida das existentes.
+  const cores = await completarCoresDoEstoque(produtoNs, cls, ctx)
+  const estoque_sincronizado = await sincronizarProdutoNuvemshopCompleto(produtoId, ctx.catalogo, ctx.estoque, cores.produtoAtualizado || produtoNs)
+  estoque_sincronizado.detalhes.push(...cores.detalhes)
+  estoque_sincronizado.falhou += cores.detalhes.length
+  return { ok: true, estampa: estampaRow.nome, produto: cls.produto, variacoes_criadas: cores.criadas, estoque_sincronizado }
 }
 
 // ── /estoque/sincronizar-tudo-nuvemshop ───────────────────
@@ -757,16 +866,22 @@ async function espelharProdutoNs(supabase: SupabaseClient, produtoNs: any, ctx: 
 // estourava o tempo da Edge Function) e só faz PUT no que está diferente.
 export async function sincronizarTudoNuvemshop(supabase: SupabaseClient, _body: any) {
   const ctx = await carregarContextoEspelho(supabase)
-  let produtos = 0, ignorados = 0, ok = 0, falhou = 0
+  let produtos = 0, ignorados = 0, ok = 0, falhou = 0, criadas = 0
+  let parcial = false
   const detalhes: string[] = []
   const POR_PAGINA = 200
-  for (let pagina = 1; ; pagina++) {
-    const lote: any[] = (await nsFetch(`/products?per_page=${POR_PAGINA}&page=${pagina}&fields=id,name,variants,images`)) || []
+  // Margem antes do limite de tempo da Edge Function: para e avisa; clicar de
+  // novo continua (o que já foi feito é pulado, nada é escrito 2x).
+  const inicio = Date.now(), LIMITE_MS = 110_000
+  paginas: for (let pagina = 1; ; pagina++) {
+    const lote: any[] = (await nsFetch(`/products?per_page=${POR_PAGINA}&page=${pagina}&fields=id,name,attributes,variants,images`)) || []
     for (const produtoNs of lote) {
+      if (Date.now() - inicio > LIMITE_MS) { parcial = true; break paginas }
       try {
         const r = await espelharProdutoNs(supabase, produtoNs, ctx)
         if (r.ignorado) { ignorados++; continue }
         produtos++
+        criadas += r.variacoes_criadas.length
         ok += r.estoque_sincronizado.ok; falhou += r.estoque_sincronizado.falhou
         detalhes.push(...r.estoque_sincronizado.detalhes)
       } catch (err) {
@@ -784,7 +899,7 @@ export async function sincronizarTudoNuvemshop(supabase: SupabaseClient, _body: 
   try { webhooks_criados = await garantirWebhooksProduto() } catch (err) {
     detalhes.push(`webhooks de produto: ${err instanceof Error ? err.message : 'erro'}`)
   }
-  return { ok: true, produtos, ignorados, variacoes_ok: ok, falhou, detalhes, webhooks_criados }
+  return { ok: true, parcial, produtos, ignorados, variacoes_criadas: criadas, variacoes_ok: ok, falhou, detalhes, webhooks_criados }
 }
 
 export async function webhookNuvemshopProduto(supabase: SupabaseClient, body: any) {
@@ -803,7 +918,7 @@ export async function webhookNuvemshopProduto(supabase: SupabaseClient, body: an
   }
 
   const [produtoNs, ctx] = await Promise.all([
-    nsFetch(`/products/${produtoId}?fields=id,name,variants,images`),
+    nsFetch(`/products/${produtoId}?fields=id,name,attributes,variants,images`),
     carregarContextoEspelho(supabase),
   ])
   return { evento, ...(await espelharProdutoNs(supabase, produtoNs, ctx)) }
