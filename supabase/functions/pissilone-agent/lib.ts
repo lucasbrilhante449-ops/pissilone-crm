@@ -125,7 +125,7 @@ export function parseNegHist(c: { neg_hist?: string }): any[] {
 
 export interface Etapa { id: string; nome: string }
 export interface Funil { id: string; nome: string; etapas: Etapa[] }
-export interface Cfg { funis: Funil[]; usuarios: { id: string; nome: string }[]; campos_personalizados: any[] }
+export interface Cfg { funis: Funil[]; usuarios: { id: string; nome: string }[]; campos_personalizados: any[]; nuvemshop_responsavel_padrao?: string }
 
 export async function loadCfg(supabase: SupabaseClient): Promise<Cfg> {
   const { data, error } = await supabase.from('config').select('dados').eq('id', 1).maybeSingle()
@@ -298,6 +298,49 @@ export async function duplicarParaPissifaAuto(supabase: SupabaseClient, cfg: Cfg
 }
 
 // ── ENVIO DE MENSAGEM (Parte 2 do doc de integração — aa.app.br) ──
+
+// ── NUVEMSHOP (webhook de pedidos pagos no site) ─────────────
+// Espelha o nsFetch() descrito em crm-nuvemshop-estoque.md (seção 7.2), só que em
+// Deno/TS em vez de Apps Script. Mesmo contrato de headers (Authorization Bearer +
+// User-Agent obrigatório, senão a API da Nuvemshop devolve 400).
+
+export async function nsFetch(path: string): Promise<any> {
+  const token = Deno.env.get('NS_TOKEN') ?? ''
+  const storeId = Deno.env.get('NS_STORE_ID') ?? ''
+  const version = Deno.env.get('NS_API_VERSION') ?? '2025-03'
+  if (!token || !storeId) throw new ApiError(500, 'NS_TOKEN/NS_STORE_ID não configurados nos secrets da Edge Function.')
+  const url = `https://api.nuvemshop.com.br/${version}/${storeId}${path}`
+  const resp = await fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'User-Agent': 'Pissilone CRM (lucas.brilhante.449@gmail.com)',
+    },
+  })
+  if (!resp.ok) throw new ApiError(502, `Nuvemshop API falhou: HTTP ${resp.status} ${await resp.text()}`)
+  return resp.json()
+}
+
+// Marca um pedido da Nuvemshop como processado de forma atômica (insert com PK
+// única) — se já existir, a inserção falha e retorna true ("já processado"), sem
+// precisar de um select antes (evita corrida se o webhook reentregar quase junto).
+export async function nuvemshopPedidoJaProcessado(supabase: SupabaseClient, orderId: string): Promise<boolean> {
+  const { error } = await supabase.from('nuvemshop_pedidos_processados').insert({ order_id: String(orderId) })
+  return Boolean(error) // qualquer erro aqui é a violação de PK esperada quando já existe
+}
+
+// Acha um item do catálogo por tipo+nome (case-insensitive) e cria "bare" se não
+// existir — mesma lógica de localizarOuCriarCatalogo() em routes.ts, só que como
+// helper reutilizável (ali é uma rota do agente, aqui é chamado de dentro do
+// mapeamento do pedido da Nuvemshop).
+export async function catalogoAcharOuCriar(supabase: SupabaseClient, tipo: 'produto' | 'estampa' | 'cor' | 'tamanho', nome: string): Promise<string> {
+  const nomeNorm = nome.trim().toLowerCase()
+  const { data: existentes } = await supabase.from('catalogo').select('nome').eq('tipo', tipo)
+  const achado = (existentes || []).find((r: any) => String(r.nome || '').trim().toLowerCase() === nomeNorm)
+  if (achado) return achado.nome
+  const { data: novo, error } = await supabase.from('catalogo').insert({ tipo, nome: nome.trim() }).select('nome').single()
+  if (error) { console.error('catalogoAcharOuCriar error:', error.message); return nome.trim() }
+  return novo.nome
+}
 
 export async function enviarImagemWhatsapp(numero: string, mediaUrl: string, legenda: string): Promise<boolean> {
   const token = Deno.env.get('AA_SEND_TOKEN') ?? ''

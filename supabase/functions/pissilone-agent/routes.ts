@@ -1,9 +1,10 @@
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import {
   ApiError, Contato, ItemPedido,
-  acharEtapaPorNome, apiSaveContato, criarEncomendasDoGanho,
+  acharEtapaPorNome, apiSaveContato, catalogoAcharOuCriar, criarEncomendasDoGanho,
   duplicarParaPissifaAuto, enviarImagemWhatsapp, findContatoByTel, getFunil, hojeISO, loadCfg,
-  logAction, moverEstoquePedido, normDateAgente, normTel, normTelBR, novoContato, parseNegHist, parseValorBR,
+  logAction, moverEstoquePedido, normDate, normDateAgente, normTel, normTelBR, novoContato,
+  nsFetch, nuvemshopPedidoJaProcessado, parseNegHist, parseValorBR,
   registrarParticipacao, rowToContato,
 } from './lib.ts'
 
@@ -15,11 +16,27 @@ function reqStr(body: any, campo: string): string {
   return String(v).trim()
 }
 
-// Acha o contato existente pelo telefone, ou lança erro pedindo pra chamar /criar-card antes.
-async function exigirContato(supabase: SupabaseClient, telefone: string): Promise<Contato> {
+// Acha o contato existente pelo telefone; se não existir, cria na hora (funil D2C,
+// 1ª etapa) em vez de falhar com 404. Antes essa rota exigia que /criar-card tivesse
+// "pego" primeiro — mas se o telefone chegar em formato levemente diferente entre
+// chamadas (ex: com/sem o 9º dígito), o lookup por sufixo pode não bater mesmo com o
+// card já existindo, e a venda simplesmente sumia (nunca virava "ganho"). Tolerar/upsert
+// aqui garante que a ação do agente nunca se perde — o preço é que, se isso realmente
+// acontecer, nasce um card novo "Cliente" em vez de cair no card certo (por isso loga
+// com a origem, pra dar pra rastrear quando isso acontece e investigar a causa real).
+async function exigirContato(supabase: SupabaseClient, telefone: string, origem: string, overrides: Partial<Contato> = {}): Promise<Contato> {
   const row = await findContatoByTel(supabase, telefone)
-  if (!row) throw new ApiError(404, 'Contato não encontrado para esse telefone. Chame /criar-card primeiro.')
-  return rowToContato(row)
+  if (row) return rowToContato(row)
+
+  const cfg = await loadCfg(supabase)
+  const d2c = getFunil(cfg, 'd2c')
+  const etapaId = d2c?.etapas?.[0]?.id
+  if (!etapaId) throw new ApiError(500, 'Funil D2C sem etapas configuradas.')
+
+  const novo = novoContato({ nome: 'Cliente', tel: telefone, funil: 'd2c', etapa: etapaId, ...overrides })
+  await apiSaveContato(supabase, novo)
+  await logAction(supabase, 'contato_criado', `${novo.nome} (auto-criado via ${origem}, tel ${telefone})`)
+  return novo
 }
 
 // ── /criar-card ──────────────────────────────────────────
@@ -79,7 +96,7 @@ export async function cadastrarCliente(supabase: SupabaseClient, body: any) {
 
 // ── /estoque ─────────────────────────────────────────────
 export async function verificarEstoque(supabase: SupabaseClient, body: any) {
-  const telefone = reqStr(body, 'telefone')
+  const telefone = normTelBR(reqStr(body, 'telefone'))
   const tamanho = reqStr(body, 'tamanho')
   const produto = (body?.produto ? String(body.produto).trim() : '') || 'Camiseta'
 
@@ -110,7 +127,7 @@ export async function verificarEstoque(supabase: SupabaseClient, body: any) {
 
 // ── /adicionar-item-pedido ───────────────────────────────
 export async function adicionarItemPedido(supabase: SupabaseClient, body: any) {
-  const telefone = normTel(reqStr(body, 'telefone'))
+  const telefone = normTelBR(reqStr(body, 'telefone'))
   const produto = reqStr(body, 'produto')
   const estampa = body?.estampa ? String(body.estampa).trim() : ''
   const cor = body?.cor ? String(body.cor).trim() : ''
@@ -167,14 +184,67 @@ export async function localizarOuCriarCatalogo(supabase: SupabaseClient, body: a
   return { ok: true, criado: true, id: novo.id, tipo, nome: novo.nome }
 }
 
+// ── /catalogo/consultar ───────────────────────────────────
+// Dá à Maria preço de produto e descrição/foto de estampa numa única
+// chamada (evita configurar várias tools novas na aa.app.br). Espelha o
+// padrão de /estoque (verificarEstoque acima): busca info + manda foto
+// via enviarImagemWhatsapp quando aplicável, tudo no mesmo request.
+// "encontrado:false"/"valor:null" voltam como sucesso (2xx), não erro —
+// a Maria precisa cair no fallback de faixa de preço do prompt, não
+// tratar como falha de ferramenta.
+export async function consultarCatalogo(supabase: SupabaseClient, body: any) {
+  const tipo = reqStr(body, 'tipo').toLowerCase()
+  if (!['produto', 'estampa'].includes(tipo)) {
+    throw new ApiError(400, `Campo "tipo" inválido: "${tipo}". Use produto ou estampa.`)
+  }
+  const nome = body?.nome ? String(body.nome).trim() : ''
+  const telefone = body?.telefone ? normTelBR(String(body.telefone).trim()) : ''
+
+  if (tipo === 'produto') {
+    const { data, error } = await supabase.from('catalogo').select('nome,valor').eq('tipo', 'produto').order('nome', { ascending: true })
+    if (error) throw new ApiError(500, 'Erro ao consultar catálogo: ' + error.message)
+    const rows = data || []
+
+    if (!nome) {
+      return { ok: true, tipo: 'produto', produtos: rows.map((r: any) => ({ nome: r.nome, valor: r.valor !== null ? Number(r.valor) : null })) }
+    }
+    const nomeNorm = nome.toLowerCase()
+    const achado = rows.find((r: any) => String(r.nome || '').trim().toLowerCase() === nomeNorm)
+      || rows.find((r: any) => String(r.nome || '').toLowerCase().includes(nomeNorm))
+    if (!achado) return { ok: true, tipo: 'produto', encontrado: false, nome }
+    return { ok: true, tipo: 'produto', encontrado: true, nome: achado.nome, valor: achado.valor !== null ? Number(achado.valor) : null }
+  }
+
+  // tipo === 'estampa'
+  const { data, error } = await supabase.from('catalogo').select('nome,descricao,foto_url').eq('tipo', 'estampa').order('nome', { ascending: true })
+  if (error) throw new ApiError(500, 'Erro ao consultar catálogo: ' + error.message)
+  const rows = data || []
+
+  if (!nome) {
+    // Sem foto_url de propósito, pra não estourar o limite de ~8000 caracteres
+    // de resposta da aa.app.br quando o catálogo de estampas crescer.
+    return { ok: true, tipo: 'estampa', estampas: rows.map((r: any) => ({ nome: r.nome, descricao: r.descricao || '' })) }
+  }
+  const nomeNorm = nome.toLowerCase()
+  const achado = rows.find((r: any) => String(r.nome || '').trim().toLowerCase() === nomeNorm)
+    || rows.find((r: any) => String(r.nome || '').toLowerCase().includes(nomeNorm))
+  if (!achado) return { ok: true, tipo: 'estampa', encontrado: false, nome }
+
+  let fotoEnviada = false
+  if (achado.foto_url && telefone) {
+    fotoEnviada = await enviarImagemWhatsapp(telefone, achado.foto_url, achado.nome)
+  }
+  return { ok: true, tipo: 'estampa', encontrado: true, nome: achado.nome, descricao: achado.descricao || '', foto_enviada: fotoEnviada }
+}
+
 // ── /dar-ganho ───────────────────────────────────────────
 export async function darGanho(supabase: SupabaseClient, body: any) {
-  const telefone = reqStr(body, 'telefone')
+  const telefone = normTelBR(reqStr(body, 'telefone'))
   const formaPagamento = reqStr(body, 'forma_pagamento')
   const valor = parseValorBR(body?.valor)
   if (isNaN(valor) || valor <= 0) throw new ApiError(400, 'Campo obrigatório: valor (maior que zero).')
 
-  const c = await exigirContato(supabase, telefone)
+  const c = await exigirContato(supabase, telefone, '/dar-ganho')
   const itensGanho = await lerCarrinho(supabase, telefone)
   if (!itensGanho.length) throw new ApiError(400, 'Nenhum item no pedido. Chame /adicionar-item-pedido antes de dar ganho.')
 
@@ -211,10 +281,10 @@ export async function darGanho(supabase: SupabaseClient, body: any) {
 
 // ── /dar-perda ───────────────────────────────────────────
 export async function darPerda(supabase: SupabaseClient, body: any) {
-  const telefone = reqStr(body, 'telefone')
+  const telefone = normTelBR(reqStr(body, 'telefone'))
   const motivo = (body?.motivo ? String(body.motivo).trim() : '') || 'Não informado'
 
-  const c = await exigirContato(supabase, telefone)
+  const c = await exigirContato(supabase, telefone, '/dar-perda')
   const hist = parseNegHist(c)
   hist.push({ r: 'perda', d: hojeISO(), m: motivo })
   c.neg_hist = JSON.stringify(hist)
@@ -233,10 +303,10 @@ export async function darPerda(supabase: SupabaseClient, body: any) {
 
 // ── /mover-card ──────────────────────────────────────────
 export async function moverCard(supabase: SupabaseClient, body: any) {
-  const telefone = reqStr(body, 'telefone')
+  const telefone = normTelBR(reqStr(body, 'telefone'))
   const etapaNome = reqStr(body, 'etapa_nome')
 
-  const c = await exigirContato(supabase, telefone)
+  const c = await exigirContato(supabase, telefone, '/mover-card')
   const cfg = await loadCfg(supabase)
   const funil = getFunil(cfg, c.funil)
   if (!funil) throw new ApiError(500, `Funil "${c.funil}" não encontrado na configuração.`)
@@ -256,12 +326,12 @@ export async function moverCard(supabase: SupabaseClient, body: any) {
 
 // ── /atividade/agendar ───────────────────────────────────
 export async function agendarAtividade(supabase: SupabaseClient, body: any) {
-  const telefone = reqStr(body, 'telefone')
+  const telefone = normTelBR(reqStr(body, 'telefone'))
   const dataNorm = normDateAgente(reqStr(body, 'data'), 'data')
   if (!dataNorm) throw new ApiError(400, 'Data inválida. Use o formato AAAA-MM-DD.')
   const descricao = body?.descricao ? String(body.descricao).trim() : ''
 
-  const c = await exigirContato(supabase, telefone)
+  const c = await exigirContato(supabase, telefone, '/atividade/agendar')
   c.atv_data = dataNorm
   c.atv_desc = descricao
   if (!Array.isArray(c.log_hist)) c.log_hist = []
@@ -271,10 +341,169 @@ export async function agendarAtividade(supabase: SupabaseClient, body: any) {
   return { ok: true, id: c.id, atv_data: c.atv_data, atv_desc: c.atv_desc }
 }
 
+// ── /registrar-nota ───────────────────────────────────────
+// Espelha saveDetNota() do navegador: sobrescreve o "resumo atual" em c.notas e
+// empilha o texto na linha do tempo (log_hist, tipo 'nota') — mesmo padrão exibido
+// na coluna central do modal de detalhe do contato (campo "Anotações").
+export async function registrarNota(supabase: SupabaseClient, body: any) {
+  const telefone = normTelBR(reqStr(body, 'telefone'))
+  const nota = reqStr(body, 'nota')
+
+  const c = await exigirContato(supabase, telefone, '/registrar-nota')
+  c.notas = nota
+  if (!Array.isArray(c.log_hist)) c.log_hist = []
+  c.log_hist.push({ tipo: 'nota', d: new Date().toISOString(), txt: nota })
+
+  await apiSaveContato(supabase, c)
+  return { ok: true, id: c.id }
+}
+
+// ── /webhook-nuvemshop-pedido ─────────────────────────────
+// Chamada pela Nuvemshop quando um pedido do site é pago (evento "order/paid").
+// O corpo do webhook só traz {store_id, event, id} — busca o pedido completo na
+// API da Nuvemshop (nsFetch) e espelha o MESMO fluxo de /dar-ganho: acha/cria o
+// contato pelo telefone, grava o ganho no neg_hist, desconta estoque, cria as
+// encomendas (fila de produção) e replica pro Pissifã se for a 2ª compra.
+//
+// IMPORTANTE — formato ainda não validado contra um pedido real: os campos lidos
+// abaixo (nsText/nsNumber, order.items vs order.products, variant_values vs
+// properties) foram desenhados pra aceitar tanto o formato "achatado" que o
+// conector MCP da Nuvemshop devolveu nos testes quanto o formato localizado
+// ({pt,en,es}) que a documentação oficial da API descreve. Rode um pedido de
+// teste de verdade assim que o NS_TOKEN estiver configurado e confira os logs
+// (console.error) antes de confiar 100% nisso em produção.
+
+function nsText(v: any): string {
+  if (v === null || v === undefined) return ''
+  if (typeof v === 'string') return v
+  if (typeof v === 'object') return String(v.pt || v.es || v.en || Object.values(v)[0] || '')
+  return String(v)
+}
+function nsNumber(v: any): number {
+  if (v === null || v === undefined) return 0
+  if (typeof v === 'object') return parseFloat(v.amount) || 0
+  return parseFloat(v) || 0
+}
+function mapearFormaPagamento(nomeMetodo: string): string {
+  const n = (nomeMetodo || '').toLowerCase()
+  if (n.includes('pix')) return 'pix'
+  if (n.includes('boleto') || n.includes('dinheiro')) return 'dinheiro'
+  if (n.includes('mercado pago') || n.includes('cart') || n.includes('credit')) return 'credito_vista'
+  return ''
+}
+
+async function mapearItensNuvemshop(supabase: SupabaseClient, order: any): Promise<ItemPedido[]> {
+  const itensBrutos: any[] = order.items || order.products || []
+  const { data: catalogo } = await supabase.from('catalogo').select('nome,tipo,tem_variacao')
+  const produtosComVariacao = (catalogo || []).filter((c: any) => c.tipo === 'produto' && c.tem_variacao)
+  const coresConhecidas = (catalogo || []).filter((c: any) => c.tipo === 'cor').map((c: any) => String(c.nome))
+  const tamanhosConhecidos = (catalogo || []).filter((c: any) => c.tipo === 'tamanho').map((c: any) => String(c.nome))
+
+  const resultado: ItemPedido[] = []
+  for (const it of itensBrutos) {
+    const nomeItem = nsText(it.name).trim()
+    const qty = parseInt(it.quantity) || 1
+    const valoresVariacao: any[] = it.variant_values || it.properties || []
+
+    let cor = '', tamanho = ''
+    for (const v of valoresVariacao) {
+      const nomeAttr = nsText(v?.name).toLowerCase()
+      const valor = nsText(v?.value).trim()
+      if (!valor) continue
+      if (nomeAttr.includes('cor') || nomeAttr.includes('color')) cor = valor
+      else if (nomeAttr.includes('tamanho') || nomeAttr.includes('size')) tamanho = valor
+      else if (!nomeAttr) {
+        // Propriedade sem nome (produto antigo cadastrado sem rótulo) — casa pelo
+        // valor contra o que já existe no catálogo de cores/tamanhos.
+        if (!cor && coresConhecidas.some((c) => c.toLowerCase() === valor.toLowerCase())) cor = valor
+        else if (!tamanho && tamanhosConhecidos.some((t) => t.toLowerCase() === valor.toLowerCase())) tamanho = valor
+      }
+    }
+
+    if (cor && tamanho) {
+      const produtoBase = produtosComVariacao.find((p: any) => nomeItem.toLowerCase().startsWith(String(p.nome).toLowerCase()))
+      const produto = produtoBase ? String(produtoBase.nome) : 'Camiseta'
+      let estampa = produtoBase ? nomeItem.slice(String(produtoBase.nome).length).trim().replace(/^[-—:]\s*/, '') : nomeItem
+      if (!estampa) estampa = nomeItem
+      estampa = await catalogoAcharOuCriar(supabase, 'estampa', estampa)
+      resultado.push({ produto, estampa, cor, tamanho, qty })
+    } else {
+      // Item simples (sem cor/tamanho, ex: caneca/chaveiro) — entra no pedido e no
+      // valor total, mas não gera encomenda nem desconta estoque (mesma regra do
+      // fluxo manual: só peça com cor+tamanho vai pra fila de produção).
+      resultado.push({ produto: nomeItem, qty })
+    }
+  }
+  return resultado
+}
+
+export async function webhookNuvemshopPedido(supabase: SupabaseClient, body: any) {
+  const orderId = body?.id
+  if (!orderId) throw new ApiError(400, 'Payload do webhook sem "id" de pedido.')
+
+  if (await nuvemshopPedidoJaProcessado(supabase, orderId)) {
+    return { ok: true, ja_processado: true }
+  }
+
+  const order = await nsFetch(`/orders/${orderId}`)
+  if (order.payment_status !== 'paid') {
+    return { ok: true, ignorado: `payment_status=${order.payment_status}` }
+  }
+
+  const telefoneBruto = nsText(order?.customer?.phone)
+  if (!telefoneBruto) {
+    console.error(`Pedido Nuvemshop ${orderId} pago sem telefone de cliente — não dá pra criar/achar card automaticamente.`)
+    return { ok: false, erro: 'Pedido sem telefone de cliente.' }
+  }
+  const telefone = normTelBR(telefoneBruto)
+  const cfg = await loadCfg(supabase)
+
+  const c = await exigirContato(supabase, telefone, 'webhook Nuvemshop', {
+    nome: nsText(order?.customer?.name) || 'Cliente',
+    canal: 'site',
+    email: nsText(order?.customer?.email),
+    usuario: cfg.nuvemshop_responsavel_padrao || '',
+  })
+
+  const itensGanho = await mapearItensNuvemshop(supabase, order)
+  const hist = parseNegHist(c)
+  const ganhosAnt = hist.filter((h: any) => h.r === 'ganho')
+  const isSegundoGanhoD2c = ganhosAnt.length === 1 && c.funil === 'd2c'
+  const dataGanho = normDate(order.completed_at) || hojeISO()
+  const vendaId = c.id + '_' + Date.now()
+  const valor = nsNumber(order.total)
+
+  hist.push({
+    r: 'ganho', d: dataGanho, m: '', v: valor, itens: itensGanho, nf: false,
+    fp: mapearFormaPagamento(nsText(order.payment_method_name)), venda_id: vendaId,
+    origem: 'nuvemshop', pedido_nuvemshop: String(orderId),
+  })
+  c.neg_hist = JSON.stringify(hist)
+  c.valor = valor; c.et = 'fechado'; c.motivo_perda = ''; c.resultado = ''
+
+  if (c.funil === 'pissifa') {
+    c.etapa = 'psf-ativo'
+  } else if (c.funil === 'd2c') {
+    c.etapa = 'd2c-cn'
+  } else if (c.funil === 'servicos') {
+    const etapaInscrito = acharEtapaPorNome(getFunil(cfg, 'servicos'), (n) => n.includes('inscrito'))
+    if (etapaInscrito) c.etapa = etapaInscrito.id
+    registrarParticipacao(c, 'inscrito')
+  }
+
+  await apiSaveContato(supabase, c)
+  await moverEstoquePedido(supabase, itensGanho, -1)
+  await criarEncomendasDoGanho(supabase, c.id, c.nome, itensGanho, dataGanho, vendaId)
+  await logAction(supabase, 'ganho_confirmado', `${c.nome} (venda no site, pedido #${orderId}) - R$${valor}`)
+  if (isSegundoGanhoD2c) await duplicarParaPissifaAuto(supabase, cfg, c)
+
+  return { ok: true, id: c.id, funil: c.funil, etapa: c.etapa, venda_id: vendaId, itens: itensGanho.length }
+}
+
 // ── /atividade/concluir ──────────────────────────────────
 export async function concluirAtividade(supabase: SupabaseClient, body: any) {
-  const telefone = reqStr(body, 'telefone')
-  const c = await exigirContato(supabase, telefone)
+  const telefone = normTelBR(reqStr(body, 'telefone'))
+  const c = await exigirContato(supabase, telefone, '/atividade/concluir')
   if (!c.atv_data) throw new ApiError(400, 'Não há atividade agendada pra concluir.')
 
   const descAtv = c.atv_desc || ''

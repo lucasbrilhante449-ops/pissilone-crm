@@ -13,7 +13,8 @@
 import { ApiError, corsHeaders, getSupabase, jsonResponse } from './lib.ts'
 import {
   adicionarItemPedido, agendarAtividade, cadastrarCliente, concluirAtividade,
-  criarCard, darGanho, darPerda, localizarOuCriarCatalogo, moverCard, verificarEstoque,
+  consultarCatalogo, criarCard, darGanho, darPerda, localizarOuCriarCatalogo, moverCard,
+  registrarNota, verificarEstoque, webhookNuvemshopPedido,
 } from './routes.ts'
 
 const ROTAS: Record<string, (supabase: ReturnType<typeof getSupabase>, body: any) => Promise<unknown>> = {
@@ -21,12 +22,23 @@ const ROTAS: Record<string, (supabase: ReturnType<typeof getSupabase>, body: any
   '/cadastrar-cliente': cadastrarCliente,
   '/estoque': verificarEstoque,
   '/catalogo/localizar-ou-criar': localizarOuCriarCatalogo,
+  '/catalogo/consultar': consultarCatalogo,
   '/adicionar-item-pedido': adicionarItemPedido,
   '/dar-ganho': darGanho,
   '/dar-perda': darPerda,
   '/mover-card': moverCard,
   '/atividade/agendar': agendarAtividade,
   '/atividade/concluir': concluirAtividade,
+  '/registrar-nota': registrarNota,
+}
+
+// Rotas chamadas por um webhook externo (não pelo agente de IA via aa.app.br),
+// que não manda o header Authorization com AGENT_API_TOKEN. Autenticadas por um
+// token próprio na query string da URL do webhook (NS_WEBHOOK_TOKEN) em vez disso
+// — a Nuvemshop não permite configurar headers customizados ao cadastrar um
+// webhook, só a URL de destino.
+const ROTAS_WEBHOOK: Record<string, (supabase: ReturnType<typeof getSupabase>, body: any) => Promise<unknown>> = {
+  '/webhook-nuvemshop-pedido': webhookNuvemshopPedido,
 }
 
 function resolveRota(pathname: string): string {
@@ -40,6 +52,28 @@ Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (req.method !== 'POST') return jsonResponse({ erro: 'Método não permitido.' }, 405)
 
+  const url = new URL(req.url)
+  const rota = resolveRota(url.pathname)
+
+  const handlerWebhook = ROTAS_WEBHOOK[rota]
+  if (handlerWebhook) {
+    const webhookToken = Deno.env.get('NS_WEBHOOK_TOKEN') ?? ''
+    const callerToken = url.searchParams.get('token') ?? ''
+    if (!webhookToken || !callerToken || callerToken !== webhookToken) {
+      return jsonResponse({ erro: 'Não autorizado.' }, 401)
+    }
+    try {
+      const body = await req.json().catch(() => ({}))
+      const resultado = await handlerWebhook(getSupabase(), body)
+      return jsonResponse(resultado, 200)
+    } catch (err) {
+      if (err instanceof ApiError) return jsonResponse({ erro: err.message }, err.status)
+      console.error(err)
+      const message = err instanceof Error ? err.message : 'Erro interno desconhecido.'
+      return jsonResponse({ erro: message }, 500)
+    }
+  }
+
   const agentToken = Deno.env.get('AGENT_API_TOKEN') ?? ''
   const authHeader = req.headers.get('Authorization') ?? ''
   const callerToken = authHeader.replace(/^Bearer\s+/i, '')
@@ -47,7 +81,6 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ erro: 'Não autorizado.' }, 401)
   }
 
-  const rota = resolveRota(new URL(req.url).pathname)
   const handler = ROTAS[rota]
   if (!handler) return jsonResponse({ erro: `Rota desconhecida: ${rota}` }, 404)
 
