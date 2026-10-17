@@ -594,6 +594,190 @@ export async function broadcastEstoqueNuvemshop(supabase: SupabaseClient, produt
   return { ok, falhou, detalhes }
 }
 
+// Alinha TODAS as variações de um produto da Nuvemshop com o estoque do CRM.
+// O broadcast acima só toca a cor/tamanho que mudou — variação cuja cor ou
+// tamanho não existe no catálogo, ou que nunca ganhou linha em "estoque",
+// ficaria com estoque infinito (stock null) na loja. Aqui tudo que o CRM não
+// conhece vira 0 com controle de estoque ligado: na dúvida, sem estoque.
+interface VarianteNs { id: number; valores: string[]; cor: string; tamanho: string; stock: any; stock_management: any }
+interface ProdutoNsClassificado { nome: string; produto: string; temProdutoBase: boolean; estampa: string; variantes: VarianteNs[] }
+
+// Lê um produto da Nuvemshop com as mesmas regras de mapearItensNuvemshop:
+// produto base pelo prefixo do nome (senão "Camiseta"), estampa = resto do
+// nome, e cor/tamanho de cada variação pelo conteúdo contra o catálogo.
+function classificarProdutoNs(produtoNs: any, catalogo: any[]): ProdutoNsClassificado {
+  const produtosComVariacao = catalogo.filter((c: any) => c.tipo === 'produto' && c.tem_variacao)
+  const cores = catalogo.filter((c: any) => c.tipo === 'cor').map((c: any) => String(c.nome))
+  const tamanhos = catalogo.filter((c: any) => c.tipo === 'tamanho').map((c: any) => String(c.nome))
+
+  const nome = nsText(produtoNs?.name).trim()
+  const produtoBase = produtosComVariacao.find((p: any) => nome.toLowerCase().startsWith(String(p.nome).toLowerCase()))
+  const produto = produtoBase ? String(produtoBase.nome) : 'Camiseta'
+  const estampa = (produtoBase ? nome.slice(String(produtoBase.nome).length).trim().replace(/^[-—:]\s*/, '') : '') || nome
+
+  const variantes: VarianteNs[] = (produtoNs?.variants || []).map((v: any) => {
+    const valores: string[] = (v.values || []).map((x: any) => nsText(x).trim()).filter(Boolean)
+    let cor = '', tamanho = ''
+    for (const valor of valores) {
+      if (!cor) { const m = cores.find((c) => corBate(valor, c)); if (m) cor = m }
+      if (!tamanho) { const m = tamanhos.find((t) => normComparar(t) === normComparar(valor)); if (m) tamanho = m }
+    }
+    return { id: v.id, valores, cor, tamanho, stock: v.stock, stock_management: v.stock_management }
+  })
+  return { nome, produto, temProdutoBase: Boolean(produtoBase), estampa, variantes }
+}
+
+async function sincronizarProdutoNuvemshopCompleto(
+  produtoId: string,
+  catalogo: any[],
+  estoque: any[],
+  produtoNsJaCarregado?: any,
+): Promise<{ ok: number; falhou: number; detalhes: string[] }> {
+  const produtoNs = produtoNsJaCarregado || await nsFetch(`/products/${produtoId}?fields=id,name,variants`)
+  const { nome: nomeNs, produto, variantes } = classificarProdutoNs(produtoNs, catalogo)
+
+  let ok = 0, falhou = 0
+  const detalhes: string[] = []
+  for (const v of variantes) {
+    const { valores, cor, tamanho } = v
+    const row = cor && tamanho
+      ? estoque.find((e: any) => e.produto === produto && e.cor === cor && e.tamanho === tamanho)
+      : null
+    const quantidade = row ? Math.max(0, parseInt(row.quantidade) || 0) : 0
+    if (v.stock_management === true && v.stock !== null && Number(v.stock) === quantidade) { ok++; continue }
+    try {
+      await nsFetch(`/products/${produtoId}/variants/${v.id}`, 'PUT', { stock_management: true, stock: quantidade })
+      ok++
+    } catch (err) {
+      falhou++
+      detalhes.push(`${nomeNs} (${valores.join('/') || 'sem variação'}): ${err instanceof Error ? err.message : 'erro'}`)
+    }
+  }
+  return { ok, falhou, detalhes }
+}
+
+async function carregarCatalogoEEstoque(supabase: SupabaseClient): Promise<{ catalogo: any[]; estoque: any[] }> {
+  const [{ data: catalogo }, { data: estoque }] = await Promise.all([
+    supabase.from('catalogo').select('nome,tipo,tem_variacao'),
+    supabase.from('estoque').select('produto,cor,tamanho,quantidade'),
+  ])
+  return { catalogo: catalogo || [], estoque: estoque || [] }
+}
+
+// ── /estoque/sincronizar-tudo-nuvemshop ───────────────────
+// Botão "Sincronizar com a Nuvemshop" da seção de Estoque: passa por todo
+// produto vinculado a alguma estampa e alinha todas as variações (ver acima).
+export async function sincronizarTudoNuvemshop(supabase: SupabaseClient, _body: any) {
+  const { data: estampas } = await supabase.from('catalogo').select('nome,nuvemshop_produto_ids').eq('tipo', 'estampa').not('nuvemshop_produto_ids', 'is', null)
+  const { catalogo, estoque } = await carregarCatalogoEEstoque(supabase)
+  const ids = new Set<string>()
+  for (const e of estampas || []) {
+    try { for (const id of JSON.parse(e.nuvemshop_produto_ids || '[]')) ids.add(String(id)) } catch (_err) { /* vínculo malformado: ignora */ }
+  }
+  let ok = 0, falhou = 0
+  const detalhes: string[] = []
+  for (const produtoId of ids) {
+    try {
+      const r = await sincronizarProdutoNuvemshopCompleto(produtoId, catalogo, estoque)
+      ok += r.ok; falhou += r.falhou; detalhes.push(...r.detalhes)
+    } catch (err) {
+      falhou++
+      detalhes.push(`produto ${produtoId}: ${err instanceof Error ? err.message : 'erro'}`)
+    }
+  }
+  // Aproveita o botão pra garantir que os webhooks de produto existem — assim
+  // não precisa de passo manual de cadastro depois do deploy.
+  let webhooks_criados: string[] = []
+  try { webhooks_criados = await garantirWebhooksProduto() } catch (err) {
+    detalhes.push(`webhooks de produto: ${err instanceof Error ? err.message : 'erro'}`)
+  }
+  return { ok: true, produtos: ids.size, variacoes_ok: ok, falhou, detalhes, webhooks_criados }
+}
+
+// ── PRODUTO NASCE NA NUVEMSHOP, CRM ESPELHA ───────────────
+// Padrão: cadastro de produto (nome, fotos, variações) é feito na Nuvemshop;
+// o CRM só controla o estoque da peça lisa. A cada product/created ou
+// product/updated, a estampa é criada/vinculada no Catálogo e TODAS as
+// variações recebem o estoque do CRM (o que o CRM não tem fica 0).
+// Os PUTs de estoque disparam outro product/updated, mas aí tudo já bate e
+// sincronizarProdutoNuvemshopCompleto não escreve nada — o ciclo para sozinho.
+const EVENTOS_PRODUTO = ['product/created', 'product/updated', 'product/deleted']
+
+function parseIdsVinculados(row: any): string[] {
+  try { return (JSON.parse(row?.nuvemshop_produto_ids || '[]') as any[]).map(String) } catch (_err) { return [] }
+}
+
+async function garantirWebhooksProduto(): Promise<string[]> {
+  const base = Deno.env.get('SUPABASE_URL') ?? ''
+  const token = Deno.env.get('NS_WEBHOOK_TOKEN') ?? ''
+  if (!base || !token) throw new ApiError(500, 'SUPABASE_URL/NS_WEBHOOK_TOKEN não configurados.')
+  const url = `${base}/functions/v1/pissilone-agent/webhook-nuvemshop-produto?token=${encodeURIComponent(token)}`
+  const existentes: any[] = (await nsFetch('/webhooks')) || []
+  const criados: string[] = []
+  for (const event of EVENTOS_PRODUTO) {
+    if (existentes.some((w: any) => w.event === event && w.url === url)) continue
+    await nsFetch('/webhooks', 'POST', { event, url })
+    criados.push(event)
+  }
+  return criados
+}
+
+export async function webhookNuvemshopProduto(supabase: SupabaseClient, body: any) {
+  const produtoId = body?.id ? String(body.id) : ''
+  const evento = String(body?.event || '')
+  if (!produtoId) throw new ApiError(400, 'Payload do webhook sem "id" de produto.')
+
+  const { data: estampas } = await supabase.from('catalogo').select('id,nome,foto_url,nuvemshop_produto_ids').eq('tipo', 'estampa')
+  let estampaRow: any = (estampas || []).find((e: any) => parseIdsVinculados(e).includes(produtoId))
+
+  if (evento === 'product/deleted') {
+    // Tira o id do vínculo pra o "Sincronizar" não ficar tentando um produto que não existe mais.
+    if (!estampaRow) return { ok: true, ignorado: 'produto não vinculado' }
+    const ids = parseIdsVinculados(estampaRow).filter((id) => id !== produtoId)
+    await supabase.from('catalogo').update({ nuvemshop_produto_ids: JSON.stringify(ids) }).eq('id', estampaRow.id)
+    return { ok: true, desvinculado: estampaRow.nome }
+  }
+
+  const produtoNs = await nsFetch(`/products/${produtoId}?fields=id,name,variants,images`)
+  const { catalogo, estoque } = await carregarCatalogoEEstoque(supabase)
+  const cls = classificarProdutoNs(produtoNs, catalogo)
+
+  // Só espelha peça que o CRM controla (nome começa com produto de variação,
+  // ex: "Camiseta ...", ou alguma variação com cor+tamanho do catálogo) —
+  // caneca/chaveiro etc. ficam como estão na Nuvemshop.
+  const temGrade = cls.variantes.some((v) => v.cor && v.tamanho)
+  if (!estampaRow && !cls.temProdutoBase && !temGrade) {
+    return { ok: true, ignorado: 'produto sem cor/tamanho do catálogo do CRM' }
+  }
+
+  if (!estampaRow) {
+    // Mesmo nome de estampa já cadastrado (ex: mesma estampa em outro produto) → soma o vínculo nele.
+    estampaRow = (estampas || []).find((e: any) => normComparar(e.nome) === normComparar(cls.estampa))
+    if (estampaRow) {
+      const ids = parseIdsVinculados(estampaRow)
+      ids.push(produtoId)
+      const { error } = await supabase.from('catalogo').update({ nuvemshop_produto_ids: JSON.stringify(ids) }).eq('id', estampaRow.id)
+      if (error) throw new ApiError(500, 'Erro ao vincular estampa: ' + error.message)
+    } else {
+      const { data: nova, error } = await supabase.from('catalogo')
+        .insert({ tipo: 'estampa', nome: cls.estampa, nuvemshop_produto_ids: JSON.stringify([produtoId]) })
+        .select('id,nome,foto_url,nuvemshop_produto_ids').single()
+      if (error) throw new ApiError(500, 'Erro ao criar estampa: ' + error.message)
+      estampaRow = nova
+    }
+  }
+
+  // Foto entra só se a estampa ainda não tem (não sobrescreve foto escolhida no CRM).
+  // No product/created as imagens às vezes ainda não subiram — o updated seguinte completa.
+  const fotoUrl = primeiraImagem(produtoNs)
+  if (fotoUrl && !estampaRow.foto_url) {
+    await supabase.from('catalogo').update({ foto_url: fotoUrl }).eq('id', estampaRow.id)
+  }
+
+  const estoque_sincronizado = await sincronizarProdutoNuvemshopCompleto(produtoId, catalogo, estoque, produtoNs)
+  return { ok: true, evento, estampa: estampaRow.nome, produto: cls.produto, estoque_sincronizado }
+}
+
 // ── /estoque/sincronizar-nuvemshop ────────────────────────
 // Chamada pelo PRÓPRIO navegador do CRM (usuário logado, não o agente de IA)
 // sempre que o estoque de peça lisa muda por ação manual: célula editada na
@@ -648,7 +832,17 @@ export async function vincularEstampaNuvemshop(supabase: SupabaseClient, body: a
   const { error: updErr } = await supabase.from('catalogo').update(patch).eq('id', estampaId)
   if (updErr) throw new ApiError(500, 'Erro ao vincular: ' + updErr.message)
 
-  return { ok: true, nuvemshop_produto_ids: ids, foto_url: fotoUrl }
+  // Produto recém-vinculado já entra alinhado com o estoque do CRM — variação
+  // que o CRM não tem fica 0, nunca infinita. Falha aqui não desfaz o vínculo.
+  let estoque_sincronizado: unknown = null
+  try {
+    const { catalogo, estoque } = await carregarCatalogoEEstoque(supabase)
+    estoque_sincronizado = await sincronizarProdutoNuvemshopCompleto(produtoId, catalogo, estoque)
+  } catch (err) {
+    console.error(`sincronização de estoque pós-vínculo falhou (produto ${produtoId}):`, err)
+  }
+
+  return { ok: true, nuvemshop_produto_ids: ids, foto_url: fotoUrl, estoque_sincronizado }
 }
 
 // ── /atividade/concluir ──────────────────────────────────

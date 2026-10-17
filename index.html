@@ -1291,6 +1291,27 @@ async function broadcastEstoqueNuvemshop(produto,cor,tamanho,quantidade){
   }catch(e){console.warn('broadcastEstoqueNuvemshop error:',e);}
 }
 
+// Alinha TODAS as variações de todos os produtos vinculados: o que não existe
+// no estoque do CRM (cor/tamanho sem linha, ou fora do catálogo) vira 0 na
+// Nuvemshop em vez de ficar com estoque infinito.
+async function sincronizarTudoNuvemshop(){
+  var btn=document.getElementById('btn-sync-ns');
+  if(btn)btn.disabled=true;
+  ss('ld','Sincronizando estoque com a Nuvemshop...');
+  try{
+    var resp=await fetch(SB_URL+'/functions/v1/pissilone-agent/estoque/sincronizar-tudo-nuvemshop',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':SB_HDR.Authorization},
+      body:'{}'
+    });
+    var data=await resp.json().catch(function(){return{};});
+    if(!resp.ok||!data.ok){ss('er','Erro ao sincronizar com a Nuvemshop');console.warn('sincronizarTudoNuvemshop falhou:',data);return;}
+    if(data.falhou>0){ss('er','Sincronização parcial: '+data.falhou+' variação(ões) falharam');console.warn(data.detalhes);}
+    else ss('ok','Estoque sincronizado ('+data.produtos+' produtos)'+(data.webhooks_criados&&data.webhooks_criados.length?' · cadastro automático pela Nuvemshop ativado':''));
+  }catch(e){ss('er','Erro ao sincronizar com a Nuvemshop');console.warn(e);}
+  finally{if(btn)btn.disabled=false;}
+}
+
 // ── VINCULAR ESTAMPA COM PRODUTO DA NUVEMSHOP (botão no Catálogo) ──
 let vincEstampaAtual=null;
 let vincDebounceTimer=null;
@@ -3848,7 +3869,7 @@ function filtrarEstampas(valor){
 function renderEstoqueSection(){
   var produtosComVar=catalogo.produtos.filter(function(p){return p.temVariacao;});
   var h='<div class="estoque-section">';
-  h+='<div class="catg-hdr"><div class="catg-title">'+ic('box')+' Estoque da peça lisa</div></div>';
+  h+='<div class="catg-hdr"><div class="catg-title">'+ic('box')+' Estoque da peça lisa</div><button class="btn xs" id="btn-sync-ns" onclick="sincronizarTudoNuvemshop()">'+ic('tag')+' Sincronizar com a Nuvemshop</button></div>';
   h+='<div class="est-hint">Vale pra qualquer estampa aplicada depois — a camiseta sem estampa é a mesma, não importa qual vai ser impressa nela. Clique num número pra editar.</div>';
   if(!produtosComVar.length){
     h+='<div class="empty">Nenhum produto com variação de cor/tamanho cadastrado ainda. Marque "estampa/cor/tam." num produto abaixo pra controlar estoque dele aqui.</div>';

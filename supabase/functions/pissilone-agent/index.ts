@@ -14,7 +14,7 @@ import { ApiError, corsHeaders, getSupabase, jsonResponse } from './lib.ts'
 import {
   adicionarItemPedido, agendarAtividade, buscarProdutosNuvemshop, cadastrarCliente, concluirAtividade,
   consultarCatalogo, criarCard, darGanho, darPerda, localizarOuCriarCatalogo, moverCard,
-  registrarNota, sincronizarEstoqueNuvemshop, verificarEstoque, vincularEstampaNuvemshop, webhookNuvemshopPedido,
+  registrarNota, sincronizarEstoqueNuvemshop, sincronizarTudoNuvemshop, verificarEstoque, vincularEstampaNuvemshop, webhookNuvemshopPedido, webhookNuvemshopProduto,
 } from './routes.ts'
 
 const ROTAS: Record<string, (supabase: ReturnType<typeof getSupabase>, body: any) => Promise<unknown>> = {
@@ -39,6 +39,7 @@ const ROTAS: Record<string, (supabase: ReturnType<typeof getSupabase>, body: any
 // webhook, só a URL de destino.
 const ROTAS_WEBHOOK: Record<string, (supabase: ReturnType<typeof getSupabase>, body: any) => Promise<unknown>> = {
   '/webhook-nuvemshop-pedido': webhookNuvemshopPedido,
+  '/webhook-nuvemshop-produto': webhookNuvemshopProduto,
 }
 
 // Rotas chamadas pelo PRÓPRIO navegador do CRM (usuário já logado via Supabase
@@ -47,6 +48,7 @@ const ROTAS_WEBHOOK: Record<string, (supabase: ReturnType<typeof getSupabase>, b
 // Supabase direto), validado aqui contra o Auth do projeto.
 const ROTAS_USUARIO: Record<string, (supabase: ReturnType<typeof getSupabase>, body: any) => Promise<unknown>> = {
   '/estoque/sincronizar-nuvemshop': sincronizarEstoqueNuvemshop,
+  '/estoque/sincronizar-tudo-nuvemshop': sincronizarTudoNuvemshop,
   '/catalogo/buscar-produtos-nuvemshop': buscarProdutosNuvemshop,
   '/catalogo/vincular-estampa': vincularEstampaNuvemshop,
 }
