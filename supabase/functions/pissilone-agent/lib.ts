@@ -304,20 +304,29 @@ export async function duplicarParaPissifaAuto(supabase: SupabaseClient, cfg: Cfg
 // Deno/TS em vez de Apps Script. Mesmo contrato de headers (Authorization Bearer +
 // User-Agent obrigatório, senão a API da Nuvemshop devolve 400).
 
-export async function nsFetch(path: string): Promise<any> {
+export async function nsFetch(path: string, method: string = 'GET', body?: unknown): Promise<any> {
   const token = Deno.env.get('NS_TOKEN') ?? ''
   const storeId = Deno.env.get('NS_STORE_ID') ?? ''
   const version = Deno.env.get('NS_API_VERSION') ?? '2025-03'
   if (!token || !storeId) throw new ApiError(500, 'NS_TOKEN/NS_STORE_ID não configurados nos secrets da Edge Function.')
   const url = `https://api.nuvemshop.com.br/${version}/${storeId}${path}`
-  const resp = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'User-Agent': 'Pissilone CRM (lucas.brilhante.449@gmail.com)',
-    },
-  })
-  if (!resp.ok) throw new ApiError(502, `Nuvemshop API falhou: HTTP ${resp.status} ${await resp.text()}`)
-  return resp.json()
+  const headers: Record<string, string> = {
+    'Authorization': `Bearer ${token}`,
+    'User-Agent': 'Pissilone CRM (lucas.brilhante.449@gmail.com)',
+  }
+  if (body !== undefined) headers['Content-Type'] = 'application/json'
+  // Retry em 429 (balde de 40 requisições, 2/seg) — igual ao nsFetch() do Apps
+  // Script descrito em crm-nuvemshop-estoque.md, necessário aqui porque o
+  // broadcast de estoque pode chamar a API várias vezes em sequência rápida
+  // (um PUT por produto vinculado a cada mudança de estoque).
+  for (let tentativa = 0; tentativa < 3; tentativa++) {
+    const resp = await fetch(url, { method, headers, body: body !== undefined ? JSON.stringify(body) : undefined })
+    if (resp.status === 429) { await new Promise((r) => setTimeout(r, 1500 * (tentativa + 1))); continue }
+    if (!resp.ok) throw new ApiError(502, `Nuvemshop API falhou: HTTP ${resp.status} ${await resp.text()}`)
+    const texto = await resp.text()
+    return texto ? JSON.parse(texto) : null
+  }
+  throw new ApiError(429, 'Limite de requisições da Nuvemshop excedido — tente de novo em alguns segundos.')
 }
 
 // Marca um pedido da Nuvemshop como processado de forma atômica (insert com PK

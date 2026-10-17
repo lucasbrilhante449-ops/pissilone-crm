@@ -14,7 +14,7 @@ import { ApiError, corsHeaders, getSupabase, jsonResponse } from './lib.ts'
 import {
   adicionarItemPedido, agendarAtividade, cadastrarCliente, concluirAtividade,
   consultarCatalogo, criarCard, darGanho, darPerda, localizarOuCriarCatalogo, moverCard,
-  registrarNota, verificarEstoque, webhookNuvemshopPedido,
+  registrarNota, sincronizarEstoqueNuvemshop, verificarEstoque, webhookNuvemshopPedido,
 } from './routes.ts'
 
 const ROTAS: Record<string, (supabase: ReturnType<typeof getSupabase>, body: any) => Promise<unknown>> = {
@@ -41,6 +41,14 @@ const ROTAS_WEBHOOK: Record<string, (supabase: ReturnType<typeof getSupabase>, b
   '/webhook-nuvemshop-pedido': webhookNuvemshopPedido,
 }
 
+// Rotas chamadas pelo PRÓPRIO navegador do CRM (usuário já logado via Supabase
+// Auth), não pelo agente de IA nem por um webhook externo — autenticadas pelo
+// token de sessão do usuário (o mesmo que o navegador já usa pra falar com o
+// Supabase direto), validado aqui contra o Auth do projeto.
+const ROTAS_USUARIO: Record<string, (supabase: ReturnType<typeof getSupabase>, body: any) => Promise<unknown>> = {
+  '/estoque/sincronizar-nuvemshop': sincronizarEstoqueNuvemshop,
+}
+
 function resolveRota(pathname: string): string {
   const partes = pathname.split('/').filter(Boolean)
   const idx = partes.indexOf('pissilone-agent')
@@ -65,6 +73,25 @@ Deno.serve(async (req: Request) => {
     try {
       const body = await req.json().catch(() => ({}))
       const resultado = await handlerWebhook(getSupabase(), body)
+      return jsonResponse(resultado, 200)
+    } catch (err) {
+      if (err instanceof ApiError) return jsonResponse({ erro: err.message }, err.status)
+      console.error(err)
+      const message = err instanceof Error ? err.message : 'Erro interno desconhecido.'
+      return jsonResponse({ erro: message }, 500)
+    }
+  }
+
+  const handlerUsuario = ROTAS_USUARIO[rota]
+  if (handlerUsuario) {
+    const jwt = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '')
+    if (!jwt) return jsonResponse({ erro: 'Não autorizado.' }, 401)
+    const supabase = getSupabase()
+    const { data: userData, error: userErr } = await supabase.auth.getUser(jwt)
+    if (userErr || !userData?.user) return jsonResponse({ erro: 'Não autorizado.' }, 401)
+    try {
+      const body = await req.json().catch(() => ({}))
+      const resultado = await handlerUsuario(supabase, body)
       return jsonResponse(resultado, 200)
     } catch (err) {
       if (err instanceof ApiError) return jsonResponse({ erro: err.message }, err.status)

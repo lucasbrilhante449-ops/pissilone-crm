@@ -533,7 +533,79 @@ export async function webhookNuvemshopPedido(supabase: SupabaseClient, body: any
   await logAction(supabase, 'ganho_confirmado', `${c.nome} (venda no site, pedido #${orderId}) - R$${valor}`)
   if (isSegundoGanhoD2c) await duplicarParaPissifaAuto(supabase, cfg, c)
 
+  // A Nuvemshop já desconta sozinha o estoque do produto que vendeu — mas o
+  // "estoque único" promete o MESMO número em toda estampa vinculada daquela
+  // cor/tamanho, então precisa reescrever nos outros produtos também. Roda
+  // depois de salvar tudo (não trava o fluxo principal do pedido se falhar).
+  for (const it of itensGanho) {
+    if (!it.cor || !it.tamanho) continue
+    try {
+      const { data: estRow } = await supabase.from('estoque').select('quantidade').eq('produto', it.produto).eq('cor', it.cor).eq('tamanho', it.tamanho).maybeSingle()
+      const novaQtd = estRow ? parseInt(estRow.quantidade) || 0 : 0
+      await broadcastEstoqueNuvemshop(supabase, it.produto, it.cor, it.tamanho, novaQtd)
+    } catch (err) {
+      console.error(`broadcast de estoque pós-venda do site falhou (${it.produto}/${it.cor}/${it.tamanho}):`, err)
+    }
+  }
+
   return { ok: true, id: c.id, funil: c.funil, etapa: c.etapa, venda_id: vendaId, itens: itensGanho.length }
+}
+
+// ── ESTOQUE COMPARTILHADO (broadcast pra todos os produtos vinculados) ───
+// A Nuvemshop guarda estoque por produto, sem noção de "pool compartilhado" —
+// por isso toda vez que o estoque de peça lisa (produto+cor+tamanho) muda no
+// CRM, reescreve o MESMO número absoluto em CADA produto vinculado que tem
+// essa cor/tamanho. Sempre absoluto (nunca delta por produto): se um produto
+// ficar dessincronizado por qualquer motivo, a próxima chamada já corrige.
+async function acharVariantId(produtoId: string, cor: string, tamanho: string): Promise<number | null> {
+  const produto = await nsFetch(`/products/${produtoId}?fields=id,variants`)
+  const variantes: any[] = produto?.variants || []
+  for (const v of variantes) {
+    const valores: string[] = (v.values || []).map((x: any) => nsText(x))
+    const temCor = valores.some((val: string) => corBate(val, cor))
+    const temTamanho = valores.some((val: string) => normComparar(val) === normComparar(tamanho))
+    if (temCor && temTamanho) return v.id
+  }
+  return null
+}
+
+export async function broadcastEstoqueNuvemshop(supabase: SupabaseClient, produto: string, cor: string, tamanho: string, quantidade: number): Promise<{ ok: number; falhou: number; detalhes: string[] }> {
+  const { data: estampas } = await supabase.from('catalogo').select('nome,nuvemshop_produto_ids').eq('tipo', 'estampa').not('nuvemshop_produto_ids', 'is', null)
+  let ok = 0, falhou = 0
+  const detalhes: string[] = []
+  const idsVistos = new Set<string>()
+  for (const e of estampas || []) {
+    let ids: string[] = []
+    try { ids = JSON.parse(e.nuvemshop_produto_ids || '[]') } catch (_err) { continue }
+    for (const produtoId of ids) {
+      if (idsVistos.has(produtoId)) continue // mesmo produto vinculado 2x por engano não chama 2x
+      idsVistos.add(produtoId)
+      try {
+        const variantId = await acharVariantId(produtoId, cor, tamanho)
+        if (!variantId) { falhou++; detalhes.push(`${e.nome} (produto ${produtoId}): sem variação ${cor}/${tamanho}`); continue }
+        await nsFetch(`/products/${produtoId}/variants/${variantId}`, 'PUT', { stock_management: true, stock: quantidade })
+        ok++
+      } catch (err) {
+        falhou++
+        detalhes.push(`${e.nome} (produto ${produtoId}): ${err instanceof Error ? err.message : 'erro'}`)
+      }
+    }
+  }
+  return { ok, falhou, detalhes }
+}
+
+// ── /estoque/sincronizar-nuvemshop ────────────────────────
+// Chamada pelo PRÓPRIO navegador do CRM (usuário logado, não o agente de IA)
+// sempre que o estoque de peça lisa muda por ação manual: célula editada na
+// grade de Estoque, ou Ganho/reabertura/edição de card. Ver broadcastEstoqueNuvemshop.
+export async function sincronizarEstoqueNuvemshop(supabase: SupabaseClient, body: any) {
+  const produto = reqStr(body, 'produto')
+  const cor = reqStr(body, 'cor')
+  const tamanho = reqStr(body, 'tamanho')
+  const quantidade = parseInt(body?.quantidade)
+  if (isNaN(quantidade) || quantidade < 0) throw new ApiError(400, 'Campo "quantidade" inválido (precisa ser 0 ou maior).')
+  const resultado = await broadcastEstoqueNuvemshop(supabase, produto, cor, tamanho, quantidade)
+  return { ok: true, ...resultado }
 }
 
 // ── /atividade/concluir ──────────────────────────────────
