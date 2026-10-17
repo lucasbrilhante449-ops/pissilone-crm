@@ -678,12 +678,11 @@ const CAMPOS_VARIANTE = ['values', 'image_id', 'price', 'promotional_price', 'co
 // Um único PUT /products/{id}/variants por produto (existentes + novas): criar
 // uma a uma eram ~15 POSTs por camiseta, cada um disparando um product/updated
 // de volta pra cá — estourava o limite de requisições da Nuvemshop.
-// Não mexe em produto cujo nome já fixa a cor (ex: "Camiseta Básica | Cor Preta")
-// nem em produto com atributos além de Cor e Tamanho. Cor sem estoque não é
-// removida — só fica 0 (esgotada).
+// Padrão da loja: um produto por peça/estampa (nunca um produto por cor), com
+// as cores como variação. Não mexe em produto com atributos além de Cor e
+// Tamanho. Cor sem estoque não é removida — só fica 0 (esgotada).
 async function completarCoresDoEstoque(produtoNs: any, cls: ProdutoNsClassificado, ctx: ContextoEspelho): Promise<{ criadas: string[]; detalhes: string[]; produtoAtualizado?: any }> {
   const criadas: string[] = [], detalhes: string[] = []
-  if (/\bcor\b/i.test(cls.nome)) return { criadas, detalhes }
   const attrs: string[] = (produtoNs?.attributes || []).map((a: any) => normComparar(nsText(a)))
   const iCor = attrs.findIndex((a) => a.startsWith('cor'))
   const iTam = attrs.findIndex((a) => a.startsWith('tamanho'))
