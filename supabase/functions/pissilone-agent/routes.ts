@@ -664,41 +664,12 @@ async function carregarCatalogoEEstoque(supabase: SupabaseClient): Promise<{ cat
   return { catalogo: catalogo || [], estoque: estoque || [] }
 }
 
-// ── /estoque/sincronizar-tudo-nuvemshop ───────────────────
-// Botão "Sincronizar com a Nuvemshop" da seção de Estoque: passa por todo
-// produto vinculado a alguma estampa e alinha todas as variações (ver acima).
-export async function sincronizarTudoNuvemshop(supabase: SupabaseClient, _body: any) {
-  const { data: estampas } = await supabase.from('catalogo').select('nome,nuvemshop_produto_ids').eq('tipo', 'estampa').not('nuvemshop_produto_ids', 'is', null)
-  const { catalogo, estoque } = await carregarCatalogoEEstoque(supabase)
-  const ids = new Set<string>()
-  for (const e of estampas || []) {
-    try { for (const id of JSON.parse(e.nuvemshop_produto_ids || '[]')) ids.add(String(id)) } catch (_err) { /* vínculo malformado: ignora */ }
-  }
-  let ok = 0, falhou = 0
-  const detalhes: string[] = []
-  for (const produtoId of ids) {
-    try {
-      const r = await sincronizarProdutoNuvemshopCompleto(produtoId, catalogo, estoque)
-      ok += r.ok; falhou += r.falhou; detalhes.push(...r.detalhes)
-    } catch (err) {
-      falhou++
-      detalhes.push(`produto ${produtoId}: ${err instanceof Error ? err.message : 'erro'}`)
-    }
-  }
-  // Aproveita o botão pra garantir que os webhooks de produto existem — assim
-  // não precisa de passo manual de cadastro depois do deploy.
-  let webhooks_criados: string[] = []
-  try { webhooks_criados = await garantirWebhooksProduto() } catch (err) {
-    detalhes.push(`webhooks de produto: ${err instanceof Error ? err.message : 'erro'}`)
-  }
-  return { ok: true, produtos: ids.size, variacoes_ok: ok, falhou, detalhes, webhooks_criados }
-}
-
 // ── PRODUTO NASCE NA NUVEMSHOP, CRM ESPELHA ───────────────
 // Padrão: cadastro de produto (nome, fotos, variações) é feito na Nuvemshop;
-// o CRM só controla o estoque da peça lisa. A cada product/created ou
-// product/updated, a estampa é criada/vinculada no Catálogo e TODAS as
-// variações recebem o estoque do CRM (o que o CRM não tem fica 0).
+// o CRM só controla o estoque da peça lisa. Cada produto que é peça do CRM
+// vira/vincula uma estampa no Catálogo e TODAS as variações recebem o estoque
+// do CRM (o que o CRM não tem fica 0). Usado pelo webhook (um produto) e pelo
+// botão "Sincronizar com a Nuvemshop" (catálogo inteiro).
 // Os PUTs de estoque disparam outro product/updated, mas aí tudo já bate e
 // sincronizarProdutoNuvemshopCompleto não escreve nada — o ciclo para sozinho.
 const EVENTOS_PRODUTO = ['product/created', 'product/updated', 'product/deleted']
@@ -722,29 +693,27 @@ async function garantirWebhooksProduto(): Promise<string[]> {
   return criados
 }
 
-export async function webhookNuvemshopProduto(supabase: SupabaseClient, body: any) {
-  const produtoId = body?.id ? String(body.id) : ''
-  const evento = String(body?.event || '')
-  if (!produtoId) throw new ApiError(400, 'Payload do webhook sem "id" de produto.')
+interface ContextoEspelho { catalogo: any[]; estoque: any[]; estampas: any[] }
 
-  const { data: estampas } = await supabase.from('catalogo').select('id,nome,foto_url,nuvemshop_produto_ids').eq('tipo', 'estampa')
-  let estampaRow: any = (estampas || []).find((e: any) => parseIdsVinculados(e).includes(produtoId))
+async function carregarContextoEspelho(supabase: SupabaseClient): Promise<ContextoEspelho> {
+  const [{ catalogo, estoque }, { data: estampas }] = await Promise.all([
+    carregarCatalogoEEstoque(supabase),
+    supabase.from('catalogo').select('id,nome,foto_url,nuvemshop_produto_ids').eq('tipo', 'estampa'),
+  ])
+  return { catalogo, estoque, estampas: estampas || [] }
+}
 
-  if (evento === 'product/deleted') {
-    // Tira o id do vínculo pra o "Sincronizar" não ficar tentando um produto que não existe mais.
-    if (!estampaRow) return { ok: true, ignorado: 'produto não vinculado' }
-    const ids = parseIdsVinculados(estampaRow).filter((id) => id !== produtoId)
-    await supabase.from('catalogo').update({ nuvemshop_produto_ids: JSON.stringify(ids) }).eq('id', estampaRow.id)
-    return { ok: true, desvinculado: estampaRow.nome }
-  }
-
-  const produtoNs = await nsFetch(`/products/${produtoId}?fields=id,name,variants,images`)
-  const { catalogo, estoque } = await carregarCatalogoEEstoque(supabase)
-  const cls = classificarProdutoNs(produtoNs, catalogo)
+// Espelha UM produto já carregado da Nuvemshop (precisa de name, variants, images).
+// ctx.estampas é atualizado em memória a cada vínculo/criação, pra uma passada
+// pelo catálogo inteiro não criar a mesma estampa 2x (ex: "Camiseta - Cafuné" em 2 produtos).
+async function espelharProdutoNs(supabase: SupabaseClient, produtoNs: any, ctx: ContextoEspelho): Promise<any> {
+  const produtoId = String(produtoNs.id)
+  const cls = classificarProdutoNs(produtoNs, ctx.catalogo)
+  let estampaRow: any = ctx.estampas.find((e: any) => parseIdsVinculados(e).includes(produtoId))
 
   // Só espelha peça que o CRM controla (nome começa com produto de variação,
   // ex: "Camiseta ...", ou alguma variação com cor+tamanho do catálogo) —
-  // caneca/chaveiro etc. ficam como estão na Nuvemshop.
+  // caneca/presilha etc. ficam como estão na Nuvemshop.
   const temGrade = cls.variantes.some((v) => v.cor && v.tamanho)
   if (!estampaRow && !cls.temProdutoBase && !temGrade) {
     return { ok: true, ignorado: 'produto sem cor/tamanho do catálogo do CRM' }
@@ -752,18 +721,20 @@ export async function webhookNuvemshopProduto(supabase: SupabaseClient, body: an
 
   if (!estampaRow) {
     // Mesmo nome de estampa já cadastrado (ex: mesma estampa em outro produto) → soma o vínculo nele.
-    estampaRow = (estampas || []).find((e: any) => normComparar(e.nome) === normComparar(cls.estampa))
+    estampaRow = ctx.estampas.find((e: any) => normComparar(e.nome) === normComparar(cls.estampa))
     if (estampaRow) {
       const ids = parseIdsVinculados(estampaRow)
       ids.push(produtoId)
       const { error } = await supabase.from('catalogo').update({ nuvemshop_produto_ids: JSON.stringify(ids) }).eq('id', estampaRow.id)
       if (error) throw new ApiError(500, 'Erro ao vincular estampa: ' + error.message)
+      estampaRow.nuvemshop_produto_ids = JSON.stringify(ids)
     } else {
       const { data: nova, error } = await supabase.from('catalogo')
         .insert({ tipo: 'estampa', nome: cls.estampa, nuvemshop_produto_ids: JSON.stringify([produtoId]) })
         .select('id,nome,foto_url,nuvemshop_produto_ids').single()
       if (error) throw new ApiError(500, 'Erro ao criar estampa: ' + error.message)
       estampaRow = nova
+      ctx.estampas.push(nova)
     }
   }
 
@@ -772,10 +743,70 @@ export async function webhookNuvemshopProduto(supabase: SupabaseClient, body: an
   const fotoUrl = primeiraImagem(produtoNs)
   if (fotoUrl && !estampaRow.foto_url) {
     await supabase.from('catalogo').update({ foto_url: fotoUrl }).eq('id', estampaRow.id)
+    estampaRow.foto_url = fotoUrl
   }
 
-  const estoque_sincronizado = await sincronizarProdutoNuvemshopCompleto(produtoId, catalogo, estoque, produtoNs)
-  return { ok: true, evento, estampa: estampaRow.nome, produto: cls.produto, estoque_sincronizado }
+  const estoque_sincronizado = await sincronizarProdutoNuvemshopCompleto(produtoId, ctx.catalogo, ctx.estoque, produtoNs)
+  return { ok: true, estampa: estampaRow.nome, produto: cls.produto, estoque_sincronizado }
+}
+
+// ── /estoque/sincronizar-tudo-nuvemshop ───────────────────
+// Botão "Sincronizar com a Nuvemshop" da seção de Estoque. Lê o catálogo
+// inteiro em páginas de 200 (1 GET por página, em vez de 1 por produto — com
+// ~180 produtos e o limite de 2 req/s da Nuvemshop, ir produto a produto
+// estourava o tempo da Edge Function) e só faz PUT no que está diferente.
+export async function sincronizarTudoNuvemshop(supabase: SupabaseClient, _body: any) {
+  const ctx = await carregarContextoEspelho(supabase)
+  let produtos = 0, ignorados = 0, ok = 0, falhou = 0
+  const detalhes: string[] = []
+  const POR_PAGINA = 200
+  for (let pagina = 1; ; pagina++) {
+    const lote: any[] = (await nsFetch(`/products?per_page=${POR_PAGINA}&page=${pagina}&fields=id,name,variants,images`)) || []
+    for (const produtoNs of lote) {
+      try {
+        const r = await espelharProdutoNs(supabase, produtoNs, ctx)
+        if (r.ignorado) { ignorados++; continue }
+        produtos++
+        ok += r.estoque_sincronizado.ok; falhou += r.estoque_sincronizado.falhou
+        detalhes.push(...r.estoque_sincronizado.detalhes)
+      } catch (err) {
+        falhou++
+        detalhes.push(`${nsText(produtoNs?.name)}: ${err instanceof Error ? err.message : 'erro'}`)
+      }
+    }
+    // Página incompleta = última (pedir a seguinte devolve 404 na Nuvemshop).
+    if (lote.length < POR_PAGINA) break
+  }
+
+  // Aproveita o botão pra garantir que os webhooks de produto existem — assim
+  // não precisa de passo manual de cadastro depois do deploy.
+  let webhooks_criados: string[] = []
+  try { webhooks_criados = await garantirWebhooksProduto() } catch (err) {
+    detalhes.push(`webhooks de produto: ${err instanceof Error ? err.message : 'erro'}`)
+  }
+  return { ok: true, produtos, ignorados, variacoes_ok: ok, falhou, detalhes, webhooks_criados }
+}
+
+export async function webhookNuvemshopProduto(supabase: SupabaseClient, body: any) {
+  const produtoId = body?.id ? String(body.id) : ''
+  const evento = String(body?.event || '')
+  if (!produtoId) throw new ApiError(400, 'Payload do webhook sem "id" de produto.')
+
+  if (evento === 'product/deleted') {
+    // Tira o id do vínculo pra o "Sincronizar" não ficar tentando um produto que não existe mais.
+    const { data: estampas } = await supabase.from('catalogo').select('id,nome,nuvemshop_produto_ids').eq('tipo', 'estampa')
+    const estampaRow: any = (estampas || []).find((e: any) => parseIdsVinculados(e).includes(produtoId))
+    if (!estampaRow) return { ok: true, ignorado: 'produto não vinculado' }
+    const ids = parseIdsVinculados(estampaRow).filter((id) => id !== produtoId)
+    await supabase.from('catalogo').update({ nuvemshop_produto_ids: JSON.stringify(ids) }).eq('id', estampaRow.id)
+    return { ok: true, desvinculado: estampaRow.nome }
+  }
+
+  const [produtoNs, ctx] = await Promise.all([
+    nsFetch(`/products/${produtoId}?fields=id,name,variants,images`),
+    carregarContextoEspelho(supabase),
+  ])
+  return { evento, ...(await espelharProdutoNs(supabase, produtoNs, ctx)) }
 }
 
 // ── /estoque/sincronizar-nuvemshop ────────────────────────
