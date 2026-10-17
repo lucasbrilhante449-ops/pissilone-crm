@@ -608,6 +608,49 @@ export async function sincronizarEstoqueNuvemshop(supabase: SupabaseClient, body
   return { ok: true, ...resultado }
 }
 
+function primeiraImagem(produto: any): string {
+  const imagens = (produto?.images || []).slice().sort((a: any, b: any) => (a.position || 0) - (b.position || 0))
+  return imagens[0]?.src || ''
+}
+
+// ── /catalogo/buscar-produtos-nuvemshop ───────────────────
+// Busca por nome na API da Nuvemshop (GET /products?q=...) — usada pelo botão
+// "Vincular" do Catálogo quando uma estampa ainda não tem produto associado.
+export async function buscarProdutosNuvemshop(supabase: SupabaseClient, body: any) {
+  const q = reqStr(body, 'q')
+  const resultado = await nsFetch(`/products?q=${encodeURIComponent(q)}&per_page=20&fields=id,name,images`)
+  const produtos = (Array.isArray(resultado) ? resultado : []).map((p: any) => ({
+    id: String(p.id), nome: nsText(p.name), imagem: primeiraImagem(p),
+  }))
+  return { ok: true, produtos }
+}
+
+// ── /catalogo/vincular-estampa ────────────────────────────
+// Confirma o vínculo escolhido no botão "Vincular": soma o product_id aos já
+// vinculados da estampa e puxa a primeira imagem do produto pra foto_url.
+export async function vincularEstampaNuvemshop(supabase: SupabaseClient, body: any) {
+  const estampaId = reqStr(body, 'estampa_id')
+  const produtoId = reqStr(body, 'produto_id')
+
+  const { data: row, error: selErr } = await supabase.from('catalogo').select('id,nuvemshop_produto_ids').eq('id', estampaId).eq('tipo', 'estampa').maybeSingle()
+  if (selErr) throw new ApiError(500, 'Erro ao consultar catálogo: ' + selErr.message)
+  if (!row) throw new ApiError(404, 'Estampa não encontrada.')
+
+  let ids: string[] = []
+  try { ids = row.nuvemshop_produto_ids ? JSON.parse(row.nuvemshop_produto_ids) : [] } catch (_err) { ids = [] }
+  if (!ids.includes(produtoId)) ids.push(produtoId)
+
+  const produto = await nsFetch(`/products/${produtoId}?fields=id,images`)
+  const fotoUrl = primeiraImagem(produto)
+
+  const patch: Record<string, string> = { nuvemshop_produto_ids: JSON.stringify(ids) }
+  if (fotoUrl) patch.foto_url = fotoUrl
+  const { error: updErr } = await supabase.from('catalogo').update(patch).eq('id', estampaId)
+  if (updErr) throw new ApiError(500, 'Erro ao vincular: ' + updErr.message)
+
+  return { ok: true, nuvemshop_produto_ids: ids, foto_url: fotoUrl }
+}
+
 // ── /atividade/concluir ──────────────────────────────────
 export async function concluirAtividade(supabase: SupabaseClient, body: any) {
   const telefone = normTelBR(reqStr(body, 'telefone'))

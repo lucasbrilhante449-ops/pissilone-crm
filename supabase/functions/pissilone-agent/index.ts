@@ -12,9 +12,9 @@
 
 import { ApiError, corsHeaders, getSupabase, jsonResponse } from './lib.ts'
 import {
-  adicionarItemPedido, agendarAtividade, cadastrarCliente, concluirAtividade,
+  adicionarItemPedido, agendarAtividade, buscarProdutosNuvemshop, cadastrarCliente, concluirAtividade,
   consultarCatalogo, criarCard, darGanho, darPerda, localizarOuCriarCatalogo, moverCard,
-  registrarNota, sincronizarEstoqueNuvemshop, verificarEstoque, webhookNuvemshopPedido,
+  registrarNota, sincronizarEstoqueNuvemshop, verificarEstoque, vincularEstampaNuvemshop, webhookNuvemshopPedido,
 } from './routes.ts'
 
 const ROTAS: Record<string, (supabase: ReturnType<typeof getSupabase>, body: any) => Promise<unknown>> = {
@@ -47,6 +47,8 @@ const ROTAS_WEBHOOK: Record<string, (supabase: ReturnType<typeof getSupabase>, b
 // Supabase direto), validado aqui contra o Auth do projeto.
 const ROTAS_USUARIO: Record<string, (supabase: ReturnType<typeof getSupabase>, body: any) => Promise<unknown>> = {
   '/estoque/sincronizar-nuvemshop': sincronizarEstoqueNuvemshop,
+  '/catalogo/buscar-produtos-nuvemshop': buscarProdutosNuvemshop,
+  '/catalogo/vincular-estampa': vincularEstampaNuvemshop,
 }
 
 function resolveRota(pathname: string): string {
