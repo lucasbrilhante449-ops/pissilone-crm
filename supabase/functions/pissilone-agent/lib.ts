@@ -342,6 +342,23 @@ export async function catalogoAcharOuCriar(supabase: SupabaseClient, tipo: 'prod
   return novo.nome
 }
 
+// Soma product_id da Nuvemshop à lista de produtos vinculados de uma estampa
+// (nuvemshop_produto_ids, JSON array em texto — uma estampa pode corresponder a
+// mais de um produto na Nuvemshop, ex: a mesma estampa cadastrada em produtos
+// separados por cor). Chamado a cada venda do site processada pelo webhook, pra
+// o vínculo ir se autocompletando sozinho com o tempo, sem precisar de alguém
+// vincular manualmente todo item um por um no Catálogo.
+export async function catalogoEstampaVincularProduto(supabase: SupabaseClient, estampaNome: string, produtoId: string): Promise<void> {
+  const { data } = await supabase.from('catalogo').select('id,nuvemshop_produto_ids').eq('tipo', 'estampa').ilike('nome', estampaNome).limit(1).maybeSingle()
+  if (!data) return
+  let ids: string[] = []
+  try { ids = data.nuvemshop_produto_ids ? JSON.parse(data.nuvemshop_produto_ids) : [] } catch (_e) { ids = [] }
+  if (ids.includes(produtoId)) return
+  ids.push(produtoId)
+  const { error } = await supabase.from('catalogo').update({ nuvemshop_produto_ids: JSON.stringify(ids) }).eq('id', data.id)
+  if (error) console.error('catalogoEstampaVincularProduto error:', error.message)
+}
+
 export async function enviarImagemWhatsapp(numero: string, mediaUrl: string, legenda: string): Promise<boolean> {
   const token = Deno.env.get('AA_SEND_TOKEN') ?? ''
   const instanceName = Deno.env.get('AA_INSTANCE_NAME') ?? ''

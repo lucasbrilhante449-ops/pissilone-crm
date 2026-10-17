@@ -1,7 +1,7 @@
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import {
   ApiError, Contato, ItemPedido,
-  acharEtapaPorNome, apiSaveContato, catalogoAcharOuCriar, criarEncomendasDoGanho,
+  acharEtapaPorNome, apiSaveContato, catalogoAcharOuCriar, catalogoEstampaVincularProduto, criarEncomendasDoGanho,
   duplicarParaPissifaAuto, enviarImagemWhatsapp, findContatoByTel, getFunil, hojeISO, loadCfg,
   logAction, moverEstoquePedido, normDate, normDateAgente, normTel, normTelBR, novoContato,
   nsFetch, nuvemshopPedidoJaProcessado, parseNegHist, parseValorBR,
@@ -365,13 +365,22 @@ export async function registrarNota(supabase: SupabaseClient, body: any) {
 // contato pelo telefone, grava o ganho no neg_hist, desconta estoque, cria as
 // encomendas (fila de produção) e replica pro Pissifã se for a 2ª compra.
 //
-// IMPORTANTE — formato ainda não validado contra um pedido real: os campos lidos
-// abaixo (nsText/nsNumber, order.items vs order.products, variant_values vs
-// properties) foram desenhados pra aceitar tanto o formato "achatado" que o
-// conector MCP da Nuvemshop devolveu nos testes quanto o formato localizado
-// ({pt,en,es}) que a documentação oficial da API descreve. Rode um pedido de
-// teste de verdade assim que o NS_TOKEN estiver configurado e confira os logs
-// (console.error) antes de confiar 100% nisso em produção.
+// Formato validado contra um pedido real (GET /orders/{id} puro, não o formato
+// "achatado" que o conector MCP devolve, que é diferente):
+// - itens ficam em order.products (não order.items)
+// - cada item.variant_values é um array de TEXTO por posição, ex: ["GG","Laranja"]
+//   — sem nome dizendo qual é cor e qual é tamanho, e a ordem muda de produto pra
+//   produto. Por isso cada valor é casado contra o catálogo de cores/tamanhos já
+//   cadastrado, nunca por posição.
+// - item.name_without_variants já vem sem o "(GG, Laranja)" no final — usa isso
+//   em vez de tentar extrair o nome base na mão.
+// - telefone/nome/email do cliente: order.customer.phone às vezes vem vazio
+//   mesmo em pedido válido — o campo confiável é order.contact_phone (idem
+//   contact_name/contact_email).
+// - data: order.paid_at é texto ISO puro; order.completed_at é um OBJETO
+//   ({date, timezone}), não texto — por isso prefere paid_at.
+// - forma de pagamento: não existe order.payment_method_name; o campo real é
+//   order.payment_details.method (credit_card/debit_card/ticket/...).
 
 function nsText(v: any): string {
   if (v === null || v === undefined) return ''
@@ -384,16 +393,46 @@ function nsNumber(v: any): number {
   if (typeof v === 'object') return parseFloat(v.amount) || 0
   return parseFloat(v) || 0
 }
-function mapearFormaPagamento(nomeMetodo: string): string {
-  const n = (nomeMetodo || '').toLowerCase()
-  if (n.includes('pix')) return 'pix'
-  if (n.includes('boleto') || n.includes('dinheiro')) return 'dinheiro'
-  if (n.includes('mercado pago') || n.includes('cart') || n.includes('credit')) return 'credito_vista'
+// completed_at/paid_at podem vir como texto ISO ou como {date, timezone, timezone_type}.
+function nsData(v: any): string {
+  if (!v) return ''
+  if (typeof v === 'string') return v
+  if (typeof v === 'object' && v.date) return String(v.date)
+  return ''
+}
+function mapearFormaPagamento(order: any): string {
+  const metodo = String(order?.payment_details?.method || '').toLowerCase()
+  const gateway = String(order?.gateway_name || '').toLowerCase()
+  if (metodo.includes('pix') || gateway.includes('pix')) return 'pix'
+  if (metodo.includes('debit')) return 'debito'
+  if (metodo.includes('credit')) return 'credito_vista'
+  if (metodo === 'cash' || metodo.includes('efectivo')) return 'dinheiro'
+  // boleto/ticket e gateways não reconhecidos ficam em branco — melhor vazio
+  // (editável depois no CRM) do que rotular errado a forma de pagamento.
   return ''
 }
 
+// Normaliza pra comparar cor/tamanho tolerando acento e maiúscula/minúscula.
+function normComparar(s: string): string {
+  return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
+}
+// Bate um valor vindo do pedido (ex: "Branco") contra um nome de cor do catálogo
+// (ex: "Branca", ou composto "Coral / Laranja") tolerando: (1) nome composto —
+// casa se QUALQUER parte separada por "/" bater; (2) variação de gênero da cor
+// em português (branco/branca, preto/preta, vermelho/vermelha) — compara a
+// "raiz" sem o -o/-a final. A Nuvemshop usa o masculino (concorda com "Produto"),
+// o CRM usa o feminino (concorda com "Camiseta") — o mesmo texto nunca bate 100%.
+function corBate(valorPedido: string, nomeCatalogo: string): boolean {
+  const alvo = normComparar(valorPedido)
+  const raizAlvo = alvo.replace(/[oa]$/, '')
+  return String(nomeCatalogo).split('/').some((parte) => {
+    const p = normComparar(parte)
+    return p === alvo || p.replace(/[oa]$/, '') === raizAlvo
+  })
+}
+
 async function mapearItensNuvemshop(supabase: SupabaseClient, order: any): Promise<ItemPedido[]> {
-  const itensBrutos: any[] = order.items || order.products || []
+  const itensBrutos: any[] = order.products || order.items || []
   const { data: catalogo } = await supabase.from('catalogo').select('nome,tipo,tem_variacao')
   const produtosComVariacao = (catalogo || []).filter((c: any) => c.tipo === 'produto' && c.tem_variacao)
   const coresConhecidas = (catalogo || []).filter((c: any) => c.tipo === 'cor').map((c: any) => String(c.nome))
@@ -401,37 +440,34 @@ async function mapearItensNuvemshop(supabase: SupabaseClient, order: any): Promi
 
   const resultado: ItemPedido[] = []
   for (const it of itensBrutos) {
-    const nomeItem = nsText(it.name).trim()
+    const nomeBase = (nsText(it.name_without_variants) || nsText(it.name)).trim()
     const qty = parseInt(it.quantity) || 1
-    const valoresVariacao: any[] = it.variant_values || it.properties || []
+    const valoresBrutos: any[] = it.variant_values || it.properties || []
+    const valoresTexto = valoresBrutos.map((v) => nsText(v).trim()).filter(Boolean)
 
+    // Classifica cada valor pelo CONTEÚDO (bate contra catálogo de cores/tamanhos
+    // já cadastrado), nunca pela posição — a Nuvemshop não garante ordem fixa.
+    // Guarda o nome do CATÁLOGO (não o valor cru do pedido), pra "estoque"/
+    // "encomendas" usarem sempre a mesma grafia cadastrada no CRM.
     let cor = '', tamanho = ''
-    for (const v of valoresVariacao) {
-      const nomeAttr = nsText(v?.name).toLowerCase()
-      const valor = nsText(v?.value).trim()
-      if (!valor) continue
-      if (nomeAttr.includes('cor') || nomeAttr.includes('color')) cor = valor
-      else if (nomeAttr.includes('tamanho') || nomeAttr.includes('size')) tamanho = valor
-      else if (!nomeAttr) {
-        // Propriedade sem nome (produto antigo cadastrado sem rótulo) — casa pelo
-        // valor contra o que já existe no catálogo de cores/tamanhos.
-        if (!cor && coresConhecidas.some((c) => c.toLowerCase() === valor.toLowerCase())) cor = valor
-        else if (!tamanho && tamanhosConhecidos.some((t) => t.toLowerCase() === valor.toLowerCase())) tamanho = valor
-      }
+    for (const valor of valoresTexto) {
+      if (!cor) { const m = coresConhecidas.find((c) => corBate(valor, c)); if (m) cor = m; }
+      if (!tamanho) { const m = tamanhosConhecidos.find((t) => normComparar(t) === normComparar(valor)); if (m) tamanho = m; }
     }
 
     if (cor && tamanho) {
-      const produtoBase = produtosComVariacao.find((p: any) => nomeItem.toLowerCase().startsWith(String(p.nome).toLowerCase()))
+      const produtoBase = produtosComVariacao.find((p: any) => nomeBase.toLowerCase().startsWith(String(p.nome).toLowerCase()))
       const produto = produtoBase ? String(produtoBase.nome) : 'Camiseta'
-      let estampa = produtoBase ? nomeItem.slice(String(produtoBase.nome).length).trim().replace(/^[-—:]\s*/, '') : nomeItem
-      if (!estampa) estampa = nomeItem
+      let estampa = produtoBase ? nomeBase.slice(String(produtoBase.nome).length).trim().replace(/^[-—:]\s*/, '') : nomeBase
+      if (!estampa) estampa = nomeBase
       estampa = await catalogoAcharOuCriar(supabase, 'estampa', estampa)
+      if (it.product_id) await catalogoEstampaVincularProduto(supabase, estampa, String(it.product_id))
       resultado.push({ produto, estampa, cor, tamanho, qty })
     } else {
       // Item simples (sem cor/tamanho, ex: caneca/chaveiro) — entra no pedido e no
       // valor total, mas não gera encomenda nem desconta estoque (mesma regra do
       // fluxo manual: só peça com cor+tamanho vai pra fila de produção).
-      resultado.push({ produto: nomeItem, qty })
+      resultado.push({ produto: nomeBase, qty })
     }
   }
   return resultado
@@ -450,7 +486,7 @@ export async function webhookNuvemshopPedido(supabase: SupabaseClient, body: any
     return { ok: true, ignorado: `payment_status=${order.payment_status}` }
   }
 
-  const telefoneBruto = nsText(order?.customer?.phone)
+  const telefoneBruto = nsText(order?.contact_phone) || nsText(order?.customer?.phone)
   if (!telefoneBruto) {
     console.error(`Pedido Nuvemshop ${orderId} pago sem telefone de cliente — não dá pra criar/achar card automaticamente.`)
     return { ok: false, erro: 'Pedido sem telefone de cliente.' }
@@ -459,9 +495,9 @@ export async function webhookNuvemshopPedido(supabase: SupabaseClient, body: any
   const cfg = await loadCfg(supabase)
 
   const c = await exigirContato(supabase, telefone, 'webhook Nuvemshop', {
-    nome: nsText(order?.customer?.name) || 'Cliente',
+    nome: nsText(order?.contact_name) || nsText(order?.customer?.name) || 'Cliente',
     canal: 'site',
-    email: nsText(order?.customer?.email),
+    email: nsText(order?.contact_email) || nsText(order?.customer?.email),
     usuario: cfg.nuvemshop_responsavel_padrao || '',
   })
 
@@ -469,13 +505,13 @@ export async function webhookNuvemshopPedido(supabase: SupabaseClient, body: any
   const hist = parseNegHist(c)
   const ganhosAnt = hist.filter((h: any) => h.r === 'ganho')
   const isSegundoGanhoD2c = ganhosAnt.length === 1 && c.funil === 'd2c'
-  const dataGanho = normDate(order.completed_at) || hojeISO()
+  const dataGanho = normDate(nsData(order.paid_at) || nsData(order.completed_at)) || hojeISO()
   const vendaId = c.id + '_' + Date.now()
   const valor = nsNumber(order.total)
 
   hist.push({
     r: 'ganho', d: dataGanho, m: '', v: valor, itens: itensGanho, nf: false,
-    fp: mapearFormaPagamento(nsText(order.payment_method_name)), venda_id: vendaId,
+    fp: mapearFormaPagamento(order), venda_id: vendaId,
     origem: 'nuvemshop', pedido_nuvemshop: String(orderId),
   })
   c.neg_hist = JSON.stringify(hist)
