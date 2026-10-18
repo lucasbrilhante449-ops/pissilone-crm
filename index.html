@@ -262,6 +262,18 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
 .pie-tab tr:last-child td{border-bottom:none}
 .pie-sw{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:8px;vertical-align:-1px}
 .pie-sub{color:var(--G3);font-size:12px}
+.fat-card{background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem;margin-bottom:1rem}
+.fat-barra{display:flex;gap:2px;height:22px;border-radius:6px;overflow:hidden;margin-bottom:.9rem}
+.fat-barra>div{height:100%}
+.fat-legenda{display:flex;gap:2rem;flex-wrap:wrap;font-size:14px;color:var(--K)}
+.fat-v{font-weight:700;margin-left:4px}
+.cat-linhas{display:flex;flex-direction:column;gap:10px}
+.cat-linha{display:grid;grid-template-columns:150px 1fr 190px;align-items:center;gap:12px}
+.cat-nome{font-size:14px;font-weight:600;color:var(--K);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cat-trilho{height:14px}
+.cat-barra{height:100%;border-radius:0 4px 4px 0}
+.cat-num{font-size:14px;color:var(--K);text-align:right;white-space:nowrap}
+.fat-dica{margin-top:.9rem;padding-top:.75rem;border-top:1px solid var(--G2);font-size:12.5px;color:var(--G3)}
 .det-valor{align-items:center;background:var(--VD2);color:var(--VD);border-radius:20px;padding:5px 14px;font-size:15px;font-weight:700;white-space:nowrap;flex-shrink:0}
 .det-prod-box{border:1px solid var(--G2);border-radius:10px;background:var(--W);margin-bottom:1.25rem;overflow:hidden}
 .det-prod-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--G);font-size:13px;font-weight:700;color:var(--K)}
@@ -500,6 +512,11 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
   <div style="font-size:12px;color:var(--G3);margin-bottom:.75rem">Opções disponíveis no campo "Canal" do contato e no filtro dos Insights</div>
   <div id="cfg-canais"></div>
   <button class="btn sm" onclick="openCanalModal()">+ Novo canal</button>
+  <div class="divider" style="margin:1.25rem 0"></div>
+  <div class="slbl">Categorias de produto</div>
+  <div style="font-size:12px;color:var(--G3);margin-bottom:.75rem">Usadas no Catálogo (produtos) e nos Insights (vendas por categoria). O produto do Catálogo casa pelo começo do nome: "Caneca" pega "Caneca Lampião". Estampa com crochê, macramê ou bordado no nome conta como "Feito à mão".</div>
+  <div id="cfg-categorias"></div>
+  <div style="display:flex;gap:6px;max-width:420px"><input class="fi" id="f-nova-categoria" placeholder="Nova categoria (ex: Linha Casa)" onkeydown="if(event.key==='Enter')addCategoria()"><button class="btn sm" onclick="addCategoria()">+ Adicionar</button></div>
   <div style="margin-top:1rem;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
     <label class="flbl" style="margin:0">Responsável padrão para pedidos do site</label>
     <select class="fi" id="f-cfg-resp-site" style="width:auto" onchange="salvarRespSite(this.value)"><option value="">Sem responsável</option></select>
@@ -683,7 +700,7 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
   <div class="mtitle"><span id="mcat-title">Novo item</span><button class="mcl" onclick="closeM('modal-catalogo')">&#10005;</button></div>
   <div class="fg fg1" style="margin-bottom:.75rem"><div><label class="flbl">Nome</label><input class="fi" id="f-cat-nome" placeholder="Ex: Camiseta..."></div></div>
   <div class="fg fg1" id="cat-natureza-wrap" style="margin-bottom:.75rem;display:none"><div><label class="flbl">Natureza</label><select class="fi" id="f-cat-natureza" onchange="onNaturezaChange()"><option value="produto">🛍️ Produto</option><option value="servico">🎨 Serviço</option></select></div></div>
-  <div class="fg fg1" id="cat-categoria-wrap" style="margin-bottom:.75rem;display:none"><div><label class="flbl">Categoria</label><select class="fi" id="f-cat-categoria"><option value="">-- Sem categoria --</option><option value="moda">Moda</option><option value="decor_home">Decor/Home</option><option value="acessorios">Acessórios</option></select></div></div>
+  <div class="fg fg1" id="cat-categoria-wrap" style="margin-bottom:.75rem;display:none"><div><label class="flbl">Categoria</label><select class="fi" id="f-cat-categoria"><option value="">-- Sem categoria --</option></select></div></div>
   <div id="cat-variacao-wrap" style="margin-bottom:.75rem;display:none">
     <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--K);cursor:pointer"><input type="checkbox" id="f-cat-variacao"> Tem estampa, cor e tamanho (ex: camiseta)</label>
   </div>
@@ -1135,8 +1152,6 @@ function popularSelectsCanal(valorAtual){
 }
 const FORMA_PAG_LABEL={credito_vista:'Crédito à Vista',credito_parcelado:'Crédito Parcelado',pix:'Pix',dinheiro:'Dinheiro',debito:'Débito',bonificacao:'Bonificação'};
 const FORMA_PAG_COR={credito_vista:'var(--L)',credito_parcelado:'var(--L2)',pix:'var(--A)',dinheiro:'var(--A2)',debito:'var(--AM)',bonificacao:'var(--VD)'};
-const CATEGORIA_LABEL={moda:'Moda',decor_home:'Decor/Home',acessorios:'Acessórios'};
-const CATEGORIA_COR={moda:'var(--L)',decor_home:'var(--A)',acessorios:'var(--VD)'};
 const TAMANHO_ORDEM=['infantil','pp','p','m','g','gg','xg','unico'];
 
 // ── ÍCONES SVG (linha, 16x16, mesma linguagem visual dos ícones da sidebar) ──
@@ -2631,6 +2646,97 @@ function itemProdutoEfetivo(it){
   if(it.estampa||it.cor||it.tamanho)return'Camiseta';
   return'';
 }
+// ── FATURAMENTO POR TIPO (produto x serviço) E POR CATEGORIA ──
+// Produto do Catálogo que casa com o nome do item: exato ou pelo começo
+// ("Caneca" casa "Caneca Lampião"); o nome mais longo vence.
+function produtoCatalogoDoItem(nome){
+  var n=String(nome||'').toLowerCase().trim();if(!n)return null;
+  var melhor=null;
+  catalogo.produtos.forEach(function(p){
+    var pn=p.nome.toLowerCase();
+    if((n===pn||n.indexOf(pn)===0)&&(!melhor||pn.length>melhor.nome.length))melhor=p;
+  });
+  return melhor;
+}
+var RE_FEITO_A_MAO=/croch|macram|bordad/;
+function classificarItemVenda(it,funil){
+  var nome=itemProdutoEfetivo(it);
+  var p=produtoCatalogoDoItem(nome);
+  if((p&&p.natureza==='servico')||(!p&&funil==='servicos'))return{tipo:'servico',cat:null};
+  var cats=getCategorias(),tem=function(id){return cats.some(function(c){return c.id===id;});};
+  var texto=(String(it.estampa||'')+' '+String(nome||'')).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+  if(RE_FEITO_A_MAO.test(texto)&&tem('feito_a_mao'))return{tipo:'produto',cat:'feito_a_mao'};
+  if(p&&p.categoria&&tem(p.categoria))return{tipo:'produto',cat:p.categoria};
+  if(/camis/.test(texto)&&tem('moda'))return{tipo:'produto',cat:'moda'};
+  return{tipo:'produto',cat:'_sem'};
+}
+// Divide o valor da venda entre os itens: item com preço gravado pesa pelo
+// preço×qtd; sem preço, divide o que sobrar pela quantidade. Venda sem itens
+// usa o texto do campo "produto" do card como item único.
+function ratearVenda(n){
+  var c=contatos.find(function(x){return x.id===n.cid;});
+  var itens=(n.itens&&n.itens.length)?n.itens:[{produto:c?c.produto:'',qty:1}];
+  var total=n.v||0;
+  var conhecidos=itens.filter(function(it){return it.valor!=null;});
+  var somaConh=conhecidos.reduce(function(a,it){return a+it.valor*(it.qty||1);},0);
+  var desconhecidos=itens.filter(function(it){return it.valor==null;});
+  var qtdDesc=desconhecidos.reduce(function(a,it){return a+(it.qty||1);},0);
+  return itens.map(function(it){
+    var v;
+    if(!desconhecidos.length)v=somaConh>0?total*(it.valor*(it.qty||1))/somaConh:0;
+    else if(it.valor!=null)v=Math.min(it.valor*(it.qty||1),somaConh>total?total*(it.valor*(it.qty||1))/somaConh:Infinity);
+    else v=Math.max(0,total-Math.min(somaConh,total))*(it.qty||1)/qtdDesc;
+    return{it:it,v:v,cls:classificarItemVenda(it,n.funil)};
+  });
+}
+function renderFaturamentoTipoCategoria(negGanhos){
+  var tipos={produto:0,servico:0},vendasTipo={produto:0,servico:0},porCat={};
+  negGanhos.forEach(function(n){
+    var temTipo={};
+    ratearVenda(n).forEach(function(r){
+      tipos[r.cls.tipo]+=r.v;temTipo[r.cls.tipo]=true;
+      if(r.cls.tipo==='produto'){
+        if(!porCat[r.cls.cat])porCat[r.cls.cat]={v:0,pecas:0};
+        porCat[r.cls.cat].v+=r.v;porCat[r.cls.cat].pecas+=(r.it.qty||1);
+      }
+    });
+    Object.keys(temTipo).forEach(function(t){vendasTipo[t]++;});
+  });
+  var fmt=function(v){return 'R$'+Math.round(v).toLocaleString('pt-BR');};
+  var h='<div class="divider"></div><div class="slbl">Faturamento: produto × serviço</div>';
+  var tot=tipos.produto+tipos.servico;
+  if(!tot){h+='<div class="empty" style="margin-bottom:1rem">Nenhuma venda no período.</div>';}
+  else{
+    var COR_PROD='#2a78d6',COR_SERV='#eb6834';
+    var pp=Math.round(tipos.produto/tot*100),ps=100-pp;
+    h+='<div class="fat-card"><div class="fat-barra">';
+    if(tipos.produto>0)h+='<div style="flex:'+tipos.produto+';background:'+COR_PROD+'" title="Produtos: '+fmt(tipos.produto)+' ('+pp+'%)"></div>';
+    if(tipos.servico>0)h+='<div style="flex:'+tipos.servico+';background:'+COR_SERV+'" title="Serviços: '+fmt(tipos.servico)+' ('+ps+'%)"></div>';
+    h+='</div><div class="fat-legenda">';
+    h+='<div><span class="pie-sw" style="background:'+COR_PROD+'"></span><b>Produtos</b> <span class="fat-v">'+fmt(tipos.produto)+'</span> <span class="pie-sub">'+pp+'% · '+vendasTipo.produto+' vendas</span></div>';
+    h+='<div><span class="pie-sw" style="background:'+COR_SERV+'"></span><b>Serviços</b> <span class="fat-v">'+fmt(tipos.servico)+'</span> <span class="pie-sub">'+ps+'% · '+vendasTipo.servico+' vendas</span></div>';
+    h+='</div></div>';
+  }
+  // Barras horizontais, uma cor (magnitude): faturamento de produtos por categoria.
+  h+='<div class="divider"></div><div class="slbl">Vendas por categoria</div>';
+  var linhas=Object.keys(porCat).map(function(k){return{k:k,nome:k==='_sem'?'Sem categoria':categoriaNome(k),v:porCat[k].v,pecas:porCat[k].pecas};}).filter(function(l){return l.v>0||l.pecas>0;}).sort(function(a,b){return b.v-a.v;});
+  if(!linhas.length){return h+'<div class="empty" style="margin-bottom:1rem">Nenhum produto vendido no período.</div>';}
+  var maxV=Math.max.apply(null,linhas.map(function(l){return l.v;}).concat([1]));
+  var totProd=linhas.reduce(function(a,l){return a+l.v;},0)||1;
+  h+='<div class="fat-card"><div class="cat-linhas">';
+  linhas.forEach(function(l){
+    var pct=Math.round(l.v/totProd*100);
+    h+='<div class="cat-linha" title="'+l.nome+': '+fmt(l.v)+' · '+pct+'% · '+l.pecas+' peças">';
+    h+='<div class="cat-nome">'+l.nome+'</div>';
+    h+='<div class="cat-trilho"><div class="cat-barra" style="width:'+Math.max(1,l.v/maxV*100)+'%;background:'+(l.k==='_sem'?'#a3a9b4':'#2a78d6')+'"></div></div>';
+    h+='<div class="cat-num"><b>'+fmt(l.v)+'</b> <span class="pie-sub">'+pct+'% · '+l.pecas+' pç</span></div></div>';
+  });
+  h+='</div>';
+  if(porCat._sem)h+='<div class="fat-dica">"Sem categoria": itens que não casam com nenhum produto do Catálogo. Cadastre o produto (ex: "Caneca") com a categoria no Catálogo → Produtos.</div>';
+  h+='</div>';
+  return h;
+}
+
 // Paleta categórica (8 cores, ordem fixa, validada pra daltonismo — skill dataviz).
 // A cor segue o CANAL (posição dele em cfg.canais), nunca o ranking: o mesmo
 // canal mantém a cor quando o período/filtro muda a ordem.
@@ -2770,7 +2876,6 @@ function renderInsights(){
   var usuariosRows=Object.entries(porUser).filter(function(e){return e[1].negs>0;}).sort(function(a,b){return b[1].receita-a[1].receita;});
   var canalNegs={};
   todasNegs.forEach(function(n){var c2=contatos.find(function(x){return x.id===n.cid;});var k=c2?(c2.canal||'outro'):'outro';if(!canalNegs[k])canalNegs[k]={ganhos:0,total:0};canalNegs[k].total++;if(n.r==='ganho')canalNegs[k].ganhos++;});
-  var canalEntries=Object.entries(canalNegs).sort(function(a,b){return b[1].ganhos-a[1].ganhos;});
   var motmc={};negPerdas.forEach(function(n){if(n.m)motmc[n.m]=(motmc[n.m]||0)+1;});
   var topM=Object.entries(motmc).sort(function(a,b){return b[1]-a[1];});
   var maxM=Math.max.apply(null,[1].concat(Object.values(motmc)));
@@ -2879,25 +2984,8 @@ function renderInsights(){
   }
   // ── VENDAS POR CANAL (rosca) ──
   h+=renderVendasPorCanal(negGanhos,canalNegs);
-  // ── CONVERSÃO POR CANAL ──
-  if(canalEntries.length>0){
-    h+='<div class="divider"></div><div class="slbl">Conversão por canal</div>';
-    h+='<div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem;margin-bottom:1rem">';
-    canalEntries.forEach(function(entry){
-      var k=entry[0],v=entry[1];
-      var tx=v.total>0?Math.round((v.ganhos/v.total)*100):0;
-      var cor=tx>=50?'var(--VD)':tx>=30?'var(--L)':'var(--VM)';
-      h+='<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">';
-      h+='<span style="font-size:13px;font-weight:600;color:var(--K)">'+(canalLabel(k))+'</span>';
-      h+='<div style="display:flex;gap:8px;font-size:12px"><span style="color:var(--G3)">'+v.ganhos+'/'+v.total+' negs</span>';
-      h+='<span style="color:'+cor+';font-weight:700">'+tx+'%</span></div></div>';
-      h+='<div style="background:var(--G2);border-radius:6px;height:14px;overflow:hidden;display:flex">';
-      h+='<div style="flex:'+v.ganhos+';background:var(--VD);height:100%;display:flex;align-items:center;justify-content:center'+(v.ganhos===0?';display:none':'')+'"><span style="font-size:10.5px;color:#fff;font-weight:700;padding:0 4px">'+(v.ganhos>0?v.ganhos:'')+'</span></div>';
-      h+='<div style="flex:'+(v.total-v.ganhos)+';background:var(--VM);opacity:.55;height:100%;display:flex;align-items:center;justify-content:center'+(v.total===v.ganhos?';display:none':'')+'"><span style="font-size:10.5px;color:#fff;font-weight:700;padding:0 4px">'+(v.total-v.ganhos>0?(v.total-v.ganhos):'')+'</span></div>';
-      h+='</div></div>';
-    });
-    h+='</div>';
-  }
+  // ── FATURAMENTO: PRODUTO x SERVIÇO e POR CATEGORIA ──
+  h+=renderFaturamentoTipoCategoria(negGanhos);
   // ── FORMA DE PAGAMENTO ──
   h+='<div class="divider"></div><div class="slbl">Forma de pagamento</div>';
   if(negGanhos.length){
@@ -3002,39 +3090,6 @@ function renderInsights(){
     h+=renderProdCol('Tamanhos',topTam,maxT);
     h+='</div>';
   }else{h+='<div class="empty" style="margin-bottom:1rem">Nenhum pedido com itens registrados</div>';}
-  // ── VENDAS POR CATEGORIA ──
-  h+='<div class="divider"></div><div class="slbl">Vendas por categoria</div>';
-  if(totalPecas>0){
-    var prodCatMap={};
-    catalogo.produtos.forEach(function(p){if(p.categoria)prodCatMap[p.nome.toLowerCase()]=p.categoria;});
-    var porCategoria={moda:0,decor_home:0,acessorios:0};
-    var semCategoria=0;
-    todosItens.forEach(function(it){
-      var qty=it.qty||1;
-      var pEf=itemProdutoEfetivo(it);
-      var cat=pEf?prodCatMap[pEf.toLowerCase()]:null;
-      if(cat&&porCategoria.hasOwnProperty(cat))porCategoria[cat]+=qty;
-      else semCategoria+=qty;
-    });
-    var catEntries=Object.keys(CATEGORIA_LABEL).map(function(ck){return{k:ck,label:CATEGORIA_LABEL[ck],v:porCategoria[ck],c:CATEGORIA_COR[ck]};});
-    if(semCategoria>0)catEntries.push({k:'sem',label:'Sem categoria',v:semCategoria,c:'var(--G3)'});
-    catEntries=catEntries.filter(function(e){return e.v>0;}).sort(function(a,b){return b.v-a.v;});
-    var segsCat=catEntries.map(function(e){return{v:e.v,c:e.c};});
-    h+='<div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem;margin-bottom:1rem">';
-    h+='<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">';
-    h+=svgPieSegs(segsCat,96);
-    h+='<div style="flex:1;min-width:180px">';
-    catEntries.forEach(function(e){
-      var pct=Math.round((e.v/totalPecas)*100);
-      h+='<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">';
-      h+='<span style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--K)"><span style="width:8px;height:8px;border-radius:50%;background:'+e.c+';flex-shrink:0"></span>'+e.label+'</span>';
-      h+='<span style="font-size:13px;color:var(--G3)">'+e.v+' pç &middot; '+pct+'%</span></div>';
-      h+='<div style="background:var(--G2);border-radius:4px;height:6px;overflow:hidden"><div style="width:'+pct+'%;height:100%;border-radius:4px;background:'+e.c+'"></div></div></div>';
-    });
-    h+='</div></div>';
-    h+='<div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--G2);font-size:12px;color:var(--G3)">Total: <strong style="color:var(--K)">'+totalPecas+' peças</strong> vendidas no período'+(semCategoria>0?' &middot; <span style="color:var(--G3)">categorize os produtos no Catálogo para reduzir o "Sem categoria"</span>':'')+'</div>';
-    h+='</div>';
-  }else{h+='<div class="empty" style="margin-bottom:1rem">Nenhuma peça vendida no período</div>';}
   // ── LOCALIZAÇÃO ──
   h+='<div class="divider"></div><div class="slbl">Localização dos clientes</div>';
   var contCidade={},contUF={};
@@ -4069,6 +4124,16 @@ function renderConfig(){
       canaisEl.innerHTML='<div class="tag-row" style="margin-bottom:.75rem">'+cnh+'</div>';
     }
   }
+  var catEl=document.getElementById('cfg-categorias');
+  if(catEl){
+    var cth='';
+    getCategorias().forEach(function(ct){
+      cth+='<span class="tag-chip">'+ct.nome
+        +'<button class="btn xs" onclick="renomearCategoria(\''+ct.id+'\')" title="Renomear">'+ic('pencil')+'</button>'
+        +'<button class="btn xs danger" onclick="delCategoria(\''+ct.id+'\')" title="Remover">'+ic('trash')+'</button></span>';
+    });
+    catEl.innerHTML='<div class="tag-row" style="margin-bottom:.75rem">'+cth+'</div>';
+  }
   var respSiteEl=document.getElementById('f-cfg-resp-site');
   if(respSiteEl){
     respSiteEl.innerHTML='<option value="">Sem responsável</option>'+(cfg.usuarios||[]).map(function(u){return'<option value="'+u.id+'">'+u.nome+'</option>';}).join('');
@@ -4296,7 +4361,7 @@ function renderProdutosSection(){
       if(!isServ){
         h+='<select class="fi" onchange="setCategoriaProduto(\''+item.id+'\',this.value)">';
         h+='<option value=""'+(!item.categoria?' selected':'')+'>Sem categoria</option>';
-        Object.keys(CATEGORIA_LABEL).forEach(function(ck){h+='<option value="'+ck+'"'+(item.categoria===ck?' selected':'')+'>'+CATEGORIA_LABEL[ck]+'</option>';});
+        getCategorias().forEach(function(ct){h+='<option value="'+ct.id+'"'+(item.categoria===ct.id?' selected':'')+'>'+ct.nome+'</option>';});
         h+='</select>';
         h+='<label style="display:flex;align-items:center;gap:5px;font-size:12.5px;color:var(--G3);cursor:pointer"><input type="checkbox"'+(item.temVariacao?' checked':'')+' onchange="setVariacaoProduto(\''+item.id+'\',this.checked)"> estampa/cor/tam.</label>';
       }
@@ -4357,7 +4422,7 @@ function openCatalogoModal(tipo){
   var natWrap=document.getElementById('cat-natureza-wrap');
   if(natWrap){natWrap.style.display=tipo==='produto'?'block':'none';document.getElementById('f-cat-natureza').value='produto';}
   var catWrap=document.getElementById('cat-categoria-wrap');
-  if(catWrap){catWrap.style.display=tipo==='produto'?'block':'none';document.getElementById('f-cat-categoria').value='';}
+  if(catWrap){catWrap.style.display=tipo==='produto'?'block':'none';popularSelectCategoria();document.getElementById('f-cat-categoria').value='';}
   var varWrap=document.getElementById('cat-variacao-wrap');
   if(varWrap){varWrap.style.display=tipo==='produto'?'block':'none';document.getElementById('f-cat-variacao').checked=false;}
   document.getElementById('modal-catalogo').style.display='flex';
@@ -4547,6 +4612,40 @@ function popularSelectTurma(valor){
   var turmas=cfg.turmas||[];
   sel.innerHTML='<option value="">Sem turma</option>'+turmas.map(function(t){return'<option value="'+t.nome.replace(/"/g,'&quot;')+'">'+t.nome+'</option>';}).join('');
   sel.value=cur||'';
+}
+
+// ── CATEGORIAS DE PRODUTO ────────────────────────────────
+// Lista editável em cfg.categorias_produto. Os ids antigos (moda, decor_home,
+// acessorios) são os que já estavam gravados em catalogo.categoria — mantidos
+// pra não perder a classificação dos produtos existentes.
+var CATEGORIAS_PADRAO=[{id:'moda',nome:'Camisetas'},{id:'decor_home',nome:'Linha Casa'},{id:'feito_a_mao',nome:'Feito à mão'},{id:'acessorios',nome:'Acessórios'}];
+function getCategorias(){
+  if(!Array.isArray(cfg.categorias_produto)||!cfg.categorias_produto.length)cfg.categorias_produto=CATEGORIAS_PADRAO.map(function(c){return Object.assign({},c);});
+  return cfg.categorias_produto;
+}
+function categoriaNome(id){var c=getCategorias().find(function(x){return x.id===id;});return c?c.nome:(id||'');}
+function popularSelectCategoria(){
+  var sel=document.getElementById('f-cat-categoria');if(!sel)return;
+  sel.innerHTML='<option value="">-- Sem categoria --</option>'+getCategorias().map(function(c){return'<option value="'+c.id+'">'+c.nome+'</option>';}).join('');
+}
+async function addCategoria(){
+  var inp=document.getElementById('f-nova-categoria');var nome=(inp.value||'').trim();if(!nome)return;
+  var lista=getCategorias();
+  if(lista.find(function(c){return c.nome.toLowerCase()===nome.toLowerCase();})){ss('er','Essa categoria já existe');return;}
+  var base=nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'')||'categoria',id=base,n=2;
+  while(lista.find(function(c){return c.id===id;})){id=base+'_'+n;n++;}
+  lista.push({id:id,nome:nome});inp.value='';
+  await saveCfg();renderConfig();
+}
+async function renomearCategoria(id){
+  var c=getCategorias().find(function(x){return x.id===id;});if(!c)return;
+  var nome=prompt('Novo nome da categoria',c.nome);if(!nome||!nome.trim())return;
+  c.nome=nome.trim();await saveCfg();renderConfig();
+}
+async function delCategoria(id){
+  if(!confirm('Remover esta categoria? Produtos do Catálogo que usam ela ficam sem categoria nos Insights.'))return;
+  cfg.categorias_produto=getCategorias().filter(function(c){return c.id!==id;});
+  await saveCfg();renderConfig();
 }
 
 // ── CANAIS DE ORIGEM ─────────────────────────────────────
