@@ -2668,6 +2668,9 @@ function classificarItemVenda(it,funil){
   if(RE_FEITO_A_MAO.test(texto)&&tem('feito_a_mao'))return{tipo:'produto',cat:'feito_a_mao'};
   if(p&&p.categoria&&tem(p.categoria))return{tipo:'produto',cat:p.categoria};
   if(/camis/.test(texto)&&tem('moda'))return{tipo:'produto',cat:'moda'};
+  // Venda antiga anotada só com o nome da estampa ("se avexe não Marrom M"):
+  // se o texto contém o nome de uma estampa do Catálogo, é camiseta.
+  if(tem('moda')&&catalogo.estampas.some(function(e){var en=e.nome.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();return en.length>=5&&texto.replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').indexOf(en)>=0;}))return{tipo:'produto',cat:'moda'};
   return{tipo:'produto',cat:'_sem'};
 }
 // Divide o valor da venda entre os itens: item com preço gravado pesa pelo
