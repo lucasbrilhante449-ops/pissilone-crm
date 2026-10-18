@@ -245,6 +245,7 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
 .peca-thumb img{width:100%;height:100%;object-fit:cover;display:block}
 .peca-body{padding:9px;display:flex;flex-direction:column;gap:7px}
 .peca-nome{font-size:13px;font-weight:600;color:var(--K);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.peca-preco{font-size:13px;font-weight:600;color:var(--K)}
 .vinc-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;width:fit-content}
 .vinc-badge.ok{background:var(--VD2);color:var(--VD)}
 .vinc-badge.off{background:var(--AM2);color:var(--AM)}
@@ -1235,7 +1236,7 @@ async function loadCatalogo(){
     var rows=await resp.json();
     catalogo={estampas:[],cores:[],tamanhos:[],produtos:[]};
     (Array.isArray(rows)?rows:[]).forEach(function(r){
-      if(r.tipo==='estampa'){var idsNs=[];try{idsNs=r.nuvemshop_produto_ids?JSON.parse(r.nuvemshop_produto_ids):[];}catch(e){idsNs=[];}catalogo.estampas.push({id:r.id,nome:r.nome,descricao:r.descricao||'',fotoUrl:r.foto_url||'',nuvemshopProdutoIds:idsNs});}
+      if(r.tipo==='estampa'){var idsNs=[];try{idsNs=r.nuvemshop_produto_ids?JSON.parse(r.nuvemshop_produto_ids):[];}catch(e){idsNs=[];}catalogo.estampas.push({id:r.id,nome:r.nome,descricao:r.descricao||'',fotoUrl:r.foto_url||'',nuvemshopProdutoIds:idsNs,valor:(r.valor!==null&&r.valor!==undefined)?parseFloat(r.valor):null});}
       else if(r.tipo==='cor')catalogo.cores.push({id:r.id,nome:r.nome,fotoUrl:r.foto_url||''});
       else if(r.tipo==='tamanho')catalogo.tamanhos.push({id:r.id,nome:r.nome});
       else if(r.tipo==='produto')catalogo.produtos.push({id:r.id,nome:r.nome,categoria:r.categoria||'',temVariacao:Boolean(r.tem_variacao),natureza:r.natureza||'produto',valor:(r.valor!==null&&r.valor!==undefined)?parseFloat(r.valor):null});
@@ -1905,6 +1906,28 @@ function abrirModalGanho(id){
   document.getElementById('modal-valor-neg').style.display='flex';
 }
 
+function fmtValorBR(v){return 'R$'+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+
+// Preço unitário do item: o da estampa (preço do site — a mesma camiseta lisa
+// custa diferente conforme a estampa/acabamento); sem estampa, o do produto.
+// Só sugere o valor da venda — não tem relação com o estoque, que segue por
+// produto/cor/tamanho.
+function precoItemPedido(prod,est){
+  var e=est&&catalogo.estampas.find(function(x){return x.nome===est;});
+  if(e&&e.valor!=null)return e.valor;
+  var p=prod&&catalogo.produtos.find(function(x){return x.nome===prod;});
+  return p&&p.valor!=null?p.valor:null;
+}
+// Recalcula o "Valor total" a partir dos itens com preço conhecido. Continua
+// editável (desconto, frete, item sem preço) — só é reescrito quando os itens mudam.
+function atualizarValorTotalPedido(){
+  var el=document.getElementById('f-neg-valor');if(!el)return;
+  var comPreco=pedidoItens.filter(function(it){return it.valor!=null;});
+  if(!comPreco.length)return;
+  var total=comPreco.reduce(function(a,it){return a+it.valor*(parseInt(it.qty)||1);},0);
+  el.value=Math.round(total*100)/100;
+}
+
 function adicionarItemPedido(){
   var prod=catSelVal('produto','novo');
   var est=catSelVal('estampa','novo');
@@ -1912,7 +1935,8 @@ function adicionarItemPedido(){
   var tam=catSelVal('tamanho','novo');
   var qty=parseInt(document.getElementById('f-item-qty').value)||1;
   if(!prod){ss('er','Selecione um produto');setTimeout(function(){ss('ok',contatos.length+' contatos');},2000);return;}
-  pedidoItens.push({produto:prod,estampa:est,cor:cor,tamanho:tam,qty:qty});
+  pedidoItens.push({produto:prod,estampa:est,cor:cor,tamanho:tam,qty:qty,valor:precoItemPedido(prod,est)});
+  atualizarValorTotalPedido();
   document.getElementById('csi-produto-novo').value='';
   document.getElementById('csi-estampa-novo').value='';
   document.getElementById('csi-cor-novo').value='';
@@ -1922,7 +1946,7 @@ function adicionarItemPedido(){
   renderItensPedido();
 }
 
-function removerItemPedido(idx){pedidoItens.splice(idx,1);renderItensPedido();}
+function removerItemPedido(idx){pedidoItens.splice(idx,1);atualizarValorTotalPedido();renderItensPedido();}
 
 function renderItensPedido(){
   var el=document.getElementById('pedido-itens-lista');if(!el)return;
@@ -1933,7 +1957,7 @@ function renderItensPedido(){
     if(item.estampa)desc+=(desc?' &middot; ':'')+item.estampa;
     if(item.cor)desc+=(desc?' &middot; ':'')+item.cor;
     if(item.tamanho)desc+=(desc?' &middot; ':'')+item.tamanho;
-    h+='<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;'+(i>0?'border-top:1px solid var(--G2)':'')+'"><div style="font-size:12px;color:var(--K)">'+desc+'</div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:var(--G3)">&times;'+item.qty+'</span><button class="btn xs danger" onclick="removerItemPedido('+i+')">&#10005;</button></div></div>';
+    h+='<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;'+(i>0?'border-top:1px solid var(--G2)':'')+'"><div style="font-size:12px;color:var(--K)">'+desc+'</div><div style="display:flex;align-items:center;gap:8px">'+(item.valor!=null?'<span style="font-size:11px;color:var(--K)">'+fmtValorBR(item.valor)+'</span>':'')+'<span style="font-size:11px;color:var(--G3)">&times;'+item.qty+'</span><button class="btn xs danger" onclick="removerItemPedido('+i+')">&#10005;</button></div></div>';
   });
   h+='</div>';
   el.innerHTML=h;
@@ -3469,7 +3493,9 @@ function adicionarItemEditNeg(){
   var tam=catSelVal('tamanho','edit');
   var qty=parseInt(document.getElementById('f-editneg-qty').value)||1;
   if(!prod){ss('er','Selecione um produto');return;}
-  editNegItens.push({produto:prod,estampa:est,cor:cor,tamanho:tam,qty:qty});
+  // Registra o preço do item, mas não recalcula o total: venda já fechada pode
+  // ter desconto, e os itens antigos não têm preço gravado.
+  editNegItens.push({produto:prod,estampa:est,cor:cor,tamanho:tam,qty:qty,valor:precoItemPedido(prod,est)});
   document.getElementById('csi-produto-edit').value='';
   document.getElementById('csi-estampa-edit').value='';
   document.getElementById('csi-cor-edit').value='';
@@ -3488,7 +3514,7 @@ function renderItensEditNeg(){
     if(item.estampa)desc+=(desc?' &middot; ':'')+item.estampa;
     if(item.cor)desc+=(desc?' &middot; ':'')+item.cor;
     if(item.tamanho)desc+=(desc?' &middot; ':'')+item.tamanho;
-    h+='<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;'+(i>0?'border-top:1px solid var(--G2)':'')+'"><div style="font-size:12px;color:var(--K)">'+desc+'</div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:var(--G3)">&times;'+item.qty+'</span><button class="btn xs danger" onclick="removerItemEditNeg('+i+')">&#10005;</button></div></div>';
+    h+='<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;'+(i>0?'border-top:1px solid var(--G2)':'')+'"><div style="font-size:12px;color:var(--K)">'+desc+'</div><div style="display:flex;align-items:center;gap:8px">'+(item.valor!=null?'<span style="font-size:11px;color:var(--K)">'+fmtValorBR(item.valor)+'</span>':'')+'<span style="font-size:11px;color:var(--G3)">&times;'+item.qty+'</span><button class="btn xs danger" onclick="removerItemEditNeg('+i+')">&#10005;</button></div></div>';
   });
   h+='</div>';
   el.innerHTML=h;
@@ -3948,8 +3974,15 @@ function renderPecasSection(){
       h+='<div class="peca-thumb">'+(item.fotoUrl?'<img src="'+item.fotoUrl.replace(/"/g,'&quot;')+'">':ic('img',24))+'</div>';
       h+='<div class="peca-body">';
       h+='<div class="peca-nome" title="'+item.nome+'">'+item.nome+'</div>';
-      if(vinculado){h+='<span class="vinc-badge ok">'+ic('tag')+' vinculada</span>';}
-      else{h+='<span class="vinc-badge off">'+ic('alert')+' sem vínculo</span><button class="btn xs full" onclick="abrirVincularNuvemshop(\''+idEsc+'\')">'+ic('tag')+' Vincular</button>';}
+      // Estampa vinculada: valor vem do preço do site (sincronização/webhook),
+      // só leitura aqui. Sem vínculo: dá pra preencher à mão.
+      if(vinculado){
+        h+='<span class="vinc-badge ok">'+ic('tag')+' vinculada</span>';
+        h+='<div class="peca-preco">'+(item.valor!=null?fmtValorBR(item.valor):'<span style="color:var(--G3)">sem preço</span>')+' <span style="font-size:10px;color:var(--G3)">preço do site</span></div>';
+      }else{
+        h+='<span class="vinc-badge off">'+ic('alert')+' sem vínculo</span><button class="btn xs full" onclick="abrirVincularNuvemshop(\''+idEsc+'\')">'+ic('tag')+' Vincular</button>';
+        h+='<input class="fi" placeholder="Preço (R$)" value="'+(item.valor!=null?String(item.valor).replace('.',','):'')+'" onchange="setValorProduto(\''+idEsc+'\',this.value)">';
+      }
       h+='<textarea class="fi" placeholder="História/descrição (opcional)" onchange="setDescricaoEstampa(\''+idEsc+'\',this.value)">'+(item.descricao?item.descricao.replace(/</g,'&lt;'):'')+'</textarea>';
       h+='<input class="fi" placeholder="Link da foto" value="'+(item.fotoUrl?item.fotoUrl.replace(/"/g,'&quot;'):'')+'" onchange="setFotoEstampa(\''+idEsc+'\',this.value)">';
       h+='<input type="file" accept="image/*" style="font-size:11px" onchange="uploadFotoCatalogo(\''+idEsc+'\',\'estampa\',this)">';

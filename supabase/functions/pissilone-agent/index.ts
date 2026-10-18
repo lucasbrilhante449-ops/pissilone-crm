@@ -12,7 +12,7 @@
 
 import { ApiError, corsHeaders, getSupabase, jsonResponse } from './lib.ts'
 import {
-  adicionarItemPedido, agendarAtividade, ajustarPrecosCamisetas, buscarProdutosNuvemshop, cadastrarCliente, concluirAtividade,
+  adicionarAtributoCor, adicionarItemPedido, agendarAtividade, ajustarPrecosCamisetas, buscarProdutosNuvemshop, cadastrarCliente, concluirAtividade,
   consultarCatalogo, criarCard, diagnosticoProdutoNuvemshop, darGanho, darPerda, localizarOuCriarCatalogo, moverCard,
   registrarNota, sincronizarEstoqueNuvemshop, sincronizarTudoNuvemshop, unificarDuplicadasNuvemshop, verificarEstoque, vincularEstampaNuvemshop, webhookNuvemshopPedido, webhookNuvemshopProduto,
 } from './routes.ts'
@@ -54,6 +54,7 @@ const ROTAS_USUARIO: Record<string, (supabase: ReturnType<typeof getSupabase>, b
   '/nuvemshop/unificar-duplicadas': unificarDuplicadasNuvemshop,
   '/nuvemshop/ajustar-precos-camisetas': ajustarPrecosCamisetas,
   '/nuvemshop/diagnostico-produto': diagnosticoProdutoNuvemshop,
+  '/nuvemshop/adicionar-atributo-cor': adicionarAtributoCor,
 }
 
 function resolveRota(pathname: string): string {

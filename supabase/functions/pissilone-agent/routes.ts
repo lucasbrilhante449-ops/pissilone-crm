@@ -216,14 +216,16 @@ export async function consultarCatalogo(supabase: SupabaseClient, body: any) {
   }
 
   // tipo === 'estampa'
-  const { data, error } = await supabase.from('catalogo').select('nome,descricao,foto_url').eq('tipo', 'estampa').order('nome', { ascending: true })
+  // valor da estampa = preço de venda no site (espelhado por espelharProdutoNs):
+  // a mesma camiseta lisa custa diferente conforme a estampa/acabamento.
+  const { data, error } = await supabase.from('catalogo').select('nome,descricao,foto_url,valor').eq('tipo', 'estampa').order('nome', { ascending: true })
   if (error) throw new ApiError(500, 'Erro ao consultar catálogo: ' + error.message)
   const rows = data || []
 
   if (!nome) {
     // Sem foto_url de propósito, pra não estourar o limite de ~8000 caracteres
     // de resposta da aa.app.br quando o catálogo de estampas crescer.
-    return { ok: true, tipo: 'estampa', estampas: rows.map((r: any) => ({ nome: r.nome, descricao: r.descricao || '' })) }
+    return { ok: true, tipo: 'estampa', estampas: rows.map((r: any) => ({ nome: r.nome, descricao: r.descricao || '', valor: r.valor !== null ? Number(r.valor) : null })) }
   }
   const nomeNorm = nome.toLowerCase()
   const achado = rows.find((r: any) => String(r.nome || '').trim().toLowerCase() === nomeNorm)
@@ -234,7 +236,7 @@ export async function consultarCatalogo(supabase: SupabaseClient, body: any) {
   if (achado.foto_url && telefone) {
     fotoEnviada = await enviarImagemWhatsapp(telefone, achado.foto_url, achado.nome)
   }
-  return { ok: true, tipo: 'estampa', encontrado: true, nome: achado.nome, descricao: achado.descricao || '', foto_enviada: fotoEnviada }
+  return { ok: true, tipo: 'estampa', encontrado: true, nome: achado.nome, descricao: achado.descricao || '', valor: achado.valor !== null ? Number(achado.valor) : null, foto_enviada: fotoEnviada }
 }
 
 // ── /dar-ganho ───────────────────────────────────────────
@@ -458,7 +460,9 @@ async function mapearItensNuvemshop(supabase: SupabaseClient, order: any): Promi
     if (cor && tamanho) {
       const produtoBase = produtosComVariacao.find((p: any) => nomeBase.toLowerCase().startsWith(String(p.nome).toLowerCase()))
       const produto = produtoBase ? String(produtoBase.nome) : 'Camiseta'
-      let estampa = produtoBase ? nomeBase.slice(String(produtoBase.nome).length).trim().replace(/^[-—:]\s*/, '') : nomeBase
+      // Separador entre produto e estampa no site: "-", "–" (en dash, o mais
+      // comum na loja), "—", ":" ou "|".
+      let estampa = produtoBase ? nomeBase.slice(String(produtoBase.nome).length).trim().replace(/^[-–—:|]+\s*/, '') : nomeBase
       if (!estampa) estampa = nomeBase
       estampa = await catalogoAcharOuCriar(supabase, 'estampa', estampa)
       if (it.product_id) await catalogoEstampaVincularProduto(supabase, estampa, String(it.product_id))
@@ -625,7 +629,7 @@ function classificarProdutoNs(produtoNs: any, catalogo: any[]): ProdutoNsClassif
   // há estoque de peça lisa pra ele: produto vazio → nenhuma linha de estoque
   // bate → todas as variações ficam 0 e nenhuma cor é adicionada.
   const produto = produtoBase ? String(produtoBase.nome) : ''
-  const estampa = (produtoBase ? nome.slice(String(produtoBase.nome).length).trim().replace(/^[-—:]\s*/, '') : '') || nome
+  const estampa = (produtoBase ? nome.slice(String(produtoBase.nome).length).trim().replace(/^[-–—:|]+\s*/, '') : '') || nome
 
   const variantes: VarianteNs[] = (produtoNs?.variants || []).map((v: any) => {
     const valores: string[] = (v.values || []).map((x: any) => nsText(x).trim()).filter(Boolean)
@@ -730,8 +734,23 @@ async function completarCoresDoEstoque(produtoNs: any, cls: ProdutoNsClassificad
   try {
     await nsFetch(`/products/${produtoNs.id}/variants`, 'PUT', [...existentes, ...novas])
   } catch (err) {
-    detalhes.push(`${cls.nome} (criar ${criadas.join(', ')}): ${err instanceof Error ? err.message : 'erro'}`)
-    return { criadas: [], detalhes }
+    // Produto que acabou de ganhar o atributo Cor (adicionarAtributoCor) recusa o
+    // PUT em lote com "Variant values should not be empty" mesmo com os dados
+    // certos. Plano B: cria uma a uma (o product/updated que cada POST dispara só
+    // acerta estoque, então não há corrida criando repetida).
+    const motivo = err instanceof Error ? err.message : 'erro'
+    const criadasUmaAUma: string[] = []
+    for (let i = 0; i < novas.length; i++) {
+      try {
+        await nsFetch(`/products/${produtoNs.id}/variants`, 'POST', novas[i])
+        criadasUmaAUma.push(criadas[i])
+      } catch (err2) {
+        detalhes.push(`${cls.nome} (criar ${criadas[i]}): ${err2 instanceof Error ? err2.message : 'erro'} [lote: ${motivo.slice(0, 120)}]`)
+      }
+    }
+    if (!criadasUmaAUma.length) return { criadas: [], detalhes }
+    const produtoAtualizado = await nsFetch(`/products/${produtoNs.id}?fields=id,name,attributes,variants,images`)
+    return { criadas: criadasUmaAUma, detalhes, produtoAtualizado }
   }
   // Recarrega: o sync seguinte precisa dos ids/estoques atuais das variações.
   const produtoAtualizado = await nsFetch(`/products/${produtoNs.id}?fields=id,name,attributes,variants,images`)
@@ -809,7 +828,7 @@ interface ContextoEspelho { catalogo: any[]; estoque: any[]; estampas: any[]; gr
 async function carregarContextoEspelho(supabase: SupabaseClient): Promise<ContextoEspelho> {
   const [{ catalogo, estoque }, { data: estampas }] = await Promise.all([
     carregarCatalogoEEstoque(supabase),
-    supabase.from('catalogo').select('id,nome,foto_url,nuvemshop_produto_ids').eq('tipo', 'estampa'),
+    supabase.from('catalogo').select('id,nome,foto_url,valor,nuvemshop_produto_ids').eq('tipo', 'estampa'),
   ])
   return { catalogo, estoque, estampas: estampas || [] }
 }
@@ -848,7 +867,7 @@ async function espelharProdutoNs(supabase: SupabaseClient, produtoNs: any, ctx: 
     } else {
       const { data: nova, error } = await supabase.from('catalogo')
         .insert({ tipo: 'estampa', nome: cls.estampa, nuvemshop_produto_ids: JSON.stringify([produtoId]) })
-        .select('id,nome,foto_url,nuvemshop_produto_ids').single()
+        .select('id,nome,foto_url,valor,nuvemshop_produto_ids').single()
       if (error) throw new ApiError(500, 'Erro ao criar estampa: ' + error.message)
       estampaRow = nova
       ctx.estampas.push(nova)
@@ -861,6 +880,15 @@ async function espelharProdutoNs(supabase: SupabaseClient, produtoNs: any, ctx: 
   if (fotoUrl && !estampaRow.foto_url) {
     await supabase.from('catalogo').update({ foto_url: fotoUrl }).eq('id', estampaRow.id)
     estampaRow.foto_url = fotoUrl
+  }
+
+  // Preço do site vira o valor da estampa no Catálogo (consulta da atendente,
+  // valor automático na venda, resposta da Maria). Roda também no
+  // product/updated, então mudar o preço na Nuvemshop já reflete no CRM.
+  const preco = precoDeVendaNs(produtoNs)
+  if (preco !== null && Number(estampaRow.valor) !== preco) {
+    await supabase.from('catalogo').update({ valor: preco }).eq('id', estampaRow.id)
+    estampaRow.valor = preco
   }
 
   // Completar cores só fora do product/updated (ver webhookNuvemshopProduto).
@@ -882,6 +910,21 @@ async function espelharProdutoNs(supabase: SupabaseClient, produtoNs: any, ctx: 
   estoque_sincronizado.detalhes.push(...cores.detalhes)
   estoque_sincronizado.falhou += cores.detalhes.length
   return { ok: true, estampa: estampaRow.nome, produto: cls.produto, variacoes_criadas: cores.criadas, repetidas_removidas, estoque_sincronizado }
+}
+
+// Preço que o cliente paga no site: promocional quando houver (e for menor),
+// senão o normal. Variações podem divergir (ex: uma esquecida em 0,00), então
+// vale o preço mais comum entre as variações com preço; empate → o maior.
+function precoDeVendaNs(produtoNs: any): number | null {
+  const contagem = new Map<number, number>()
+  for (const v of produtoNs?.variants || []) {
+    const preco = parseFloat(v.price) || 0
+    const promo = parseFloat(v.promotional_price) || 0
+    const efetivo = promo > 0 && promo < preco ? promo : preco
+    if (efetivo > 0) contagem.set(efetivo, (contagem.get(efetivo) || 0) + 1)
+  }
+  if (!contagem.size) return null
+  return [...contagem.entries()].sort((a, b) => (b[1] - a[1]) || (b[0] - a[0]))[0][0]
 }
 
 // Variação repetida (mesma cor+tamanho 2x ou mais) aparece quando dois
@@ -1079,6 +1122,69 @@ export async function diagnosticoProdutoNuvemshop(_supabase: SupabaseClient, bod
   const direto = await nsFetch(`/products/${id}?fields=id,name,attributes,variants`)
   const lista: any[] = (await nsFetch(`/products?ids=${id}&fields=id,name,attributes,variants`)) || []
   return { ok: true, direto: resumir(direto), na_listagem: lista.length ? resumir(lista[0]) : null }
+}
+
+// ── /nuvemshop/adicionar-atributo-cor ─────────────────────
+// Camisetas cadastradas só com "Tamanho" não recebem cores (completarCores
+// exige Cor+Tamanho). Aqui o produto ganha o atributo Cor; as variações que já
+// existem recebem uma cor padrão (Preto — a foto não diz a cor, e logo depois
+// todas as cores com estoque entram mesmo) mantendo id/preço, e o espelhamento
+// completa as demais cores e o estoque.
+// Sem { executar: true } só lista; { produto_id } restringe a um produto (teste).
+export async function adicionarAtributoCor(supabase: SupabaseClient, body: any) {
+  const executar = body?.executar === true
+  const soId = body?.produto_id ? String(body.produto_id) : ''
+  const ctx = await carregarContextoEspelho(supabase)
+  const candidatos: any[] = []
+  if (soId) {
+    candidatos.push(await nsFetch(`/products/${soId}?fields=id,name,attributes,variants,images`))
+  } else {
+    for (let pagina = 1; ; pagina++) {
+      const lote: any[] = (await nsFetch(`/products?per_page=200&page=${pagina}&fields=id,name,attributes,variants,images`)) || []
+      candidatos.push(...lote)
+      if (lote.length < 200) break
+    }
+  }
+
+  const corCrm = ctx.catalogo.some((c: any) => c.tipo === 'cor' && c.nome === 'Preta') ? 'Preta' : ''
+  const plano: any[] = []
+  // Cada produto custa ~35 requisições (cores criadas uma a uma); para antes do
+  // limite da Edge Function. Chamar de novo continua: o que já ganhou Cor sai da lista.
+  const inicio = Date.now(), LIMITE_MS = 100_000
+  for (const p of candidatos) {
+    const nome = nsText(p?.name).trim()
+    const attrs: string[] = (p?.attributes || []).map((a: any) => normComparar(nsText(a)))
+    if (!normComparar(nome).startsWith('camiseta') || attrs.length !== 1 || attrs[0] !== 'tamanho') continue
+    const item: any = { id: String(p.id), nome, variacoes: (p.variants || []).length }
+    plano.push(item)
+    if (!executar) continue
+    if (Date.now() - inicio > LIMITE_MS) { item.pulado = 'limite de tempo'; continue }
+    try {
+      const cor = corCrm ? await grafiaCorNaLoja(ctx, corCrm) : 'Preto'
+      const passos: string[] = []
+      // A ordem que a API aceita não é documentada: tenta atributo primeiro e,
+      // se recusar, ajusta as variações primeiro.
+      const valoresNovos = (p.variants || []).map((v: any) => ({ id: v.id, values: [{ pt: cor }, v.values?.[0] ?? { pt: '' }] }))
+      try {
+        await nsFetch(`/products/${p.id}`, 'PUT', { attributes: [{ pt: 'Cor' }, { pt: 'Tamanho' }] })
+        passos.push('atributo')
+        await nsFetch(`/products/${p.id}/variants`, 'PATCH', valoresNovos)
+        passos.push('variações')
+      } catch (err1) {
+        item.tentativa1 = err1 instanceof Error ? err1.message.slice(0, 300) : 'erro'
+        await nsFetch(`/products/${p.id}/variants`, 'PATCH', valoresNovos)
+        passos.push('variações')
+        await nsFetch(`/products/${p.id}`, 'PUT', { attributes: [{ pt: 'Cor' }, { pt: 'Tamanho' }] })
+        passos.push('atributo')
+      }
+      const atualizado = await nsFetch(`/products/${p.id}?fields=id,name,attributes,variants,images`)
+      const espelho = await espelharProdutoNs(supabase, atualizado, ctx)
+      Object.assign(item, { ok: true, passos, cor_padrao: cor, cores_criadas: (espelho.variacoes_criadas || []).length })
+    } catch (err) {
+      item.erro = err instanceof Error ? err.message.slice(0, 400) : 'erro'
+    }
+  }
+  return { ok: true, executado: executar, produtos: plano.length, plano }
 }
 
 // ── /nuvemshop/ajustar-precos-camisetas ───────────────────
