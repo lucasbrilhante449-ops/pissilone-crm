@@ -262,16 +262,27 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
 .pie-tab tr:last-child td{border-bottom:none}
 .pie-sw{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:8px;vertical-align:-1px}
 .pie-sub{color:var(--G3);font-size:12px}
+.ins-click{cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.ins-click:hover{border-color:var(--L);box-shadow:0 2px 8px rgba(194,98,47,.18)}
+.il-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border-bottom:1px solid var(--G2);cursor:pointer;border-radius:6px}
+.il-row:hover{background:var(--G)}
+.il-nome{font-size:14px;font-weight:600;color:var(--K);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.il-sub{font-size:12.5px;color:var(--G3)}
+.il-valor{font-size:13px;font-weight:600;color:var(--K);white-space:nowrap}
 .fat-card{background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem;margin-bottom:1rem}
 .fat-barra{display:flex;gap:2px;height:22px;border-radius:6px;overflow:hidden;margin-bottom:.9rem}
 .fat-barra>div{height:100%}
 .fat-legenda{display:flex;gap:2rem;flex-wrap:wrap;font-size:14px;color:var(--K)}
 .fat-v{font-weight:700;margin-left:4px}
 .cat-linhas{display:flex;flex-direction:column;gap:10px}
+.cat-linhas>.cat-feito{margin-left:162px}
 .cat-linha{display:grid;grid-template-columns:150px 1fr 190px;align-items:center;gap:12px}
 .cat-nome{font-size:14px;font-weight:600;color:var(--K);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cat-trilho{height:14px}
 .cat-barra{height:100%;border-radius:0 4px 4px 0}
+.cat-barra{display:flex;overflow:hidden}
+.cat-barra-feito{height:100%}
+.cat-feito{grid-column:2 / 4;font-size:12.5px;color:var(--G3);margin-top:-4px}
 .cat-num{font-size:14px;color:var(--K);text-align:right;white-space:nowrap}
 .fat-dica{margin-top:.9rem;padding-top:.75rem;border-top:1px solid var(--G2);font-size:12.5px;color:var(--G3)}
 .det-valor{align-items:center;background:var(--VD2);color:var(--VD);border-radius:20px;padding:5px 14px;font-size:15px;font-weight:700;white-space:nowrap;flex-shrink:0}
@@ -514,7 +525,7 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
   <button class="btn sm" onclick="openCanalModal()">+ Novo canal</button>
   <div class="divider" style="margin:1.25rem 0"></div>
   <div class="slbl">Categorias de produto</div>
-  <div style="font-size:12px;color:var(--G3);margin-bottom:.75rem">Usadas no Catálogo (produtos) e nos Insights (vendas por categoria). O produto do Catálogo casa pelo começo do nome: "Caneca" pega "Caneca Lampião". Estampa com crochê, macramê ou bordado no nome conta como "Feito à mão".</div>
+  <div style="font-size:12px;color:var(--G3);margin-bottom:.75rem">Usadas no Catálogo (produtos) e nos Insights (vendas por categoria). O produto do Catálogo casa pelo começo do nome: "Caneca" pega "Caneca Lampião". "Feito à mão" não é categoria: é uma marcação na estampa/produto (Catálogo), e os Insights mostram quanto de cada categoria foi feito à mão.</div>
   <div id="cfg-categorias"></div>
   <div style="display:flex;gap:6px;max-width:420px"><input class="fi" id="f-nova-categoria" placeholder="Nova categoria (ex: Linha Casa)" onkeydown="if(event.key==='Enter')addCategoria()"><button class="btn sm" onclick="addCategoria()">+ Adicionar</button></div>
   <div style="margin-top:1rem;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -895,6 +906,13 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
 </div>
 
 <!-- MODAL GANHOS LIST -->
+<div class="overlay" id="modal-ins-lista" style="display:none">
+<div class="modal" style="max-width:620px">
+  <div class="mtitle"><span id="mil-title">Lista</span><button class="mcl" onclick="closeM('modal-ins-lista')">&#10005;</button></div>
+  <input class="fi" id="mil-busca" placeholder="Buscar por nome..." oninput="renderListaInsight()" style="margin-bottom:.75rem">
+  <div id="mil-content" style="max-height:60vh;overflow-y:auto"></div>
+</div>
+</div>
 <div class="overlay" id="modal-ganhos-list" style="display:none">
 <div class="modal" style="max-width:620px">
   <div class="mtitle"><span id="mgl-title">Ganhos</span><button class="mcl" onclick="closeM('modal-ganhos-list')">&#10005;</button></div>
@@ -1316,10 +1334,10 @@ async function loadCatalogo(){
     var rows=await resp.json();
     catalogo={estampas:[],cores:[],tamanhos:[],produtos:[]};
     (Array.isArray(rows)?rows:[]).forEach(function(r){
-      if(r.tipo==='estampa'){var idsNs=[];try{idsNs=r.nuvemshop_produto_ids?JSON.parse(r.nuvemshop_produto_ids):[];}catch(e){idsNs=[];}catalogo.estampas.push({id:r.id,nome:r.nome,descricao:r.descricao||'',fotoUrl:r.foto_url||'',nuvemshopProdutoIds:idsNs,valor:(r.valor!==null&&r.valor!==undefined)?parseFloat(r.valor):null,valorOriginal:(r.valor_original!==null&&r.valor_original!==undefined)?parseFloat(r.valor_original):null,urlSite:r.url_site||''});}
+      if(r.tipo==='estampa'){var idsNs=[];try{idsNs=r.nuvemshop_produto_ids?JSON.parse(r.nuvemshop_produto_ids):[];}catch(e){idsNs=[];}catalogo.estampas.push({id:r.id,nome:r.nome,descricao:r.descricao||'',fotoUrl:r.foto_url||'',nuvemshopProdutoIds:idsNs,valor:(r.valor!==null&&r.valor!==undefined)?parseFloat(r.valor):null,valorOriginal:(r.valor_original!==null&&r.valor_original!==undefined)?parseFloat(r.valor_original):null,urlSite:r.url_site||'',feitoAMao:r.feito_a_mao===true});}
       else if(r.tipo==='cor')catalogo.cores.push({id:r.id,nome:r.nome,fotoUrl:r.foto_url||''});
       else if(r.tipo==='tamanho')catalogo.tamanhos.push({id:r.id,nome:r.nome});
-      else if(r.tipo==='produto')catalogo.produtos.push({id:r.id,nome:r.nome,categoria:r.categoria||'',temVariacao:Boolean(r.tem_variacao),natureza:r.natureza||'produto',valor:(r.valor!==null&&r.valor!==undefined)?parseFloat(r.valor):null});
+      else if(r.tipo==='produto')catalogo.produtos.push({id:r.id,nome:r.nome,categoria:r.categoria||'',temVariacao:Boolean(r.tem_variacao),natureza:r.natureza||'produto',valor:(r.valor!==null&&r.valor!==undefined)?parseFloat(r.valor):null,feitoAMao:r.feito_a_mao===true});
     });
     catalogo.tamanhos=ordenarTamanhos(catalogo.tamanhos);
   }catch(e){console.warn('loadCatalogo error:',e);}
@@ -2659,19 +2677,31 @@ function produtoCatalogoDoItem(nome){
   return melhor;
 }
 var RE_FEITO_A_MAO=/croch|macram|bordad/;
+// Feito à mão: marcação da estampa do item no Catálogo; sem estampa
+// cadastrada, a do produto; venda antiga em texto livre cai na regra do nome.
+function itemFeitoAMao(it,p,texto){
+  var e=it.estampa&&catalogo.estampas.find(function(x){return x.nome.toLowerCase()===String(it.estampa).toLowerCase();});
+  if(e)return e.feitoAMao;
+  if(p&&p.feitoAMao)return true;
+  return RE_FEITO_A_MAO.test(texto);
+}
 function classificarItemVenda(it,funil){
   var nome=itemProdutoEfetivo(it);
   var p=produtoCatalogoDoItem(nome);
-  if((p&&p.natureza==='servico')||(!p&&funil==='servicos'))return{tipo:'servico',cat:null};
+  if((p&&p.natureza==='servico')||(!p&&funil==='servicos'))return{tipo:'servico',cat:null,feito:false};
+  var r=classificarCategoriaProduto(it,nome,p);
+  r.feito=itemFeitoAMao(it,p,r.texto);
+  return r;
+}
+function classificarCategoriaProduto(it,nome,p){
   var cats=getCategorias(),tem=function(id){return cats.some(function(c){return c.id===id;});};
   var texto=(String(it.estampa||'')+' '+String(nome||'')).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
-  if(RE_FEITO_A_MAO.test(texto)&&tem('feito_a_mao'))return{tipo:'produto',cat:'feito_a_mao'};
-  if(p&&p.categoria&&tem(p.categoria))return{tipo:'produto',cat:p.categoria};
-  if(/camis/.test(texto)&&tem('moda'))return{tipo:'produto',cat:'moda'};
+  if(p&&p.categoria&&tem(p.categoria))return{tipo:'produto',cat:p.categoria,texto:texto};
+  if(/camis/.test(texto)&&tem('moda'))return{tipo:'produto',cat:'moda',texto:texto};
   // Venda antiga anotada só com o nome da estampa ("se avexe não Marrom M"):
   // se o texto contém o nome de uma estampa do Catálogo, é camiseta.
-  if(tem('moda')&&catalogo.estampas.some(function(e){var en=e.nome.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();return en.length>=5&&texto.replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').indexOf(en)>=0;}))return{tipo:'produto',cat:'moda'};
-  return{tipo:'produto',cat:'_sem'};
+  if(tem('moda')&&catalogo.estampas.some(function(e){var en=e.nome.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();return en.length>=5&&texto.replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').indexOf(en)>=0;}))return{tipo:'produto',cat:'moda',texto:texto};
+  return{tipo:'produto',cat:'_sem',texto:texto};
 }
 // Divide o valor da venda entre os itens: item com preço gravado pesa pelo
 // preço×qtd; sem preço, divide o que sobrar pela quantidade. Venda sem itens
@@ -2699,8 +2729,9 @@ function renderFaturamentoTipoCategoria(negGanhos){
     ratearVenda(n).forEach(function(r){
       tipos[r.cls.tipo]+=r.v;temTipo[r.cls.tipo]=true;
       if(r.cls.tipo==='produto'){
-        if(!porCat[r.cls.cat])porCat[r.cls.cat]={v:0,pecas:0};
+        if(!porCat[r.cls.cat])porCat[r.cls.cat]={v:0,pecas:0,feitoV:0,feitoPecas:0};
         porCat[r.cls.cat].v+=r.v;porCat[r.cls.cat].pecas+=(r.it.qty||1);
+        if(r.cls.feito){porCat[r.cls.cat].feitoV+=r.v;porCat[r.cls.cat].feitoPecas+=(r.it.qty||1);}
       }
     });
     Object.keys(temTipo).forEach(function(t){vendasTipo[t]++;});
@@ -2722,7 +2753,7 @@ function renderFaturamentoTipoCategoria(negGanhos){
   }
   // Barras horizontais, uma cor (magnitude): faturamento de produtos por categoria.
   h+='<div class="divider"></div><div class="slbl">Vendas por categoria</div>';
-  var linhas=Object.keys(porCat).map(function(k){return{k:k,nome:k==='_sem'?'Sem categoria':categoriaNome(k),v:porCat[k].v,pecas:porCat[k].pecas};}).filter(function(l){return l.v>0||l.pecas>0;}).sort(function(a,b){return b.v-a.v;});
+  var linhas=Object.keys(porCat).map(function(k){return{k:k,nome:k==='_sem'?'Sem categoria':categoriaNome(k),v:porCat[k].v,pecas:porCat[k].pecas,feitoV:porCat[k].feitoV,feitoPecas:porCat[k].feitoPecas};}).filter(function(l){return l.v>0||l.pecas>0;}).sort(function(a,b){return b.v-a.v;});
   if(!linhas.length){return h+'<div class="empty" style="margin-bottom:1rem">Nenhum produto vendido no período.</div>';}
   var maxV=Math.max.apply(null,linhas.map(function(l){return l.v;}).concat([1]));
   var totProd=linhas.reduce(function(a,l){return a+l.v;},0)||1;
@@ -2731,10 +2762,15 @@ function renderFaturamentoTipoCategoria(negGanhos){
     var pct=Math.round(l.v/totProd*100);
     h+='<div class="cat-linha" title="'+l.nome+': '+fmt(l.v)+' · '+pct+'% · '+l.pecas+' peças">';
     h+='<div class="cat-nome">'+l.nome+'</div>';
-    h+='<div class="cat-trilho"><div class="cat-barra" style="width:'+Math.max(1,l.v/maxV*100)+'%;background:'+(l.k==='_sem'?'#a3a9b4':'#2a78d6')+'"></div></div>';
+    // Parte feita à mão = trecho mais escuro (mesma cor, tom 600) no começo da barra.
+    var pf=l.v>0?l.feitoV/l.v*100:0;
+    h+='<div class="cat-trilho"><div class="cat-barra" style="width:'+Math.max(1,l.v/maxV*100)+'%;background:'+(l.k==='_sem'?'#a3a9b4':'#86b6ef')+'">'+(l.feitoV>0?'<div class="cat-barra-feito" style="width:'+pf+'%;background:'+(l.k==='_sem'?'#6b7280':'#184f95')+'"></div>':'')+'</div></div>';
     h+='<div class="cat-num"><b>'+fmt(l.v)+'</b> <span class="pie-sub">'+pct+'% · '+l.pecas+' pç</span></div></div>';
+    if(l.feitoPecas>0)h+='<div class="cat-feito">✋ Feito à mão: <b>'+l.feitoPecas+'</b> de '+l.pecas+' peças ('+Math.round(l.feitoPecas/l.pecas*100)+'%) · <b>'+fmt(l.feitoV)+'</b> = '+Math.round(pf)+'% do faturamento de '+l.nome+'</div>';
   });
   h+='</div>';
+  var tf=linhas.reduce(function(a,l){return a+l.feitoV;},0),tfp=linhas.reduce(function(a,l){return a+l.feitoPecas;},0),tp=linhas.reduce(function(a,l){return a+l.pecas;},0);
+  h+='<div class="fat-dica"><span class="pie-sw" style="background:#184f95"></span>feito à mão &nbsp;<span class="pie-sw" style="background:#86b6ef"></span>demais · No total, <b style="color:var(--K)">'+tfp+' de '+tp+' peças</b> foram feitas à mão ('+(tp?Math.round(tfp/tp*100):0)+'%), <b style="color:var(--K)">'+fmt(tf)+'</b> ('+Math.round(tf/totProd*100)+'% do faturamento de produtos). Marque ou desmarque "feito à mão" nas estampas e produtos do Catálogo.</div>';
   if(porCat._sem)h+='<div class="fat-dica">"Sem categoria": itens que não casam com nenhum produto do Catálogo. Cadastre o produto (ex: "Caneca") com a categoria no Catálogo → Produtos.</div>';
   h+='</div>';
   return h;
@@ -2833,9 +2869,9 @@ function renderInsights(){
   // 2ª compra (em vez de duplicar), a 1ª compra pode acabar "dentro" de um card hoje com
   // funil==='pissifa'. Agrupar por telefone garante 1 "primeira compra" por cliente real, e ainda
   // funciona pra cards antigos duplicados (mesmo telefone em 2 cards = mesma chave, sem contar 2x).
-  allNegs.forEach(function(n){if(n.r!=='ganho')return;var chave=n.tel||n.cid;if(!ganhosPorCliente[chave])ganhosPorCliente[chave]=[];ganhosPorCliente[chave].push(n.d);});
-  var primeiraCompraList=Object.keys(ganhosPorCliente).map(function(chave){var datas=ganhosPorCliente[chave].filter(Boolean).sort();return{d:datas[0]};});
-  var clientesNovos=filtNegsPer(primeiraCompraList,false).length;
+  allNegs.forEach(function(n){if(n.r!=='ganho')return;var chave=n.tel||n.cid;if(!ganhosPorCliente[chave])ganhosPorCliente[chave]=[];ganhosPorCliente[chave].push({d:n.d,cid:n.cid,v:n.v});});
+  var primeiraCompraList=Object.keys(ganhosPorCliente).map(function(chave){var g=ganhosPorCliente[chave].filter(function(x){return x.d;}).sort(function(a,b){return a.d.localeCompare(b.d);});return g[0]||{d:''};});
+  var primeirasNoPeriodo=filtNegsPer(primeiraCompraList,false);var clientesNovos=primeirasNoPeriodo.length;
   var todasNegs=filtNegsPer(allNegs,false);
   var prevNegs=filtNegsPer(allNegs,true);
   var negGanhos=todasNegs.filter(function(n){return n.r==='ganho';});
@@ -2888,6 +2924,17 @@ function renderInsights(){
   var maxStage=Math.max.apply(null,[1].concat(stageData.map(function(s){return s.count;})));
   var convCor=txConv>=15?'var(--VD)':txConv>=8?'var(--AM)':'var(--VM)';
   _insightsLista=lista;
+  // Quem está por trás de cada número clicável (abre a lista em abrirListaInsight).
+  var negSub=function(n){return (n.r==='ganho'?'✓ Ganho':'✗ Perda')+' · '+fmtDFull(n.d)+(n.v?' · '+fmtValorBR(n.v):'')+(n.r==='perda'&&n.m?' · '+n.m:'');};
+  window.__insListas={
+    negociacoes:{titulo:'Negociações',itens:todasNegs.map(function(n){return{cid:n.cid,sub:negSub(n)};})},
+    perdidos:{titulo:'Perdidos',itens:negPerdas.map(function(n){return{cid:n.cid,sub:negSub(n)};})},
+    emaberto:{titulo:'Em aberto (sem negociação)',itens:lista.filter(function(c){return !parseNegHist(c).length&&!isGanho(c.funil,c.etapa)&&!isPerdido(c.funil,c.etapa);}).map(function(c){return{cid:c.id};})},
+    safra:{titulo:'Safra (cards do período)',itens:lista.map(function(c){return{cid:c.id};})},
+    novos:{titulo:'Clientes novos (1ª compra no período)',itens:primeirasNoPeriodo.map(function(g){return{cid:g.cid,sub:'1ª compra · '+fmtDFull(g.d)+(g.v?' · '+fmtValorBR(g.v):'')};})},
+    whats:{titulo:'Conversas WhatsApp',itens:canalBase.filter(function(c){return c.canal==='whatsapp'&&contatoTeveEventoNoPeriodo(c);}).map(function(c){return{cid:c.id};})},
+    atelie:{titulo:'Visitas ao Ateliê',itens:canalBase.filter(function(c){return c.canal==='atelie'&&contatoTeveEventoNoPeriodo(c);}).map(function(c){return{cid:c.id};})}
+  };
   var mesesMap={};negGanhos.forEach(function(n){var m=(n.d||'').slice(0,7);if(!m||m.length<7)return;mesesMap[m]=(mesesMap[m]||0)+(n.v||0);});var mesesKeys=Object.keys(mesesMap).sort();if(mesesKeys.length>12)mesesKeys=mesesKeys.slice(mesesKeys.length-12);var mesesData=mesesKeys.map(function(m){var p=m.split('-');return{v:mesesMap[m],l:p[1]+'/'+p[0].slice(2)};});
   var h='';
   // ── HERO CARDS ──
@@ -2918,19 +2965,19 @@ function renderInsights(){
   h+='</div>';
   // ── MINI STATS ──
   h+='<div class="mg" style="margin-bottom:1rem">';
-  h+='<div class="mc"><div class="mc-n">'+baseConv+'</div><div class="mc-l">Negociações</div><div class="mc-s a">base</div></div>';
-  h+='<div class="mc"><div class="mc-n" style="color:var(--VM)">'+negPerdas.length+'</div><div class="mc-l">Perdidos</div><div class="mc-s r">'+txPerda+'%</div></div>';
-  h+='<div class="mc"><div class="mc-n">'+emAberto+'</div><div class="mc-l">Em aberto</div><div class="mc-s a">sem neg.</div></div>';
-  h+='<div class="mc"><div class="mc-n">'+lista.length+'</div><div class="mc-l">SAFRA</div><div class="mc-s">cards</div></div>';
+  h+='<div class="mc ins-click" onclick="abrirListaInsight(\'negociacoes\')" title="Ver a lista"><div class="mc-n">'+baseConv+'</div><div class="mc-l">Negociações</div><div class="mc-s a">base</div></div>';
+  h+='<div class="mc ins-click" onclick="abrirListaInsight(\'perdidos\')" title="Ver a lista"><div class="mc-n" style="color:var(--VM)">'+negPerdas.length+'</div><div class="mc-l">Perdidos</div><div class="mc-s r">'+txPerda+'%</div></div>';
+  h+='<div class="mc ins-click" onclick="abrirListaInsight(\'emaberto\')" title="Ver a lista"><div class="mc-n">'+emAberto+'</div><div class="mc-l">Em aberto</div><div class="mc-s a">sem neg.</div></div>';
+  h+='<div class="mc ins-click" onclick="abrirListaInsight(\'safra\')" title="Ver a lista"><div class="mc-n">'+lista.length+'</div><div class="mc-l">SAFRA</div><div class="mc-s">cards</div></div>';
   h+='<div class="mc"><div class="mc-n" style="color:var(--A2)">'+checkpts+'</div><div class="mc-l">Checkpoints</div><div class="mc-s v">executados</div></div>';
   h+='<div class="mc"><div class="mc-n">'+pa.toFixed(1)+'</div><div class="mc-l">PA</div><div class="mc-s">'+totalPecas+' peças</div></div>';
   h+='</div>';
   // ── AQUISIÇÃO DE CLIENTES ──
   h+='<div class="divider"></div><div class="slbl">Aquisição de clientes</div>';
   h+='<div class="mg" style="margin-bottom:1rem">';
-  h+='<div class="mc"><div class="mc-n" style="color:var(--VD)">'+clientesNovos+'</div><div class="mc-l">Clientes novos</div></div>';
-  h+='<div class="mc"><div class="mc-n" style="color:var(--A2)">'+conversasWhats+'</div><div class="mc-l">Conversas WhatsApp</div></div>';
-  h+='<div class="mc"><div class="mc-n" style="color:var(--L)">'+visitasAtelie+'</div><div class="mc-l">Visitas ao Ateliê</div></div>';
+  h+='<div class="mc ins-click" onclick="abrirListaInsight(\'novos\')" title="Ver a lista"><div class="mc-n" style="color:var(--VD)">'+clientesNovos+'</div><div class="mc-l">Clientes novos</div></div>';
+  h+='<div class="mc ins-click" onclick="abrirListaInsight(\'whats\')" title="Ver a lista"><div class="mc-n" style="color:var(--A2)">'+conversasWhats+'</div><div class="mc-l">Conversas WhatsApp</div></div>';
+  h+='<div class="mc ins-click" onclick="abrirListaInsight(\'atelie\')" title="Ver a lista"><div class="mc-n" style="color:var(--L)">'+visitasAtelie+'</div><div class="mc-l">Visitas ao Ateliê</div></div>';
   h+='</div>';
   // ── RECEITA POR MÊS ──
   if(mesesData.length>=1){
@@ -4024,6 +4071,33 @@ async function executeImport(){
 }
 
 // ── GANHOS LIST MODAL ────────────────────────────────────
+// Lista genérica dos números clicáveis dos Insights (window.__insListas,
+// montado em renderInsights com os mesmos filtros/período dos números).
+let insListaAtual=null;
+function abrirListaInsight(chave){
+  insListaAtual=(window.__insListas||{})[chave]||null;if(!insListaAtual)return;
+  document.getElementById('mil-busca').value='';
+  renderListaInsight();
+  document.getElementById('modal-ins-lista').style.display='flex';
+}
+function renderListaInsight(){
+  var L=insListaAtual;if(!L)return;
+  var q=(document.getElementById('mil-busca').value||'').trim().toLowerCase();
+  var rows=L.itens.map(function(it){return{it:it,c:contatos.find(function(x){return x.id===it.cid;})};}).filter(function(r){return r.c&&(!q||r.c.nome.toLowerCase().includes(q));});
+  document.getElementById('mil-title').textContent=L.titulo+' ('+L.itens.length+')';
+  var el=document.getElementById('mil-content');
+  if(!rows.length){el.innerHTML='<div class="empty">Nada por aqui.</div>';return;}
+  var h='';
+  rows.forEach(function(r){
+    var c=r.c,f=getFunil(c.funil),e=f?f.etapas.find(function(x){return x.id===c.etapa;}):null;
+    var linha2=r.it.sub||((f?f.nome:'')+(e?' · '+e.nome:'')+(c.canal?' · '+canalLabel(c.canal):''));
+    h+='<div class="il-row" onclick="closeM(\'modal-ins-lista\');openContatoDetail(\''+c.id+'\')">';
+    h+='<div style="min-width:0"><div class="il-nome">'+c.nome+'</div><div class="il-sub">'+linha2+'</div></div>';
+    h+='<div class="il-valor">'+(c.valor?fmtValorBR(c.valor):'')+'</div></div>';
+  });
+  el.innerHTML=h;
+}
+
 function openGanhosModal(){
   filtroGL='todos';
   document.querySelectorAll('#modal-ganhos-list .filtro').forEach(function(b){b.classList.remove('active');});
@@ -4315,6 +4389,7 @@ function renderPecasSection(){
       // Vinculada e com foto: tudo vem do site, card enxuto com o link do produto
       // (atendente abre ou copia pra mandar no WhatsApp). Sem vínculo ou sem foto:
       // campos pra completar à mão.
+      h+='<label class="peca-check" style="font-size:12.5px;font-weight:500"><input type="checkbox"'+(item.feitoAMao?' checked':'')+' onchange="setFeitoAMao(\''+idEsc+'\',this.checked)"> Feito à mão</label>';
       if(vinculado&&item.fotoUrl){
         if(item.urlSite){
           var urlEsc=item.urlSite.replace(/"/g,'&quot;');
@@ -4367,6 +4442,7 @@ function renderProdutosSection(){
         getCategorias().forEach(function(ct){h+='<option value="'+ct.id+'"'+(item.categoria===ct.id?' selected':'')+'>'+ct.nome+'</option>';});
         h+='</select>';
         h+='<label style="display:flex;align-items:center;gap:5px;font-size:12.5px;color:var(--G3);cursor:pointer"><input type="checkbox"'+(item.temVariacao?' checked':'')+' onchange="setVariacaoProduto(\''+item.id+'\',this.checked)"> estampa/cor/tam.</label>';
+        h+='<label style="display:flex;align-items:center;gap:5px;font-size:12.5px;color:var(--G3);cursor:pointer" title="Peça artesanal. Em produto com estampa, vale a marcação da estampa."><input type="checkbox"'+(item.feitoAMao?' checked':'')+' onchange="setFeitoAMao(\''+item.id+'\',this.checked)"> feito à mão</label>';
       }
       h+='</div></div></div>';
     });
@@ -4499,6 +4575,13 @@ async function setFotoCor(id,fotoUrl){
   }catch(e){ss('er','Erro ao salvar foto');}
 }
 
+async function setFeitoAMao(id,feito){
+  try{
+    await fetch(SB_URL+'/rest/v1/catalogo?id=eq.'+id,{method:'PATCH',headers:SB_HDR,body:JSON.stringify({feito_a_mao:Boolean(feito)})});
+    await loadCatalogo();
+    renderCatalogo();
+  }catch(e){ss('er','Erro ao salvar "feito à mão"');}
+}
 async function setValorProduto(id,valor){
   try{
     var v=String(valor||'').trim().replace(',','.');
@@ -4621,9 +4704,12 @@ function popularSelectTurma(valor){
 // Lista editável em cfg.categorias_produto. Os ids antigos (moda, decor_home,
 // acessorios) são os que já estavam gravados em catalogo.categoria — mantidos
 // pra não perder a classificação dos produtos existentes.
-var CATEGORIAS_PADRAO=[{id:'moda',nome:'Camisetas'},{id:'decor_home',nome:'Linha Casa'},{id:'feito_a_mao',nome:'Feito à mão'},{id:'acessorios',nome:'Acessórios'}];
+// 'Feito à mão' não é categoria (é a marcação catalogo.feito_a_mao, que vale
+// pra qualquer categoria) — removido da lista se tiver sido salvo antes.
+var CATEGORIAS_PADRAO=[{id:'moda',nome:'Camisetas'},{id:'decor_home',nome:'Linha Casa'},{id:'acessorios',nome:'Acessórios'}];
 function getCategorias(){
   if(!Array.isArray(cfg.categorias_produto)||!cfg.categorias_produto.length)cfg.categorias_produto=CATEGORIAS_PADRAO.map(function(c){return Object.assign({},c);});
+  cfg.categorias_produto=cfg.categorias_produto.filter(function(c){return c.id!=='feito_a_mao';});
   return cfg.categorias_produto;
 }
 function categoriaNome(id){var c=getCategorias().find(function(x){return x.id===id;});return c?c.nome:(id||'');}
