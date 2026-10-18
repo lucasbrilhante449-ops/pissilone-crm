@@ -12,9 +12,9 @@
 
 import { ApiError, corsHeaders, getSupabase, jsonResponse } from './lib.ts'
 import {
-  adicionarItemPedido, agendarAtividade, buscarProdutosNuvemshop, cadastrarCliente, concluirAtividade,
-  consultarCatalogo, criarCard, darGanho, darPerda, localizarOuCriarCatalogo, moverCard,
-  registrarNota, sincronizarEstoqueNuvemshop, sincronizarTudoNuvemshop, verificarEstoque, vincularEstampaNuvemshop, webhookNuvemshopPedido, webhookNuvemshopProduto,
+  adicionarItemPedido, agendarAtividade, ajustarPrecosCamisetas, buscarProdutosNuvemshop, cadastrarCliente, concluirAtividade,
+  consultarCatalogo, criarCard, diagnosticoProdutoNuvemshop, darGanho, darPerda, localizarOuCriarCatalogo, moverCard,
+  registrarNota, sincronizarEstoqueNuvemshop, sincronizarTudoNuvemshop, unificarDuplicadasNuvemshop, verificarEstoque, vincularEstampaNuvemshop, webhookNuvemshopPedido, webhookNuvemshopProduto,
 } from './routes.ts'
 
 const ROTAS: Record<string, (supabase: ReturnType<typeof getSupabase>, body: any) => Promise<unknown>> = {
@@ -51,6 +51,9 @@ const ROTAS_USUARIO: Record<string, (supabase: ReturnType<typeof getSupabase>, b
   '/estoque/sincronizar-tudo-nuvemshop': sincronizarTudoNuvemshop,
   '/catalogo/buscar-produtos-nuvemshop': buscarProdutosNuvemshop,
   '/catalogo/vincular-estampa': vincularEstampaNuvemshop,
+  '/nuvemshop/unificar-duplicadas': unificarDuplicadasNuvemshop,
+  '/nuvemshop/ajustar-precos-camisetas': ajustarPrecosCamisetas,
+  '/nuvemshop/diagnostico-produto': diagnosticoProdutoNuvemshop,
 }
 
 function resolveRota(pathname: string): string {

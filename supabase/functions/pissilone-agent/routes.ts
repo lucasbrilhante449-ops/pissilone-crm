@@ -621,7 +621,10 @@ function classificarProdutoNs(produtoNs: any, catalogo: any[]): ProdutoNsClassif
 
   const nome = nsText(produtoNs?.name).trim()
   const produtoBase = produtosComVariacao.find((p: any) => nome.toLowerCase().startsWith(String(p.nome).toLowerCase()))
-  const produto = produtoBase ? String(produtoBase.nome) : 'Camiseta'
+  // Sem produto do CRM no começo do nome (ex: "Vestido ...", "Regata ...") não
+  // há estoque de peça lisa pra ele: produto vazio → nenhuma linha de estoque
+  // bate → todas as variações ficam 0 e nenhuma cor é adicionada.
+  const produto = produtoBase ? String(produtoBase.nome) : ''
   const estampa = (produtoBase ? nome.slice(String(produtoBase.nome).length).trim().replace(/^[-—:]\s*/, '') : '') || nome
 
   const variantes: VarianteNs[] = (produtoNs?.variants || []).map((v: any) => {
@@ -690,8 +693,12 @@ async function completarCoresDoEstoque(produtoNs: any, cls: ProdutoNsClassificad
 
   const variantsNs: any[] = produtoNs.variants || []
   const tamanhos = [...new Set(cls.variantes.map((v) => v.tamanho).filter(Boolean))]
+  // Só cor cadastrada no Catálogo: cor que existe no estoque mas não no Catálogo
+  // não é reconhecida nas variações da loja (classificarProdutoNs), então pareceria
+  // sempre "faltando" e seria criada de novo a cada passada.
+  const coresCatalogo = new Set(ctx.catalogo.filter((c: any) => c.tipo === 'cor').map((c: any) => String(c.nome)))
   const coresComEstoque = [...new Set(ctx.estoque
-    .filter((e: any) => e.produto === cls.produto && (parseInt(e.quantidade) || 0) > 0)
+    .filter((e: any) => e.produto === cls.produto && (parseInt(e.quantidade) || 0) > 0 && coresCatalogo.has(String(e.cor)))
     .map((e: any) => String(e.cor)))]
 
   const novas: Record<string, unknown>[] = []
@@ -810,7 +817,7 @@ async function carregarContextoEspelho(supabase: SupabaseClient): Promise<Contex
 // Espelha UM produto já carregado da Nuvemshop (precisa de name, variants, images).
 // ctx.estampas é atualizado em memória a cada vínculo/criação, pra uma passada
 // pelo catálogo inteiro não criar a mesma estampa 2x (ex: "Camiseta - Cafuné" em 2 produtos).
-async function espelharProdutoNs(supabase: SupabaseClient, produtoNs: any, ctx: ContextoEspelho): Promise<any> {
+async function espelharProdutoNs(supabase: SupabaseClient, produtoNs: any, ctx: ContextoEspelho, completarCores = true): Promise<any> {
   const produtoId = String(produtoNs.id)
   const cls = classificarProdutoNs(produtoNs, ctx.catalogo)
   let estampaRow: any = ctx.estampas.find((e: any) => parseIdsVinculados(e).includes(produtoId))
@@ -821,6 +828,12 @@ async function espelharProdutoNs(supabase: SupabaseClient, produtoNs: any, ctx: 
   const temGrade = cls.variantes.some((v) => v.cor && v.tamanho)
   if (!estampaRow && !cls.temProdutoBase && !temGrade) {
     return { ok: true, ignorado: 'produto sem cor/tamanho do catálogo do CRM' }
+  }
+  if (!estampaRow && !cls.temProdutoBase) {
+    // Peça com cor/tamanho mas que não é produto do CRM (vestido, regata...):
+    // não vira estampa no Catálogo, só fica sem estoque em vez de infinito.
+    const estoque_sincronizado = await sincronizarProdutoNuvemshopCompleto(produtoId, ctx.catalogo, ctx.estoque, produtoNs)
+    return { ok: true, produto: '', variacoes_criadas: [], estoque_sincronizado }
   }
 
   if (!estampaRow) {
@@ -850,12 +863,46 @@ async function espelharProdutoNs(supabase: SupabaseClient, produtoNs: any, ctx: 
     estampaRow.foto_url = fotoUrl
   }
 
-  // Variações novas já nascem com o estoque certo; o sync abaixo cuida das existentes.
-  const cores = await completarCoresDoEstoque(produtoNs, cls, ctx)
-  const estoque_sincronizado = await sincronizarProdutoNuvemshopCompleto(produtoId, ctx.catalogo, ctx.estoque, cores.produtoAtualizado || produtoNs)
+  // Completar cores só fora do product/updated (ver webhookNuvemshopProduto).
+  let produtoAtual = produtoNs, clsAtual = cls, repetidas_removidas = 0
+  let cores: { criadas: string[]; detalhes: string[]; produtoAtualizado?: any } = { criadas: [], detalhes: [] }
+  if (completarCores) {
+    const errosRepetidas: string[] = []
+    repetidas_removidas = await removerVariacoesRepetidas(produtoAtual, clsAtual, errosRepetidas)
+    cores.detalhes.push(...errosRepetidas)
+    if (repetidas_removidas) {
+      produtoAtual = await nsFetch(`/products/${produtoId}?fields=id,name,attributes,variants,images`)
+      clsAtual = classificarProdutoNs(produtoAtual, ctx.catalogo)
+    }
+    // Variações novas já nascem com o estoque certo; o sync abaixo cuida das existentes.
+    const completadas = await completarCoresDoEstoque(produtoAtual, clsAtual, ctx)
+    cores = { ...completadas, detalhes: [...cores.detalhes, ...completadas.detalhes] }
+  }
+  const estoque_sincronizado = await sincronizarProdutoNuvemshopCompleto(produtoId, ctx.catalogo, ctx.estoque, cores.produtoAtualizado || produtoAtual)
   estoque_sincronizado.detalhes.push(...cores.detalhes)
   estoque_sincronizado.falhou += cores.detalhes.length
-  return { ok: true, estampa: estampaRow.nome, produto: cls.produto, variacoes_criadas: cores.criadas, estoque_sincronizado }
+  return { ok: true, estampa: estampaRow.nome, produto: cls.produto, variacoes_criadas: cores.criadas, repetidas_removidas, estoque_sincronizado }
+}
+
+// Variação repetida (mesma cor+tamanho 2x ou mais) aparece quando dois
+// espelhamentos do mesmo produto rodam ao mesmo tempo. Fica sempre a de menor
+// id (a mais antiga, que pode ter foto associada) — regra fixa, então duas
+// execuções simultâneas apagam exatamente as mesmas e nunca as duas cópias.
+async function removerVariacoesRepetidas(produtoNs: any, cls: ProdutoNsClassificado, erros: string[] = []): Promise<number> {
+  const vistas = new Set<string>()
+  let removidas = 0
+  const ordenadas = cls.variantes.slice().sort((a, b) => Number(a.id) - Number(b.id))
+  for (const v of ordenadas) {
+    const chave = v.cor && v.tamanho ? `${v.cor}|${v.tamanho}` : v.valores.map(normComparar).join('|')
+    if (!vistas.has(chave)) { vistas.add(chave); continue }
+    try {
+      await nsFetch(`/products/${produtoNs.id}/variants/${v.id}`, 'DELETE')
+      removidas++
+    } catch (err) {
+      erros.push(`${cls.nome} (remover repetida ${v.cor}/${v.tamanho}): ${err instanceof Error ? err.message : 'erro'}`)
+    }
+  }
+  return removidas
 }
 
 // ── /estoque/sincronizar-tudo-nuvemshop ───────────────────
@@ -865,7 +912,7 @@ async function espelharProdutoNs(supabase: SupabaseClient, produtoNs: any, ctx: 
 // estourava o tempo da Edge Function) e só faz PUT no que está diferente.
 export async function sincronizarTudoNuvemshop(supabase: SupabaseClient, _body: any) {
   const ctx = await carregarContextoEspelho(supabase)
-  let produtos = 0, ignorados = 0, ok = 0, falhou = 0, criadas = 0
+  let produtos = 0, ignorados = 0, ok = 0, falhou = 0, criadas = 0, repetidas = 0
   let parcial = false
   const detalhes: string[] = []
   const POR_PAGINA = 200
@@ -881,6 +928,7 @@ export async function sincronizarTudoNuvemshop(supabase: SupabaseClient, _body: 
         if (r.ignorado) { ignorados++; continue }
         produtos++
         criadas += r.variacoes_criadas.length
+        repetidas += r.repetidas_removidas || 0
         ok += r.estoque_sincronizado.ok; falhou += r.estoque_sincronizado.falhou
         detalhes.push(...r.estoque_sincronizado.detalhes)
       } catch (err) {
@@ -898,7 +946,7 @@ export async function sincronizarTudoNuvemshop(supabase: SupabaseClient, _body: 
   try { webhooks_criados = await garantirWebhooksProduto() } catch (err) {
     detalhes.push(`webhooks de produto: ${err instanceof Error ? err.message : 'erro'}`)
   }
-  return { ok: true, parcial, produtos, ignorados, variacoes_criadas: criadas, variacoes_ok: ok, falhou, detalhes, webhooks_criados }
+  return { ok: true, parcial, produtos, ignorados, variacoes_criadas: criadas, repetidas_removidas: repetidas, variacoes_ok: ok, falhou, detalhes, webhooks_criados }
 }
 
 export async function webhookNuvemshopProduto(supabase: SupabaseClient, body: any) {
@@ -920,7 +968,164 @@ export async function webhookNuvemshopProduto(supabase: SupabaseClient, body: an
     nsFetch(`/products/${produtoId}?fields=id,name,attributes,variants,images`),
     carregarContextoEspelho(supabase),
   ])
-  return { evento, ...(await espelharProdutoNs(supabase, produtoNs, ctx)) }
+  // product/updated chega em rajada (cada foto/variação/estoque gravado dispara
+  // um) e vários rodariam completarCoresDoEstoque ao mesmo tempo no mesmo
+  // produto, criando cor repetida. Aqui só acerta estoque; cores são completadas
+  // no product/created, no botão Sincronizar e na unificação.
+  return { evento, ...(await espelharProdutoNs(supabase, produtoNs, ctx, evento === 'product/created')) }
+}
+
+// ── /nuvemshop/unificar-duplicadas ────────────────────────
+// Limpeza única do legado "um produto por cor": junta peças cadastradas várias
+// vezes com o mesmo nome (ex: 4x "Camiseta Destá") num produto só. Fica o
+// publicado (empate: o mais antigo, que tem a URL original); ele recebe as fotos
+// e categorias dos outros, os outros são excluídos, e as cores voltam pelo
+// estoque do CRM (espelharProdutoNs). Só peça do CRM (caneca etc. fica de fora).
+// Sem { executar: true } só devolve o plano, sem mexer em nada. Para antes do
+// limite de tempo; chamar de novo continua (o que já foi unificado some da lista).
+function chaveNomePeca(nome: string, apelidos: Record<string, string>): string {
+  const k = normComparar(nome).replace(/[-–—|:/,.]/g, ' ').replace(/\s+/g, ' ').trim()
+  return apelidos[k] || k
+}
+// Mesmo arquivo enviado 2x vira URLs diferentes só no sufixo numérico do CDN.
+function chaveFoto(src: string): string {
+  const arquivo = String(src).split('?')[0].split('/').pop() || ''
+  return arquivo.replace(/\.[a-z0-9]+$/i, '').replace(/(-\d+)+$/, '')
+}
+
+export async function unificarDuplicadasNuvemshop(supabase: SupabaseClient, body: any) {
+  const executar = body?.executar === true
+  const apelidos: Record<string, string> = {}
+  for (const [de, para] of Object.entries(body?.apelidos || {})) apelidos[chaveNomePeca(de, {})] = chaveNomePeca(String(para), {})
+
+  const ctx = await carregarContextoEspelho(supabase)
+  const todos: any[] = []
+  for (let pagina = 1; ; pagina++) {
+    const lote: any[] = (await nsFetch(`/products?per_page=200&page=${pagina}&fields=id,name,attributes,variants,images,categories,published`)) || []
+    todos.push(...lote)
+    if (lote.length < 200) break
+  }
+
+  const grupos = new Map<string, any[]>()
+  for (const p of todos) {
+    const cls = classificarProdutoNs(p, ctx.catalogo)
+    if (!cls.temProdutoBase && !cls.variantes.some((v) => v.cor && v.tamanho)) continue
+    const k = chaveNomePeca(cls.nome, apelidos)
+    grupos.set(k, [...(grupos.get(k) || []), p])
+  }
+
+  const plano: any[] = []
+  const inicio = Date.now(), LIMITE_MS = 110_000
+  let parcial = false
+  for (const lista of grupos.values()) {
+    if (lista.length < 2) continue
+    lista.sort((a, b) => (Number(b.published) - Number(a.published)) || (Number(a.id) - Number(b.id)))
+    const [fica, ...saem] = lista
+    const item: any = {
+      fica: { id: String(fica.id), nome: nsText(fica.name), publicado: fica.published, fotos: (fica.images || []).length },
+      saem: saem.map((p) => ({ id: String(p.id), nome: nsText(p.name), publicado: p.published, fotos: (p.images || []).length })),
+    }
+    plano.push(item)
+    if (!executar) continue
+    if (Date.now() - inicio > LIMITE_MS) { parcial = true; item.pulado = 'limite de tempo'; continue }
+
+    try {
+      const fotosVistas = new Set((fica.images || []).map((i: any) => chaveFoto(i.src)))
+      let posicao = (fica.images || []).length
+      let fotosMovidas = 0
+      for (const p of saem) {
+        for (const img of (p.images || []).slice().sort((a: any, b: any) => (a.position || 0) - (b.position || 0))) {
+          const k = chaveFoto(img.src)
+          if (fotosVistas.has(k)) continue
+          fotosVistas.add(k)
+          await nsFetch(`/products/${fica.id}/images`, 'POST', { src: img.src, position: ++posicao })
+          fotosMovidas++
+        }
+      }
+      const categorias = [...new Set([...lista].flatMap((p) => (p.categories || []).map((c: any) => Number(typeof c === 'object' ? c.id : c))))]
+      const patch: Record<string, unknown> = { categories: categorias }
+      if (lista.some((p) => p.published)) patch.published = true
+      await nsFetch(`/products/${fica.id}`, 'PUT', patch)
+
+      // Fotos e categorias garantidas no que fica → aí sim exclui os outros.
+      const idsSaem = saem.map((p) => String(p.id))
+      for (const id of idsSaem) await nsFetch(`/products/${id}`, 'DELETE')
+      for (const e of ctx.estampas) {
+        const ids = parseIdsVinculados(e)
+        if (!ids.some((id) => idsSaem.includes(id))) continue
+        e.nuvemshop_produto_ids = JSON.stringify(ids.filter((id) => !idsSaem.includes(id)))
+        await supabase.from('catalogo').update({ nuvemshop_produto_ids: e.nuvemshop_produto_ids }).eq('id', e.id)
+      }
+
+      const atualizado = await nsFetch(`/products/${fica.id}?fields=id,name,attributes,variants,images`)
+      const espelho = await espelharProdutoNs(supabase, atualizado, ctx)
+      Object.assign(item, { ok: true, fotos_movidas: fotosMovidas, cores_criadas: espelho.variacoes_criadas || [] })
+    } catch (err) {
+      item.erro = err instanceof Error ? err.message : 'erro'
+    }
+  }
+  return { ok: true, executado: executar, parcial, grupos: plano.length, produtos_a_excluir: plano.reduce((n, g) => n + g.saem.length, 0), plano }
+}
+
+// ── /nuvemshop/diagnostico-produto ────────────────────────
+// Só leitura: variações cruas de um produto pela API (por id) e como vêm na
+// listagem paginada, pra comparar quando algo não bate com o painel.
+export async function diagnosticoProdutoNuvemshop(_supabase: SupabaseClient, body: any) {
+  const id = reqStr(body, 'produto_id')
+  const resumir = (p: any) => ({
+    attributes: p?.attributes,
+    variantes: (p?.variants || []).map((v: any) => ({ id: v.id, values: v.values, stock: v.stock })),
+  })
+  const direto = await nsFetch(`/products/${id}?fields=id,name,attributes,variants`)
+  const lista: any[] = (await nsFetch(`/products?ids=${id}&fields=id,name,attributes,variants`)) || []
+  return { ok: true, direto: resumir(direto), na_listagem: lista.length ? resumir(lista[0]) : null }
+}
+
+// ── /nuvemshop/ajustar-precos-camisetas ───────────────────
+// Tabela definida pelo dono da loja (2026-10-18): camiseta sem detalhe artesanal
+// (crochê, bordado, macramê) custa 89,90; quem já está em 99,90 ou mais mantém.
+// Camiseta com detalhe artesanal não é tocada. Referência do produto = maior
+// preço entre as variações (há produto com variação esquecida em 0,00).
+// Promoção existente fica, a não ser que deixe de ser menor que o preço novo.
+// Sem { executar: true } só devolve o plano.
+const PRECO_CAMISETA = 89.9
+const PRECO_MANTEM_A_PARTIR = 99.9
+
+export async function ajustarPrecosCamisetas(_supabase: SupabaseClient, body: any) {
+  const executar = body?.executar === true
+  const plano: any[] = []
+  const inicio = Date.now(), LIMITE_MS = 110_000
+  let parcial = false
+  for (let pagina = 1; ; pagina++) {
+    const lote: any[] = (await nsFetch(`/products?per_page=200&page=${pagina}&fields=id,name,variants`)) || []
+    for (const p of lote) {
+      const nome = nsText(p.name).trim()
+      if (!normComparar(nome).startsWith('camiseta')) continue
+      if (/croch|bordad|macram/i.test(normComparar(nome))) continue
+      const variantes: any[] = p.variants || []
+      const ref = Math.max(0, ...variantes.map((v: any) => parseFloat(v.price) || 0))
+      if (ref >= PRECO_MANTEM_A_PARTIR) continue
+      const mudar = variantes.filter((v: any) => Math.abs((parseFloat(v.price) || 0) - PRECO_CAMISETA) > 0.001)
+      if (!mudar.length) continue
+      const item: any = { id: String(p.id), nome, de: [...new Set(mudar.map((v: any) => String(v.price)))], variacoes: mudar.length }
+      plano.push(item)
+      if (!executar) continue
+      if (Date.now() - inicio > LIMITE_MS) { parcial = true; item.pulado = 'limite de tempo'; continue }
+      try {
+        await nsFetch(`/products/${p.id}/variants`, 'PATCH', mudar.map((v: any) => {
+          const o: Record<string, unknown> = { id: v.id, price: PRECO_CAMISETA.toFixed(2) }
+          const promo = parseFloat(v.promotional_price)
+          if (promo && promo >= PRECO_CAMISETA) o.promotional_price = null
+          return o
+        }))
+        item.ok = true
+      } catch (err) {
+        item.erro = err instanceof Error ? err.message : 'erro'
+      }
+    }
+    if (lote.length < 200) break
+  }
+  return { ok: true, executado: executar, parcial, produtos: plano.length, plano }
 }
 
 // ── /estoque/sincronizar-nuvemshop ────────────────────────
