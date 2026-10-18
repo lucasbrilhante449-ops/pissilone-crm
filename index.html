@@ -250,6 +250,18 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
 .peca-body{padding:9px;display:flex;flex-direction:column;gap:7px}
 .peca-nome{font-size:13px;font-weight:600;color:var(--K);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .peca-preco{font-size:14px;font-weight:700;color:var(--K)}
+.pie-card{background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1.25rem;margin-bottom:1rem;display:flex;align-items:center;gap:2rem;flex-wrap:wrap}
+.pie-wrap{position:relative;flex-shrink:0}
+.pie-fatia{cursor:pointer;transition:opacity .15s}
+.pie-wrap svg:hover .pie-fatia{opacity:.55}
+.pie-wrap svg .pie-fatia:hover{opacity:1}
+.pie-tip{display:none;position:absolute;pointer-events:none;background:var(--K);color:#fff;font-size:12.5px;line-height:1.45;padding:7px 10px;border-radius:8px;white-space:nowrap;z-index:5;box-shadow:var(--shadow-md)}
+.pie-tab{flex:1;min-width:300px;border-collapse:collapse;font-size:13px}
+.pie-tab th{text-align:left;font-size:11.5px;font-weight:700;color:var(--G3);text-transform:uppercase;letter-spacing:.04em;padding:0 8px 8px;border-bottom:1px solid var(--G2)}
+.pie-tab td{padding:8px;border-bottom:1px solid var(--G4);color:var(--K);white-space:nowrap}
+.pie-tab tr:last-child td{border-bottom:none}
+.pie-sw{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:8px;vertical-align:-1px}
+.pie-sub{color:var(--G3);font-size:12px}
 .det-valor{align-items:center;background:var(--VD2);color:var(--VD);border-radius:20px;padding:5px 14px;font-size:15px;font-weight:700;white-space:nowrap;flex-shrink:0}
 .det-prod-box{border:1px solid var(--G2);border-radius:10px;background:var(--W);margin-bottom:1.25rem;overflow:hidden}
 .det-prod-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--G);font-size:13px;font-weight:700;color:var(--K)}
@@ -2619,6 +2631,65 @@ function itemProdutoEfetivo(it){
   if(it.estampa||it.cor||it.tamanho)return'Camiseta';
   return'';
 }
+// Paleta categórica (8 cores, ordem fixa, validada pra daltonismo — skill dataviz).
+// A cor segue o CANAL (posição dele em cfg.canais), nunca o ranking: o mesmo
+// canal mantém a cor quando o período/filtro muda a ordem.
+var CORES_CANAL=['#2a78d6','#eb6834','#1baf7a','#eda100','#e87ba4','#008300','#6250d6','#e34948'];
+var COR_OUTROS='#8a909c';
+function corDoCanal(k){
+  var ids=(cfg.canais||[]).map(function(c){return c.id;});
+  var i=ids.indexOf(k);
+  return i>=0&&i<CORES_CANAL.length?CORES_CANAL[i]:COR_OUTROS;
+}
+function renderVendasPorCanal(negGanhos,canalNegs){
+  var porCanal={};
+  negGanhos.forEach(function(n){
+    var c2=contatos.find(function(x){return x.id===n.cid;});
+    var k=c2?(c2.canal||'outro'):'outro';
+    if(!porCanal[k])porCanal[k]={vendas:0,receita:0};
+    porCanal[k].vendas++;porCanal[k].receita+=(n.v||0);
+  });
+  var fatias=Object.keys(porCanal).map(function(k){
+    var neg=canalNegs[k]||{ganhos:0,total:0};
+    return{k:k,nome:canalLabel(k)||'Sem canal',cor:corDoCanal(k),vendas:porCanal[k].vendas,receita:porCanal[k].receita,conv:neg.total>0?Math.round(neg.ganhos/neg.total*100):0,negs:neg.total};
+  }).sort(function(a,b){return b.vendas-a.vendas;});
+  var total=fatias.reduce(function(a,f){return a+f.vendas;},0);
+  var h='<div class="divider"></div><div class="slbl">Vendas por canal</div>';
+  h+='<div class="pie-card">';
+  if(!total){return h+'<div class="empty">Nenhuma venda no período.</div></div>';}
+  // Rosca: fatias separadas por 2px da cor do fundo; total no centro.
+  var S=200,cx=S/2,cy=S/2,R=92,r=56,ang=-Math.PI/2,svg='';
+  window.__pieCanal=fatias.map(function(f){return{nome:f.nome,vendas:f.vendas,pct:Math.round(f.vendas/total*100),receita:f.receita,conv:f.conv,negs:f.negs};});
+  fatias.forEach(function(f,i){
+    var a=f.vendas/total*2*Math.PI;
+    if(fatias.length===1){
+      svg+='<circle cx="'+cx+'" cy="'+cy+'" r="'+((R+r)/2)+'" fill="none" stroke="'+f.cor+'" stroke-width="'+(R-r)+'" onmousemove="pieCanalHover(event,'+i+')" onmouseleave="pieCanalOut()"/>';
+    }else{
+      var a0=ang,a1=ang+a,large=a>Math.PI?1:0;
+      var p=function(rad,t){return(cx+rad*Math.cos(t)).toFixed(2)+' '+(cy+rad*Math.sin(t)).toFixed(2);};
+      svg+='<path d="M'+p(R,a0)+' A'+R+' '+R+' 0 '+large+' 1 '+p(R,a1)+' L'+p(r,a1)+' A'+r+' '+r+' 0 '+large+' 0 '+p(r,a0)+' Z" fill="'+f.cor+'" stroke="#fff" stroke-width="2" stroke-linejoin="round" class="pie-fatia" onmousemove="pieCanalHover(event,'+i+')" onmouseleave="pieCanalOut()"/>';
+    }
+    ang+=a;
+  });
+  svg+='<text x="'+cx+'" y="'+(cy-2)+'" text-anchor="middle" font-size="30" font-weight="700" fill="var(--K)" font-family="system-ui,Segoe UI,sans-serif">'+total+'</text>';
+  svg+='<text x="'+cx+'" y="'+(cy+20)+'" text-anchor="middle" font-size="13" fill="var(--G3)" font-family="system-ui,Segoe UI,sans-serif">vendas</text>';
+  h+='<div class="pie-wrap"><svg viewBox="0 0 '+S+' '+S+'" width="'+S+'" height="'+S+'" role="img" aria-label="Vendas por canal">'+svg+'</svg><div id="pie-canal-tip" class="pie-tip"></div></div>';
+  // Legenda = tabela (identidade nunca só pela cor; números legíveis).
+  h+='<table class="pie-tab"><thead><tr><th>Canal</th><th>Vendas</th><th>% vendas</th><th>Receita</th><th title="Ganhos ÷ negociações do canal no período">Conversão</th></tr></thead><tbody>';
+  fatias.forEach(function(f){
+    h+='<tr><td><span class="pie-sw" style="background:'+f.cor+'"></span>'+f.nome+'</td><td>'+f.vendas+'</td><td>'+Math.round(f.vendas/total*100)+'%</td><td>R$'+Math.round(f.receita).toLocaleString('pt-BR')+'</td><td><b>'+f.conv+'%</b> <span class="pie-sub">('+f.vendas+'/'+f.negs+')</span></td></tr>';
+  });
+  h+='</tbody></table></div>';
+  return h;
+}
+function pieCanalHover(ev,i){
+  var t=document.getElementById('pie-canal-tip'),d=(window.__pieCanal||[])[i];if(!t||!d)return;
+  t.innerHTML='<b>'+d.nome+'</b><br>'+d.vendas+' vendas ('+d.pct+'%)<br>R$'+Math.round(d.receita).toLocaleString('pt-BR')+'<br>Conversão '+d.conv+'%';
+  var box=t.parentNode.getBoundingClientRect();
+  t.style.left=(ev.clientX-box.left+12)+'px';t.style.top=(ev.clientY-box.top+12)+'px';t.style.display='block';
+}
+function pieCanalOut(){var t=document.getElementById('pie-canal-tip');if(t)t.style.display='none';}
+
 function renderInsights(){
   var su=document.getElementById('ins-user');
   if(su){var puv=su.value;su.innerHTML='<option value="todos">Todos usuários</option>'+cfg.usuarios.map(function(u){return'<option value="'+u.id+'">'+u.nome+'</option>';}).join('');if(puv)su.value=puv;}
@@ -2806,6 +2877,8 @@ function renderInsights(){
     });
     h+='</div>';
   }
+  // ── VENDAS POR CANAL (rosca) ──
+  h+=renderVendasPorCanal(negGanhos,canalNegs);
   // ── CONVERSÃO POR CANAL ──
   if(canalEntries.length>0){
     h+='<div class="divider"></div><div class="slbl">Conversão por canal</div>';
