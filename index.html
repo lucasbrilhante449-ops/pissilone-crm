@@ -2879,7 +2879,17 @@ function renderInsights(){
   var todosItens=[];
   negGanhos.forEach(function(n){if(n.itens&&n.itens.length)n.itens.forEach(function(it){todosItens.push(it);});});
   var totalPecas=todosItens.reduce(function(a,it){return a+(it.qty||1);},0);
-  var pa=negGanhos.length>0?totalPecas/negGanhos.length:0;
+  // PA (peças por atendimento) = peças de PRODUTO ÷ vendas de produto que têm
+  // a lista de itens. Fora da conta: serviço (oficina não é peça) e venda
+  // antiga anotada só em texto (sem itens, a quantidade é desconhecida — antes
+  // ela entrava no divisor com 0 peça e derrubava o PA pra ~1,0).
+  var paPecas=0,paVendas=0;
+  negGanhos.forEach(function(n){
+    if(!n.itens||!n.itens.length)return;
+    var pecas=n.itens.reduce(function(a,it){return classificarItemVenda(it,n.funil).tipo==='produto'?a+(parseInt(it.qty)||1):a;},0);
+    if(pecas>0){paPecas+=pecas;paVendas++;}
+  });
+  var pa=paVendas>0?paPecas/paVendas:0;
   var ganhosPrev=prevNegs.filter(function(n){return n.r==='ganho';});
   var baseConv=todasNegs.length;
   var receita=negGanhos.reduce(function(a,n){return a+(n.v||0);},0);
@@ -2970,7 +2980,7 @@ function renderInsights(){
   h+='<div class="mc ins-click" onclick="abrirListaInsight(\'emaberto\')" title="Ver a lista"><div class="mc-n">'+emAberto+'</div><div class="mc-l">Em aberto</div><div class="mc-s a">sem neg.</div></div>';
   h+='<div class="mc ins-click" onclick="abrirListaInsight(\'safra\')" title="Ver a lista"><div class="mc-n">'+lista.length+'</div><div class="mc-l">SAFRA</div><div class="mc-s">cards</div></div>';
   h+='<div class="mc"><div class="mc-n" style="color:var(--A2)">'+checkpts+'</div><div class="mc-l">Checkpoints</div><div class="mc-s v">executados</div></div>';
-  h+='<div class="mc"><div class="mc-n">'+pa.toFixed(1)+'</div><div class="mc-l">PA</div><div class="mc-s">'+totalPecas+' peças</div></div>';
+  h+='<div class="mc" title="Peças por atendimento: peças de produto ÷ vendas de produto com itens registrados (não conta oficinas nem vendas anotadas só em texto)"><div class="mc-n">'+pa.toFixed(1).replace('.',',')+'</div><div class="mc-l">PA (peças/venda)</div><div class="mc-s">'+paPecas+' peças em '+paVendas+' vendas</div></div>';
   h+='</div>';
   // ── AQUISIÇÃO DE CLIENTES ──
   h+='<div class="divider"></div><div class="slbl">Aquisição de clientes</div>';
