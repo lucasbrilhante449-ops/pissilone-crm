@@ -749,11 +749,11 @@ async function completarCoresDoEstoque(produtoNs: any, cls: ProdutoNsClassificad
       }
     }
     if (!criadasUmaAUma.length) return { criadas: [], detalhes }
-    const produtoAtualizado = await nsFetch(`/products/${produtoNs.id}?fields=id,name,attributes,variants,images`)
+    const produtoAtualizado = await nsFetch(`/products/${produtoNs.id}?fields=id,name,attributes,variants,images,canonical_url,handle`)
     return { criadas: criadasUmaAUma, detalhes, produtoAtualizado }
   }
   // Recarrega: o sync seguinte precisa dos ids/estoques atuais das variações.
-  const produtoAtualizado = await nsFetch(`/products/${produtoNs.id}?fields=id,name,attributes,variants,images`)
+  const produtoAtualizado = await nsFetch(`/products/${produtoNs.id}?fields=id,name,attributes,variants,images,canonical_url,handle`)
   return { criadas, detalhes, produtoAtualizado }
 }
 
@@ -828,7 +828,7 @@ interface ContextoEspelho { catalogo: any[]; estoque: any[]; estampas: any[]; gr
 async function carregarContextoEspelho(supabase: SupabaseClient): Promise<ContextoEspelho> {
   const [{ catalogo, estoque }, { data: estampas }] = await Promise.all([
     carregarCatalogoEEstoque(supabase),
-    supabase.from('catalogo').select('id,nome,foto_url,valor,valor_original,nuvemshop_produto_ids').eq('tipo', 'estampa'),
+    supabase.from('catalogo').select('id,nome,foto_url,valor,valor_original,url_site,nuvemshop_produto_ids').eq('tipo', 'estampa'),
   ])
   return { catalogo, estoque, estampas: estampas || [] }
 }
@@ -867,7 +867,7 @@ async function espelharProdutoNs(supabase: SupabaseClient, produtoNs: any, ctx: 
     } else {
       const { data: nova, error } = await supabase.from('catalogo')
         .insert({ tipo: 'estampa', nome: cls.estampa, nuvemshop_produto_ids: JSON.stringify([produtoId]) })
-        .select('id,nome,foto_url,valor,valor_original,nuvemshop_produto_ids').single()
+        .select('id,nome,foto_url,valor,valor_original,url_site,nuvemshop_produto_ids').single()
       if (error) throw new ApiError(500, 'Erro ao criar estampa: ' + error.message)
       estampaRow = nova
       ctx.estampas.push(nova)
@@ -885,6 +885,13 @@ async function espelharProdutoNs(supabase: SupabaseClient, produtoNs: any, ctx: 
   // Preço do site vira o valor da estampa no Catálogo (consulta da atendente,
   // valor automático na venda, resposta da Maria). Roda também no
   // product/updated, então mudar o preço na Nuvemshop já reflete no CRM.
+  // Link da página do produto: botão "Ver no site"/copiar link do Catálogo.
+  const url = urlSiteNs(produtoNs)
+  if (url && estampaRow.url_site !== url) {
+    await supabase.from('catalogo').update({ url_site: url }).eq('id', estampaRow.id)
+    estampaRow.url_site = url
+  }
+
   const precos = precosNs(produtoNs)
   const originalAtual = estampaRow.valor_original === null || estampaRow.valor_original === undefined ? null : Number(estampaRow.valor_original)
   if (precos.venda !== null && (Number(estampaRow.valor) !== precos.venda || originalAtual !== precos.original)) {
@@ -901,7 +908,7 @@ async function espelharProdutoNs(supabase: SupabaseClient, produtoNs: any, ctx: 
     repetidas_removidas = await removerVariacoesRepetidas(produtoAtual, clsAtual, errosRepetidas)
     cores.detalhes.push(...errosRepetidas)
     if (repetidas_removidas) {
-      produtoAtual = await nsFetch(`/products/${produtoId}?fields=id,name,attributes,variants,images`)
+      produtoAtual = await nsFetch(`/products/${produtoId}?fields=id,name,attributes,variants,images,canonical_url,handle`)
       clsAtual = classificarProdutoNs(produtoAtual, ctx.catalogo)
     }
     // Variações novas já nascem com o estoque certo; o sync abaixo cuida das existentes.
@@ -917,6 +924,15 @@ async function espelharProdutoNs(supabase: SupabaseClient, produtoNs: any, ctx: 
 // Preço que o cliente paga no site: promocional quando houver (e for menor),
 // senão o normal. Variações podem divergir (ex: uma esquecida em 0,00), então
 // vale o preço mais comum entre as variações com preço; empate → o maior.
+// canonical_url vem pronto da API; sem ele, monta pelo handle (slug) no
+// domínio da loja.
+function urlSiteNs(produtoNs: any): string {
+  const canonica = nsText(produtoNs?.canonical_url).trim()
+  if (canonica) return canonica.replace(/^http:\/\//, 'https://')
+  const handle = nsText(produtoNs?.handle).trim()
+  return handle ? `https://pissilone.com.br/produtos/${handle}/` : ''
+}
+
 function precoDeVendaNs(produtoNs: any): number | null {
   return precosNs(produtoNs).venda
 }
@@ -977,7 +993,7 @@ export async function sincronizarTudoNuvemshop(supabase: SupabaseClient, _body: 
   // novo continua (o que já foi feito é pulado, nada é escrito 2x).
   const inicio = Date.now(), LIMITE_MS = 110_000
   paginas: for (let pagina = 1; ; pagina++) {
-    const lote: any[] = (await nsFetch(`/products?per_page=${POR_PAGINA}&page=${pagina}&fields=id,name,attributes,variants,images`)) || []
+    const lote: any[] = (await nsFetch(`/products?per_page=${POR_PAGINA}&page=${pagina}&fields=id,name,attributes,variants,images,canonical_url,handle`)) || []
     for (const produtoNs of lote) {
       if (Date.now() - inicio > LIMITE_MS) { parcial = true; break paginas }
       try {
@@ -1022,7 +1038,7 @@ export async function webhookNuvemshopProduto(supabase: SupabaseClient, body: an
   }
 
   const [produtoNs, ctx] = await Promise.all([
-    nsFetch(`/products/${produtoId}?fields=id,name,attributes,variants,images`),
+    nsFetch(`/products/${produtoId}?fields=id,name,attributes,variants,images,canonical_url,handle`),
     carregarContextoEspelho(supabase),
   ])
   // product/updated chega em rajada (cada foto/variação/estoque gravado dispara
@@ -1058,7 +1074,7 @@ export async function unificarDuplicadasNuvemshop(supabase: SupabaseClient, body
   const ctx = await carregarContextoEspelho(supabase)
   const todos: any[] = []
   for (let pagina = 1; ; pagina++) {
-    const lote: any[] = (await nsFetch(`/products?per_page=200&page=${pagina}&fields=id,name,attributes,variants,images,categories,published`)) || []
+    const lote: any[] = (await nsFetch(`/products?per_page=200&page=${pagina}&fields=id,name,attributes,variants,images,canonical_url,handle,categories,published`)) || []
     todos.push(...lote)
     if (lote.length < 200) break
   }
@@ -1114,7 +1130,7 @@ export async function unificarDuplicadasNuvemshop(supabase: SupabaseClient, body
         await supabase.from('catalogo').update({ nuvemshop_produto_ids: e.nuvemshop_produto_ids }).eq('id', e.id)
       }
 
-      const atualizado = await nsFetch(`/products/${fica.id}?fields=id,name,attributes,variants,images`)
+      const atualizado = await nsFetch(`/products/${fica.id}?fields=id,name,attributes,variants,images,canonical_url,handle`)
       const espelho = await espelharProdutoNs(supabase, atualizado, ctx)
       Object.assign(item, { ok: true, fotos_movidas: fotosMovidas, cores_criadas: espelho.variacoes_criadas || [] })
     } catch (err) {
@@ -1152,10 +1168,10 @@ export async function adicionarAtributoCor(supabase: SupabaseClient, body: any) 
   const ctx = await carregarContextoEspelho(supabase)
   const candidatos: any[] = []
   if (soId) {
-    candidatos.push(await nsFetch(`/products/${soId}?fields=id,name,attributes,variants,images`))
+    candidatos.push(await nsFetch(`/products/${soId}?fields=id,name,attributes,variants,images,canonical_url,handle`))
   } else {
     for (let pagina = 1; ; pagina++) {
-      const lote: any[] = (await nsFetch(`/products?per_page=200&page=${pagina}&fields=id,name,attributes,variants,images`)) || []
+      const lote: any[] = (await nsFetch(`/products?per_page=200&page=${pagina}&fields=id,name,attributes,variants,images,canonical_url,handle`)) || []
       candidatos.push(...lote)
       if (lote.length < 200) break
     }
@@ -1192,7 +1208,7 @@ export async function adicionarAtributoCor(supabase: SupabaseClient, body: any) 
         await nsFetch(`/products/${p.id}`, 'PUT', { attributes: [{ pt: 'Cor' }, { pt: 'Tamanho' }] })
         passos.push('atributo')
       }
-      const atualizado = await nsFetch(`/products/${p.id}?fields=id,name,attributes,variants,images`)
+      const atualizado = await nsFetch(`/products/${p.id}?fields=id,name,attributes,variants,images,canonical_url,handle`)
       const espelho = await espelharProdutoNs(supabase, atualizado, ctx)
       Object.assign(item, { ok: true, passos, cor_padrao: cor, cores_criadas: (espelho.variacoes_criadas || []).length })
     } catch (err) {

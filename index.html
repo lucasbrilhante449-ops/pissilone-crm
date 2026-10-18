@@ -250,6 +250,12 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
 .peca-body{padding:9px;display:flex;flex-direction:column;gap:7px}
 .peca-nome{font-size:13px;font-weight:600;color:var(--K);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .peca-preco{font-size:14px;font-weight:700;color:var(--K)}
+.peca-filtros{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:1rem}
+.peca-filtros .bw{flex:1;min-width:220px}
+.peca-check{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--K);cursor:pointer;white-space:nowrap;user-select:none}
+.peca-check input{width:17px;height:17px;accent-color:var(--L);cursor:pointer}
+.peca-acoes{display:flex;gap:6px;margin-top:2px}
+.peca-acoes .btn{flex:1;justify-content:center;text-decoration:none}
 .promo-linha{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--G3)}
 .promo-tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--VM2);color:var(--VM);text-transform:uppercase;letter-spacing:.03em}
 .vinc-badge{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:20px;width:fit-content}
@@ -1060,6 +1066,7 @@ let catalogo={estampas:[],cores:[],tamanhos:[],produtos:[]};
 let estoque=[];
 let catSubAtivo='estoque';
 let catEstampaBusca='';
+let catEstampaSoPromo=false;
 let encomendas=[];
 let dragEncomendaId=null;
 var pedidoItens=[];
@@ -1242,7 +1249,7 @@ async function loadCatalogo(){
     var rows=await resp.json();
     catalogo={estampas:[],cores:[],tamanhos:[],produtos:[]};
     (Array.isArray(rows)?rows:[]).forEach(function(r){
-      if(r.tipo==='estampa'){var idsNs=[];try{idsNs=r.nuvemshop_produto_ids?JSON.parse(r.nuvemshop_produto_ids):[];}catch(e){idsNs=[];}catalogo.estampas.push({id:r.id,nome:r.nome,descricao:r.descricao||'',fotoUrl:r.foto_url||'',nuvemshopProdutoIds:idsNs,valor:(r.valor!==null&&r.valor!==undefined)?parseFloat(r.valor):null,valorOriginal:(r.valor_original!==null&&r.valor_original!==undefined)?parseFloat(r.valor_original):null});}
+      if(r.tipo==='estampa'){var idsNs=[];try{idsNs=r.nuvemshop_produto_ids?JSON.parse(r.nuvemshop_produto_ids):[];}catch(e){idsNs=[];}catalogo.estampas.push({id:r.id,nome:r.nome,descricao:r.descricao||'',fotoUrl:r.foto_url||'',nuvemshopProdutoIds:idsNs,valor:(r.valor!==null&&r.valor!==undefined)?parseFloat(r.valor):null,valorOriginal:(r.valor_original!==null&&r.valor_original!==undefined)?parseFloat(r.valor_original):null,urlSite:r.url_site||''});}
       else if(r.tipo==='cor')catalogo.cores.push({id:r.id,nome:r.nome,fotoUrl:r.foto_url||''});
       else if(r.tipo==='tamanho')catalogo.tamanhos.push({id:r.id,nome:r.nome});
       else if(r.tipo==='produto')catalogo.produtos.push({id:r.id,nome:r.nome,categoria:r.categoria||'',temVariacao:Boolean(r.tem_variacao),natureza:r.natureza||'produto',valor:(r.valor!==null&&r.valor!==undefined)?parseFloat(r.valor):null});
@@ -3894,6 +3901,12 @@ function renderCatalogo(){
   el.innerHTML=h;
 }
 function showCatSub(sub){catSubAtivo=sub;renderCatalogo();}
+async function copiarLinkEstampa(id){
+  var e=catalogo.estampas.find(function(x){return String(x.id)===String(id);});
+  if(!e||!e.urlSite)return;
+  try{await navigator.clipboard.writeText(e.urlSite);ss('ok','Link de "'+e.nome+'" copiado');}
+  catch(err){ss('er','Não deu pra copiar — use "Ver no site"');}
+}
 function filtrarEstampas(valor){
   catEstampaBusca=valor;
   var pos=null,el=document.activeElement;
@@ -3968,13 +3981,21 @@ function renderPecasSection(){
   var h='<div class="catg-card" style="margin-bottom:1rem">';
   h+='<div class="catg-hdr"><div class="catg-title">Estampas</div><span class="catg-count">'+catalogo.estampas.length+'</span></div>';
   h+='<div class="est-hint">Cada estampa usa o estoque da peça lisa (aba Estoque) — não tem número de estoque próprio. "Vinculada" significa que já sabemos qual produto dela é na Nuvemshop.</div>';
-  h+='<div class="bw" style="margin-bottom:1rem"><span class="bi">'+ic('tag')+'</span><input class="fi busca-fi" placeholder="Buscar estampa..." value="'+catEstampaBusca.replace(/"/g,'&quot;')+'" oninput="filtrarEstampas(this.value)"></div>';
+  var qtdPromo=catalogo.estampas.filter(function(e){return e.valorOriginal!=null;}).length;
+  h+='<div class="peca-filtros">';
+  h+='<div class="bw"><span class="bi">'+ic('tag')+'</span><input class="fi busca-fi" placeholder="Buscar estampa..." value="'+catEstampaBusca.replace(/"/g,'&quot;')+'" oninput="filtrarEstampas(this.value)"></div>';
+  h+='<label class="peca-check"><input type="checkbox"'+(catEstampaSoPromo?' checked':'')+' onchange="catEstampaSoPromo=this.checked;renderCatalogo()"> Só em promoção <span class="catg-count">'+qtdPromo+'</span></label>';
+  h+='</div>';
   var busca=catEstampaBusca.trim().toLowerCase();
-  var lista=busca?catalogo.estampas.filter(function(e){return e.nome.toLowerCase().includes(busca);}):catalogo.estampas;
+  var lista=catalogo.estampas.filter(function(e){
+    if(busca&&!e.nome.toLowerCase().includes(busca))return false;
+    if(catEstampaSoPromo&&e.valorOriginal==null)return false;
+    return true;
+  });
   if(!catalogo.estampas.length){
     h+='<div class="empty">Nenhuma estampa cadastrada ainda.</div>';
   }else if(!lista.length){
-    h+='<div class="empty">Nenhuma estampa encontrada para "'+catEstampaBusca+'".</div>';
+    h+='<div class="empty">Nenhuma estampa encontrada'+(busca?' para "'+catEstampaBusca+'"':'')+(catEstampaSoPromo?' em promoção':'')+'.</div>';
   }else{
     h+='<div class="peca-gallery">';
     lista.forEach(function(item){
@@ -3994,10 +4015,20 @@ function renderPecasSection(){
         h+='<span class="vinc-badge off">'+ic('alert')+' sem vínculo</span><button class="btn xs full" onclick="abrirVincularNuvemshop(\''+idEsc+'\')">'+ic('tag')+' Vincular</button>';
         h+='<input class="fi" placeholder="Preço (R$)" value="'+(item.valor!=null?String(item.valor).replace('.',','):'')+'" onchange="setValorProduto(\''+idEsc+'\',this.value)">';
       }
-      h+='<textarea class="fi" placeholder="História/descrição (opcional)" onchange="setDescricaoEstampa(\''+idEsc+'\',this.value)">'+(item.descricao?item.descricao.replace(/</g,'&lt;'):'')+'</textarea>';
-      h+='<input class="fi" placeholder="Link da foto" value="'+(item.fotoUrl?item.fotoUrl.replace(/"/g,'&quot;'):'')+'" onchange="setFotoEstampa(\''+idEsc+'\',this.value)">';
-      h+='<input type="file" accept="image/*" style="font-size:12px" onchange="uploadFotoCatalogo(\''+idEsc+'\',\'estampa\',this)">';
-      h+='<button class="btn xs danger full" onclick="delCatalogoItem(\''+idEsc+'\',\'estampa\')">'+ic('trash')+' Remover</button>';
+      // Vinculada e com foto: tudo vem do site, card enxuto com o link do produto
+      // (atendente abre ou copia pra mandar no WhatsApp). Sem vínculo ou sem foto:
+      // campos pra completar à mão.
+      if(vinculado&&item.fotoUrl){
+        if(item.urlSite){
+          var urlEsc=item.urlSite.replace(/"/g,'&quot;');
+          h+='<div class="peca-acoes"><a class="btn xs laranja" href="'+urlEsc+'" target="_blank" rel="noopener">Ver no site</a><button class="btn xs" title="Copiar link do produto" onclick="copiarLinkEstampa(\''+idEsc+'\')">Copiar link</button></div>';
+        }
+      }else{
+        h+='<textarea class="fi" placeholder="História/descrição (opcional)" onchange="setDescricaoEstampa(\''+idEsc+'\',this.value)">'+(item.descricao?item.descricao.replace(/</g,'&lt;'):'')+'</textarea>';
+        h+='<input class="fi" placeholder="Link da foto" value="'+(item.fotoUrl?item.fotoUrl.replace(/"/g,'&quot;'):'')+'" onchange="setFotoEstampa(\''+idEsc+'\',this.value)">';
+        h+='<input type="file" accept="image/*" style="font-size:12px" onchange="uploadFotoCatalogo(\''+idEsc+'\',\'estampa\',this)">';
+        h+='<button class="btn xs danger full" onclick="delCatalogoItem(\''+idEsc+'\',\'estampa\')">'+ic('trash')+' Remover</button>';
+      }
       h+='</div></div>';
     });
     h+='</div>';
