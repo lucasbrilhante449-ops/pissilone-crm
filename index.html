@@ -250,6 +250,13 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
 .peca-body{padding:9px;display:flex;flex-direction:column;gap:7px}
 .peca-nome{font-size:13px;font-weight:600;color:var(--K);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .peca-preco{font-size:14px;font-weight:700;color:var(--K)}
+.card-itens{background:var(--W);border:1px solid var(--G2);border-radius:8px;overflow:hidden;margin-bottom:.5rem}
+.card-item-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;border-top:1px solid var(--G2)}
+.card-item-row:first-child{border-top:none}
+.card-item-desc{font-size:13px;color:var(--K)}
+.card-item-meta{display:flex;align-items:center;gap:8px;font-size:13px;white-space:nowrap}
+.card-item-total{display:flex;justify-content:space-between;padding:7px 10px;border-top:1px solid var(--G2);background:var(--G);font-size:13px;font-weight:700}
+.card-item-form{background:var(--G);border:1px solid var(--G2);border-radius:8px;padding:.75rem;margin-top:.5rem}
 .peca-filtros{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:1rem}
 .peca-filtros .bw{flex:1;min-width:220px}
 .peca-check{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--K);cursor:pointer;white-space:nowrap;user-select:none}
@@ -545,7 +552,30 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
     <div><label class="flbl">Próx. atividade</label><input class="fi" type="date" id="f-atv-data-modal"></div>
   </div>
   <div class="fg fg1"><div><label class="flbl">Descrição da atividade</label><input class="fi" id="f-atv-desc-modal" placeholder="Ex: Ligar, enviar proposta..."></div></div>
-  <div class="fg fg1" id="wrap-produto-normal"><div><label class="flbl">Produto</label><input class="fi" id="f-produto" placeholder="Kit Nordeste Vivo..."></div></div>
+  <div class="fg fg1" id="wrap-produto-normal"><div>
+    <label class="flbl">Produtos</label>
+    <div id="card-itens-lista"></div>
+    <div id="card-produto-antigo" style="display:none;font-size:12px;color:var(--G3);margin-bottom:6px"></div>
+    <button type="button" class="btn sm" id="btn-card-add-item" onclick="abrirFormItemCard()">+ Adicionar produto</button>
+    <div id="card-item-form" class="card-item-form" style="display:none">
+      <div class="fg fg1" style="margin-bottom:.5rem">
+        <div class="cat-sw"><label class="flbl">Produto *</label><input class="fi" type="text" id="csi-produto-card" placeholder="Buscar produto..." oninput="catSelFilter('produto','card')" onfocus="catSelOpen('produto','card')" onblur="setTimeout(function(){catSelClose('produto','card');},220)" autocomplete="off"><div class="cat-sd" id="csd-produto-card"></div></div>
+      </div>
+      <div id="variacao-wrap-card" style="display:none">
+        <div class="fg fg3" style="margin-bottom:.5rem">
+          <div class="cat-sw"><label class="flbl">Tamanho</label><input class="fi" type="text" id="csi-tamanho-card" placeholder="Buscar tamanho..." oninput="catSelFilter('tamanho','card')" onfocus="catSelOpen('tamanho','card')" onblur="setTimeout(function(){catSelClose('tamanho','card');},220)" autocomplete="off"><div class="cat-sd" id="csd-tamanho-card"></div></div>
+          <div class="cat-sw"><label class="flbl">Cor</label><input class="fi" type="text" id="csi-cor-card" placeholder="Buscar cor..." oninput="catSelFilter('cor','card')" onfocus="catSelOpen('cor','card')" onblur="setTimeout(function(){catSelClose('cor','card');},220)" autocomplete="off"><div class="cat-sd" id="csd-cor-card"></div></div>
+          <div class="cat-sw"><label class="flbl">Estampa</label><input class="fi" type="text" id="csi-estampa-card" placeholder="Buscar estampa..." oninput="catSelFilter('estampa','card')" onfocus="catSelOpen('estampa','card')" onblur="setTimeout(function(){catSelClose('estampa','card');},220)" autocomplete="off"><div class="cat-sd" id="csd-estampa-card"></div></div>
+        </div>
+      </div>
+      <div class="fg fg3" style="margin-bottom:0">
+        <div><label class="flbl">Qtd</label><input class="fi" type="number" id="f-card-qty" min="1" value="1"></div>
+        <div style="display:flex;align-items:flex-end"><button type="button" class="btn sm laranja full" onclick="adicionarItemCard()">Adicionar</button></div>
+        <div style="display:flex;align-items:flex-end"><button type="button" class="btn sm full" onclick="fecharFormItemCard()">Cancelar</button></div>
+      </div>
+    </div>
+    <input type="hidden" id="f-produto">
+  </div></div>
   <div class="fg fg1" id="wrap-oficina" style="display:none"><div><label class="flbl">Oficina</label><select class="fi" id="selOficina" onchange="onOficinaChange()"><option value="">Selecione uma oficina...</option></select></div></div>
   <div class="fg fg1" id="wrap-turma" style="display:none"><div><label class="flbl">Turma</label><div style="display:flex;gap:6px"><select class="fi" id="f-turma" style="flex:1"><option value="">Sem turma</option></select><button type="button" class="btn sm" onclick="openTurmaModal()" style="white-space:nowrap">+ Nova</button></div></div></div>
   <div class="fg fg1"><div><label class="flbl">Observação</label><textarea class="fi" id="f-obs"></textarea></div></div>
@@ -1324,6 +1354,10 @@ async function sincronizarTudoNuvemshop(){
     if(data.parcial){ss('ok','Ainda não terminou ('+data.produtos+' produtos feitos'+extra+') — clique em Sincronizar de novo pra continuar');if(data.falhou>0)console.warn(data.detalhes);}
     else if(data.falhou>0){ss('er','Sincronização parcial: '+data.falhou+' falharam'+extra);console.warn(data.detalhes);}
     else ss('ok','Estoque sincronizado ('+data.produtos+' produtos)'+extra);
+    // A sincronização atualiza preço, promoção, link e foto das estampas no
+    // banco — recarrega o Catálogo pra tela não ficar com os dados de antes.
+    await loadCatalogo();
+    if(document.getElementById('pane-catalogo')&&document.getElementById('pane-catalogo').classList.contains('active'))renderCatalogo();
   }catch(e){ss('er','Erro ao sincronizar com a Nuvemshop');console.warn(e);}
   finally{if(btn)btn.disabled=false;}
 }
@@ -1611,7 +1645,11 @@ async function doSync(){
         oficina_atual:String(meta.oficina_atual||''),
         aniversario_ano_enviado:String(meta.aniversario_ano_enviado||''),
         card_titulo:String(meta.card_titulo||''),
-        turma:String(meta.turma||'')
+        turma:String(meta.turma||''),
+        itens:Array.isArray(meta.itens)?meta.itens:[],
+        // meta original inteiro: apiSave regrava por cima dele, pra não apagar
+        // campo que outro lado (Edge Function/agente) tenha gravado.
+        _meta:meta
       };
     });
     ss('ok',contatos.length+' contato'+(contatos.length!==1?'s':''));
@@ -1628,7 +1666,7 @@ async function apiSave(c){
     atv_desc:c.atv_desc||'',resultado:c.resultado||'',
     atv_hist:c.atv_hist||0,neg_hist:c.neg_hist||'',
     aniversario:c.aniversario||null,cod_marketup:c.cod_marketup||'',nf_emitida:c.nf_emitida||false,
-    meta:JSON.stringify({email:c.email||'',cpf:c.cpf||'',endereco:c.endereco||'',notas:c.notas||'',log_hist:c.log_hist||[],campos:c.campos||{},cidade:c.cidade||'',uf:c.uf||'',cep:c.cep||'',nps:(c.nps!=null)?c.nps:null,oficinas_hist:c.oficinas_hist||[],oficina_atual:c.oficina_atual||'',aniversario_ano_enviado:c.aniversario_ano_enviado||'',card_titulo:c.card_titulo||'',turma:c.turma||''})
+    meta:JSON.stringify(Object.assign({},c._meta||{},{email:c.email||'',cpf:c.cpf||'',endereco:c.endereco||'',notas:c.notas||'',log_hist:c.log_hist||[],campos:c.campos||{},cidade:c.cidade||'',uf:c.uf||'',cep:c.cep||'',nps:(c.nps!=null)?c.nps:null,oficinas_hist:c.oficinas_hist||[],oficina_atual:c.oficina_atual||'',aniversario_ano_enviado:c.aniversario_ano_enviado||'',card_titulo:c.card_titulo||'',turma:c.turma||'',itens:Array.isArray(c.itens)?c.itens:[]}))
   });
 }
 
@@ -1894,7 +1932,8 @@ function abrirModalGanho(id){
   ganhoCid=id;
   var c=contatos.find(function(x){return x.id===id;});if(!c)return;
   setFb('fb-neg','','');
-  pedidoItens=[];
+  // Pedido já abre com os produtos que foram anotados no card (interesse).
+  pedidoItens=Array.isArray(c.itens)?c.itens.map(function(it){return Object.assign({},it);}):[];
   document.getElementById('csi-produto-novo').value='';
   document.getElementById('csi-estampa-novo').value='';
   document.getElementById('csi-cor-novo').value='';
@@ -1964,6 +2003,71 @@ function adicionarItemPedido(){
 }
 
 function removerItemPedido(idx){pedidoItens.splice(idx,1);atualizarValorTotalPedido();renderItensPedido();}
+
+// ── PRODUTOS DO CARD (interesse de compra / pedido em andamento) ──
+// Ficam em meta.itens do contato; o valor do card vira a soma deles. Ao dar
+// Ganho, o pedido já abre com esses itens (abrirGanho → pedidoItens).
+let cardItens=[];
+function itemDescricao(it){
+  var d=it.produto||'';
+  if(it.estampa)d+=' · '+it.estampa;
+  if(it.cor)d+=' · '+it.cor;
+  if(it.tamanho)d+=' · '+it.tamanho;
+  return d;
+}
+function resumoItensCard(itens){
+  return itens.map(function(it){return (it.qty>1?it.qty+'x ':'')+itemDescricao(it);}).join(' + ');
+}
+function abrirFormItemCard(){
+  ['produto','tamanho','cor','estampa'].forEach(function(t){var el=document.getElementById('csi-'+t+'-card');if(el)el.value='';});
+  document.getElementById('f-card-qty').value='1';
+  updProdutoVariacaoUI('card','');
+  document.getElementById('card-item-form').style.display='block';
+  document.getElementById('btn-card-add-item').style.display='none';
+  setTimeout(function(){document.getElementById('csi-produto-card').focus();},50);
+}
+function fecharFormItemCard(){
+  document.getElementById('card-item-form').style.display='none';
+  document.getElementById('btn-card-add-item').style.display='';
+}
+function adicionarItemCard(){
+  var prod=catSelVal('produto','card');
+  if(!prod){ss('er','Selecione um produto');return;}
+  var p=catalogo.produtos.find(function(x){return x.nome.toLowerCase()===prod.toLowerCase();});
+  var temVar=p&&p.temVariacao;
+  var tam=temVar?catSelVal('tamanho','card'):'';
+  var cor=temVar?catSelVal('cor','card'):'';
+  var est=temVar?catSelVal('estampa','card'):'';
+  if(temVar&&(!tam||!est)){ss('er','Selecione tamanho e estampa');return;}
+  var qty=parseInt(document.getElementById('f-card-qty').value)||1;
+  cardItens.push({produto:p?p.nome:prod,estampa:est,cor:cor,tamanho:tam,qty:qty,valor:precoItemPedido(prod,est)});
+  atualizarValorCard();
+  renderItensCard();
+  fecharFormItemCard();
+}
+function removerItemCard(i){cardItens.splice(i,1);atualizarValorCard();renderItensCard();}
+// Valor do card = soma dos itens com preço (campo segue editável pra desconto/frete).
+function atualizarValorCard(){
+  var el=document.getElementById('f-valor');if(!el)return;
+  var comPreco=cardItens.filter(function(it){return it.valor!=null;});
+  if(!comPreco.length)return;
+  el.value=Math.round(comPreco.reduce(function(a,it){return a+it.valor*(parseInt(it.qty)||1);},0)*100)/100;
+}
+function renderItensCard(){
+  var el=document.getElementById('card-itens-lista');if(!el)return;
+  if(!cardItens.length){el.innerHTML='';return;}
+  var h='<div class="card-itens">';
+  cardItens.forEach(function(it,i){
+    h+='<div class="card-item-row"><div class="card-item-desc">'+itemDescricao(it)+'</div>';
+    h+='<div class="card-item-meta">'+(estampaEmPromocao(it.estampa)?'<span class="promo-tag">Promoção</span>':'');
+    h+=(it.valor!=null?'<span>'+fmtValorBR(it.valor)+'</span>':'<span style="color:var(--G3)">sem preço</span>');
+    h+='<span style="color:var(--G3)">&times;'+it.qty+'</span><button type="button" class="btn xs danger" onclick="removerItemCard('+i+')">&#10005;</button></div></div>';
+  });
+  var total=cardItens.reduce(function(a,it){return a+(it.valor!=null?it.valor*(parseInt(it.qty)||1):0);},0);
+  if(total>0)h+='<div class="card-item-total"><span>Total dos produtos</span><span>'+fmtValorBR(total)+'</span></div>';
+  h+='</div>';
+  el.innerHTML=h;
+}
 
 function renderItensPedido(){
   var el=document.getElementById('pedido-itens-lista');if(!el)return;
@@ -2198,6 +2302,10 @@ function openContato(id=null,fid=null,eid=null){
     document.getElementById('f-atv-data-modal').value=normDate(c.atv_data)||'';
     document.getElementById('f-atv-desc-modal').value=c.atv_desc||'';
     document.getElementById('f-produto').value=c.produto||'';
+    cardItens=Array.isArray(c.itens)?c.itens.map(function(it){return Object.assign({},it);}):[];
+    // Card antigo com produto em texto livre (antes da lista de produtos): só mostra.
+    var antigo=document.getElementById('card-produto-antigo');
+    if(antigo){antigo.style.display=(!cardItens.length&&c.produto)?'block':'none';antigo.textContent=c.produto?'Produto anotado antes: '+c.produto:'';}
     updEtapas();
     popularSelectTurma(c.turma||'');
     document.getElementById('f-obs').value=c.obs||'';
@@ -2244,10 +2352,14 @@ function openContato(id=null,fid=null,eid=null){
     ['f-nome','f-card-titulo','f-tel','f-valor','f-atv-data-modal','f-atv-desc-modal','f-produto','f-obs','f-email','f-cpf','f-endereco','f-cod-marketup','f-cidade','f-uf','f-cep','selOficina','f-turma'].forEach(x=>document.getElementById(x).value='');
     document.getElementById('f-user').value='';
     document.getElementById('f-aniversario').value='';
+    cardItens=[];
+    var antigoNovo=document.getElementById('card-produto-antigo');if(antigoNovo)antigoNovo.style.display='none';
     const hw=document.getElementById('neg-hist-wrap');if(hw)hw.style.display='none';
     const rw=document.getElementById('reabrir-wrap');if(rw)rw.style.display='none';
     if(eid)setTimeout(()=>{document.getElementById('f-etapa').value=eid;},30);
   }
+  fecharFormItemCard();
+  renderItensCard();
   document.getElementById('modal-c').style.display='flex';
 }
 
@@ -2286,7 +2398,11 @@ async function saveContato(){
     et:isGanho(fid,eid)?'fechado':isPerdido(fid,eid)?'perdido':'atendimento',
     canal:document.getElementById('f-canal').value,
     valor:parseFloat(document.getElementById('f-valor').value)||0,
-    produto:document.getElementById('f-produto').value.trim(),
+    // Com lista de produtos, o campo texto "produto" vira o resumo dela (aparece
+    // em relatórios/busca); sem lista, mantém o que já estava (ou a oficina).
+    produto:(fid!=='servicos'&&cardItens.length)?resumoItensCard(cardItens):document.getElementById('f-produto').value.trim(),
+    itens:fid!=='servicos'?cardItens.slice():(prev.itens||[]),
+    _meta:prev._meta||{},
     turma:document.getElementById('f-turma').value,
     obs:document.getElementById('f-obs').value.trim(),
     data:prev.data||new Date().toISOString(),compras:prev.compras||0,
@@ -3545,7 +3661,9 @@ function catSelRender(tipo,ctx,items,q){
   var h='';
   items.forEach(function(item){
     var esc=item.nome.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    h+='<div class="cat-sd-opt" onmousedown="catSelPick(\''+tipo+'\',\''+ctx+'\',\''+esc+'\')">'+item.nome+'</div>';
+    // Estampa mostra o preço do site na lista (e se está em promoção).
+    var extraOpt=(tipo==='estampa'&&item.valor!=null)?'<span style="float:right;color:var(--G3);font-weight:600">'+(item.valorOriginal!=null?'<span class="promo-tag" style="margin-right:6px">Promoção</span>':'')+fmtValorBR(item.valor)+'</span>':'';
+    h+='<div class="cat-sd-opt" onmousedown="catSelPick(\''+tipo+'\',\''+ctx+'\',\''+esc+'\')">'+item.nome+extraOpt+'</div>';
   });
   if(q&&!items.find(function(i){return i.nome.toLowerCase()===q.toLowerCase();})){
     h+='<div class="cat-sd-add" onmousedown="catSelAddNew(\''+tipo+'\',\''+ctx+'\')">+ Adicionar &quot;'+q+'&quot;</div>';

@@ -161,6 +161,9 @@ export interface Contato {
   email: string; cpf: string; endereco: string; notas: string; log_hist: any[]
   cidade: string; uf: string; cep: string; nps: number | null
   campos: Record<string, any>; oficinas_hist: any[]; oficina_atual: string
+  // meta original da linha: apiSaveContato regrava por cima dele, pra não apagar
+  // o que só o CRM conhece (card_titulo, turma, itens do card...).
+  _meta?: Record<string, any>
 }
 
 export function novoContato(overrides: Partial<Contato>): Contato {
@@ -206,6 +209,7 @@ export function rowToContato(row: any): Contato {
     campos: (meta.campos && typeof meta.campos === 'object' && !Array.isArray(meta.campos)) ? meta.campos : {},
     oficinas_hist: Array.isArray(meta.oficinas_hist) ? meta.oficinas_hist : [],
     oficina_atual: String(meta.oficina_atual || ''),
+    _meta: meta,
   }
 }
 
@@ -220,6 +224,7 @@ export async function apiSaveContato(supabase: SupabaseClient, c: Contato): Prom
     atv_hist: c.atv_hist || 0, neg_hist: c.neg_hist || '',
     aniversario: c.aniversario || null, cod_marketup: c.cod_marketup || '', nf_emitida: c.nf_emitida || false,
     meta: JSON.stringify({
+      ...(c._meta || {}),
       email: c.email || '', cpf: c.cpf || '', endereco: c.endereco || '', notas: c.notas || '',
       log_hist: c.log_hist || [], campos: c.campos || {}, cidade: c.cidade || '', uf: c.uf || '', cep: c.cep || '',
       nps: (c.nps != null) ? c.nps : null, oficinas_hist: c.oficinas_hist || [], oficina_atual: c.oficina_atual || '',
