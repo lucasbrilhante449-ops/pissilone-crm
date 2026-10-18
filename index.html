@@ -250,6 +250,14 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
 .peca-body{padding:9px;display:flex;flex-direction:column;gap:7px}
 .peca-nome{font-size:13px;font-weight:600;color:var(--K);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .peca-preco{font-size:14px;font-weight:700;color:var(--K)}
+.det-valor{align-items:center;background:var(--VD2);color:var(--VD);border-radius:20px;padding:5px 14px;font-size:15px;font-weight:700;white-space:nowrap;flex-shrink:0}
+.det-prod-box{border:1px solid var(--G2);border-radius:10px;background:var(--W);margin-bottom:1.25rem;overflow:hidden}
+.det-prod-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--G);font-size:13px;font-weight:700;color:var(--K)}
+.det-prod-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border-top:1px solid var(--G2)}
+.det-prod-desc{font-size:14px;color:var(--K)}
+.det-prod-link{font-size:12px;color:var(--L);margin-left:6px;white-space:nowrap}
+.det-prod-meta{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;white-space:nowrap}
+.det-prod-vazio{padding:10px 12px;font-size:13px;color:var(--G3);border-top:1px solid var(--G2)}
 .card-itens{background:var(--W);border:1px solid var(--G2);border-radius:8px;overflow:hidden;margin-bottom:.5rem}
 .card-item-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;border-top:1px solid var(--G2)}
 .card-item-row:first-child{border-top:none}
@@ -758,6 +766,7 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
       <div id="det-nome" style="font-size:17px;font-weight:700;color:var(--K);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Cliente</div>
       <div id="det-sub" style="font-size:12px;color:var(--G3);margin-top:2px"></div>
     </div>
+    <div id="det-valor" class="det-valor" style="display:none"></div>
     <div id="det-responsavel" style="display:flex;align-items:center;gap:6px;background:var(--G);border-radius:20px;padding:5px 12px;font-size:13px;white-space:nowrap;flex-shrink:0"></div>
     <button class="btn sm" id="det-edit-btn">&#9998; Editar</button>
     <button class="mcl" onclick="closeM('modal-detail')">&#10005;</button>
@@ -782,6 +791,7 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
       </div>
     </div>
     <div class="det-center">
+      <div id="det-produtos"></div>
       <div style="font-size:13px;font-weight:600;color:var(--K);margin-bottom:.75rem;display:flex;align-items:center;justify-content:space-between">
         Anota&#231;&#245;es
         <button class="btn xs primary" id="det-nota-save" onclick="saveDetNota()">Salvar</button>
@@ -3319,6 +3329,33 @@ function detRow(lbl,val){
   return'<div class="det-row"><span class="det-row-lbl">'+lbl+'</span><span class="det-row-val">'+val+'</span></div>';
 }
 
+// Topo do detalhe: valor do card (ao lado do responsável) e os produtos que o
+// cliente quer — o que a atendente precisa ver primeiro pra atender. Produtos
+// são editados no card (Editar → + Adicionar produto).
+function renderDetProdutos(c){
+  var vEl=document.getElementById('det-valor');
+  if(vEl){vEl.style.display=c.valor?'flex':'none';vEl.innerHTML=c.valor?fmtValorBR(c.valor):'';}
+  var el=document.getElementById('det-produtos');if(!el)return;
+  var itens=Array.isArray(c.itens)?c.itens:[];
+  var h='<div class="det-prod-box"><div class="det-prod-hdr"><span>Produtos</span><button class="btn xs" onclick="closeM(\'modal-detail\');openContato(\''+c.id+'\')">'+(itens.length?'Editar produtos':'+ Adicionar produto')+'</button></div>';
+  if(itens.length){
+    itens.forEach(function(it){
+      var e=it.estampa&&catalogo.estampas.find(function(x){return x.nome===it.estampa;});
+      h+='<div class="det-prod-row"><div class="det-prod-desc">'+itemDescricao(it);
+      if(e&&e.urlSite)h+=' <a href="'+e.urlSite.replace(/"/g,'&quot;')+'" target="_blank" rel="noopener" class="det-prod-link">ver no site</a>';
+      h+='</div><div class="det-prod-meta">'+(estampaEmPromocao(it.estampa)?'<span class="promo-tag">Promoção</span>':'');
+      h+=(it.valor!=null?'<span>'+fmtValorBR(it.valor)+'</span>':'<span style="color:var(--G3)">sem preço</span>');
+      h+='<span style="color:var(--G3)">&times;'+(it.qty||1)+'</span></div></div>';
+    });
+  }else if(c.produto){
+    h+='<div class="det-prod-row"><div class="det-prod-desc">'+c.produto.replace(/</g,'&lt;')+'</div></div>';
+  }else{
+    h+='<div class="det-prod-vazio">Nenhum produto anotado ainda.</div>';
+  }
+  h+='</div>';
+  el.innerHTML=h;
+}
+
 function openContatoDetail(id){
   if(!id)return;
   currentDetailId=id;
@@ -3331,6 +3368,7 @@ function openContatoDetail(id){
   var u=cfg.usuarios.find(function(x){return x.id===c.usuario;});
   document.getElementById('det-responsavel').innerHTML=u?'&#128100; '+u.nome:'<span style="color:var(--G3)">Sem responsável</span>';
   document.getElementById('det-edit-btn').onclick=function(){closeM('modal-detail');openContato(id);};
+  renderDetProdutos(c);
   // INFO
   var info='';
   var waTel=c.tel?c.tel.replace(/\D/g,''):'';
