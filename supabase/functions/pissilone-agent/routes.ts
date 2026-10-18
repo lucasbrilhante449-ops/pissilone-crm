@@ -218,7 +218,7 @@ export async function consultarCatalogo(supabase: SupabaseClient, body: any) {
   // tipo === 'estampa'
   // valor da estampa = preço de venda no site (espelhado por espelharProdutoNs):
   // a mesma camiseta lisa custa diferente conforme a estampa/acabamento.
-  const { data, error } = await supabase.from('catalogo').select('nome,descricao,foto_url,valor').eq('tipo', 'estampa').order('nome', { ascending: true })
+  const { data, error } = await supabase.from('catalogo').select('nome,descricao,foto_url,valor,valor_original').eq('tipo', 'estampa').order('nome', { ascending: true })
   if (error) throw new ApiError(500, 'Erro ao consultar catálogo: ' + error.message)
   const rows = data || []
 
@@ -236,7 +236,7 @@ export async function consultarCatalogo(supabase: SupabaseClient, body: any) {
   if (achado.foto_url && telefone) {
     fotoEnviada = await enviarImagemWhatsapp(telefone, achado.foto_url, achado.nome)
   }
-  return { ok: true, tipo: 'estampa', encontrado: true, nome: achado.nome, descricao: achado.descricao || '', valor: achado.valor !== null ? Number(achado.valor) : null, foto_enviada: fotoEnviada }
+  return { ok: true, tipo: 'estampa', encontrado: true, nome: achado.nome, descricao: achado.descricao || '', valor: achado.valor !== null ? Number(achado.valor) : null, valor_original_sem_promocao: achado.valor_original !== null ? Number(achado.valor_original) : null, foto_enviada: fotoEnviada }
 }
 
 // ── /dar-ganho ───────────────────────────────────────────
@@ -828,7 +828,7 @@ interface ContextoEspelho { catalogo: any[]; estoque: any[]; estampas: any[]; gr
 async function carregarContextoEspelho(supabase: SupabaseClient): Promise<ContextoEspelho> {
   const [{ catalogo, estoque }, { data: estampas }] = await Promise.all([
     carregarCatalogoEEstoque(supabase),
-    supabase.from('catalogo').select('id,nome,foto_url,valor,nuvemshop_produto_ids').eq('tipo', 'estampa'),
+    supabase.from('catalogo').select('id,nome,foto_url,valor,valor_original,nuvemshop_produto_ids').eq('tipo', 'estampa'),
   ])
   return { catalogo, estoque, estampas: estampas || [] }
 }
@@ -867,7 +867,7 @@ async function espelharProdutoNs(supabase: SupabaseClient, produtoNs: any, ctx: 
     } else {
       const { data: nova, error } = await supabase.from('catalogo')
         .insert({ tipo: 'estampa', nome: cls.estampa, nuvemshop_produto_ids: JSON.stringify([produtoId]) })
-        .select('id,nome,foto_url,valor,nuvemshop_produto_ids').single()
+        .select('id,nome,foto_url,valor,valor_original,nuvemshop_produto_ids').single()
       if (error) throw new ApiError(500, 'Erro ao criar estampa: ' + error.message)
       estampaRow = nova
       ctx.estampas.push(nova)
@@ -885,10 +885,12 @@ async function espelharProdutoNs(supabase: SupabaseClient, produtoNs: any, ctx: 
   // Preço do site vira o valor da estampa no Catálogo (consulta da atendente,
   // valor automático na venda, resposta da Maria). Roda também no
   // product/updated, então mudar o preço na Nuvemshop já reflete no CRM.
-  const preco = precoDeVendaNs(produtoNs)
-  if (preco !== null && Number(estampaRow.valor) !== preco) {
-    await supabase.from('catalogo').update({ valor: preco }).eq('id', estampaRow.id)
-    estampaRow.valor = preco
+  const precos = precosNs(produtoNs)
+  const originalAtual = estampaRow.valor_original === null || estampaRow.valor_original === undefined ? null : Number(estampaRow.valor_original)
+  if (precos.venda !== null && (Number(estampaRow.valor) !== precos.venda || originalAtual !== precos.original)) {
+    await supabase.from('catalogo').update({ valor: precos.venda, valor_original: precos.original }).eq('id', estampaRow.id)
+    estampaRow.valor = precos.venda
+    estampaRow.valor_original = precos.original
   }
 
   // Completar cores só fora do product/updated (ver webhookNuvemshopProduto).
@@ -916,15 +918,27 @@ async function espelharProdutoNs(supabase: SupabaseClient, produtoNs: any, ctx: 
 // senão o normal. Variações podem divergir (ex: uma esquecida em 0,00), então
 // vale o preço mais comum entre as variações com preço; empate → o maior.
 function precoDeVendaNs(produtoNs: any): number | null {
-  const contagem = new Map<number, number>()
+  return precosNs(produtoNs).venda
+}
+// venda = o que o cliente paga; original = preço normal quando "venda" é
+// promocional (null fora de promoção) — vira a tag "Promoção" no CRM.
+function precosNs(produtoNs: any): { venda: number | null; original: number | null } {
+  const contagem = new Map<string, { venda: number; original: number | null; n: number }>()
   for (const v of produtoNs?.variants || []) {
     const preco = parseFloat(v.price) || 0
     const promo = parseFloat(v.promotional_price) || 0
-    const efetivo = promo > 0 && promo < preco ? promo : preco
-    if (efetivo > 0) contagem.set(efetivo, (contagem.get(efetivo) || 0) + 1)
+    const emPromo = promo > 0 && promo < preco
+    const venda = emPromo ? promo : preco
+    if (venda <= 0) continue
+    const original = emPromo ? preco : null
+    const k = `${venda}|${original}`
+    const atual = contagem.get(k) || { venda, original, n: 0 }
+    atual.n++
+    contagem.set(k, atual)
   }
-  if (!contagem.size) return null
-  return [...contagem.entries()].sort((a, b) => (b[1] - a[1]) || (b[0] - a[0]))[0][0]
+  if (!contagem.size) return { venda: null, original: null }
+  const top = [...contagem.values()].sort((a, b) => (b.n - a.n) || (b.venda - a.venda))[0]
+  return { venda: top.venda, original: top.original }
 }
 
 // Variação repetida (mesma cor+tamanho 2x ou mais) aparece quando dois
@@ -1117,7 +1131,8 @@ export async function diagnosticoProdutoNuvemshop(_supabase: SupabaseClient, bod
   const id = reqStr(body, 'produto_id')
   const resumir = (p: any) => ({
     attributes: p?.attributes,
-    variantes: (p?.variants || []).map((v: any) => ({ id: v.id, values: v.values, stock: v.stock })),
+    variantes: (p?.variants || []).map((v: any) => ({ id: v.id, values: v.values, stock: v.stock, price: v.price, promotional_price: v.promotional_price, compare_at_price: v.compare_at_price })),
+    preco_calculado: precoDeVendaNs(p),
   })
   const direto = await nsFetch(`/products/${id}?fields=id,name,attributes,variants`)
   const lista: any[] = (await nsFetch(`/products?ids=${id}&fields=id,name,attributes,variants`)) || []
