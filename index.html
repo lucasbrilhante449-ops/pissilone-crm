@@ -2675,16 +2675,16 @@ function renderVendasPorCanal(negGanhos,canalNegs){
   svg+='<text x="'+cx+'" y="'+(cy+20)+'" text-anchor="middle" font-size="13" fill="var(--G3)" font-family="system-ui,Segoe UI,sans-serif">vendas</text>';
   h+='<div class="pie-wrap"><svg viewBox="0 0 '+S+' '+S+'" width="'+S+'" height="'+S+'" role="img" aria-label="Vendas por canal">'+svg+'</svg><div id="pie-canal-tip" class="pie-tip"></div></div>';
   // Legenda = tabela (identidade nunca só pela cor; números legíveis).
-  h+='<table class="pie-tab"><thead><tr><th>Canal</th><th>Vendas</th><th>% vendas</th><th>Receita</th><th title="Ganhos ÷ negociações do canal no período">Conversão</th></tr></thead><tbody>';
+  h+='<table class="pie-tab"><thead><tr><th>Canal</th><th>Vendas</th><th>% vendas</th><th>Receita</th><th title="Receita ÷ vendas do canal">Ticket médio</th><th title="Ganhos ÷ negociações do canal no período">Conversão</th></tr></thead><tbody>';
   fatias.forEach(function(f){
-    h+='<tr><td><span class="pie-sw" style="background:'+f.cor+'"></span>'+f.nome+'</td><td>'+f.vendas+'</td><td>'+Math.round(f.vendas/total*100)+'%</td><td>R$'+Math.round(f.receita).toLocaleString('pt-BR')+'</td><td><b>'+f.conv+'%</b> <span class="pie-sub">('+f.vendas+'/'+f.negs+')</span></td></tr>';
+    h+='<tr><td><span class="pie-sw" style="background:'+f.cor+'"></span>'+f.nome+'</td><td>'+f.vendas+'</td><td>'+Math.round(f.vendas/total*100)+'%</td><td>R$'+Math.round(f.receita).toLocaleString('pt-BR')+'</td><td>R$'+Math.round(f.receita/f.vendas).toLocaleString('pt-BR')+'</td><td><b>'+f.conv+'%</b> <span class="pie-sub">('+f.vendas+'/'+f.negs+')</span></td></tr>';
   });
   h+='</tbody></table></div>';
   return h;
 }
 function pieCanalHover(ev,i){
   var t=document.getElementById('pie-canal-tip'),d=(window.__pieCanal||[])[i];if(!t||!d)return;
-  t.innerHTML='<b>'+d.nome+'</b><br>'+d.vendas+' vendas ('+d.pct+'%)<br>R$'+Math.round(d.receita).toLocaleString('pt-BR')+'<br>Conversão '+d.conv+'%';
+  t.innerHTML='<b>'+d.nome+'</b><br>'+d.vendas+' vendas ('+d.pct+'%)<br>R$'+Math.round(d.receita).toLocaleString('pt-BR')+' · ticket R$'+Math.round(d.receita/d.vendas).toLocaleString('pt-BR')+'<br>Conversão '+d.conv+'%';
   var box=t.parentNode.getBoundingClientRect();
   t.style.left=(ev.clientX-box.left+12)+'px';t.style.top=(ev.clientY-box.top+12)+'px';t.style.display='block';
 }
