@@ -1002,8 +1002,12 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
 <!-- MODAL TURMA -->
 <div class="overlay" id="modal-turma" style="display:none">
 <div class="modal">
-  <div class="mtitle"><span>Nova turma</span><button class="mcl" onclick="closeM('modal-turma')">✕</button></div>
-  <div class="fg fg1" style="margin-bottom:1rem"><div><label class="flbl">Nome da turma</label><input class="fi" id="f-turma-nome" placeholder="Ex: Carmorita 2..."></div></div>
+  <div class="mtitle"><span id="mturma-title">Nova turma</span><button class="mcl" onclick="closeM('modal-turma')">✕</button></div>
+  <div class="fg fg1" style="margin-bottom:.75rem"><div><label class="flbl">Nome da turma</label><input class="fi" id="f-turma-nome" placeholder="Ex: Carmorita 2..."></div></div>
+  <div class="fg fg2" style="margin-bottom:1rem">
+    <div><label class="flbl">Data da oficina</label><input class="fi" type="date" id="f-turma-data"></div>
+    <div><label class="flbl">Vagas abertas</label><input class="fi" type="number" min="0" id="f-turma-vagas" placeholder="Ex: 15"></div>
+  </div>
   <button class="btn primary full" onclick="saveTurma()">Salvar</button>
 </div>
 </div>
@@ -4326,7 +4330,8 @@ function renderConfig(){
     }else{
       var th='';
       turmasArr.forEach(function(t){
-        th+='<div style="display:flex;align-items:center;gap:6px;background:var(--G);border-radius:20px;padding:5px 12px"><span style="font-size:13px">🎓 '+t.nome+'</span><button class="btn xs danger" onclick="delTurma(\''+t.id+'\')">✕</button></div>';
+        var tSub=[t.data?fmtDFull(t.data):'sem data',t.vagas!=null?t.vagas+' vagas':'sem vagas'].join(' · ');
+        th+='<div style="display:flex;align-items:center;gap:6px;background:var(--G);border-radius:20px;padding:5px 12px"><span style="font-size:13px">🎓 '+escHtml(t.nome)+' <span style="color:var(--G3);font-size:12px">'+tSub+'</span></span><button class="btn xs" onclick="openTurmaModal(\''+t.id+'\')" title="Editar data e vagas">'+ic('pencil')+'</button><button class="btn xs danger" onclick="delTurma(\''+t.id+'\')">✕</button></div>';
       });
       turmasEl.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.75rem">'+th+'</div>';
     }
@@ -4810,13 +4815,32 @@ async function delEtapa(fid,eid){if(!confirm('Apagar etapa?'))return;const f=get
 async function delUser(id){if(!confirm('Remover usuário?'))return;cfg.usuarios=cfg.usuarios.filter(u=>u.id!==id);await saveCfg();renderConfig();renderUbtns();}
 
 // ── TURMAS ───────────────────────────────────────────────
-function openTurmaModal(){document.getElementById('f-turma-nome').value='';document.getElementById('modal-turma').style.display='flex';setTimeout(function(){document.getElementById('f-turma-nome').focus();},50);}
+// Data e vagas da turma alimentam ocupação e vendas por turma nos Insights.
+// O nome não muda na edição: os cards guardam a turma pelo nome.
+var editTurmaId=null;
+function openTurmaModal(id){
+  editTurmaId=id||null;
+  var t=id?(cfg.turmas||[]).find(function(x){return x.id===id;}):null;
+  var nomeEl=document.getElementById('f-turma-nome');
+  nomeEl.value=t?t.nome:'';nomeEl.disabled=Boolean(t);
+  document.getElementById('f-turma-data').value=t&&t.data?t.data:'';
+  document.getElementById('f-turma-vagas').value=t&&t.vagas!=null?t.vagas:'';
+  document.getElementById('mturma-title').textContent=t?'Editar turma':'Nova turma';
+  document.getElementById('modal-turma').style.display='flex';
+  if(!t)setTimeout(function(){nomeEl.focus();},50);
+}
 async function saveTurma(){
   var nome=document.getElementById('f-turma-nome').value.trim();
   if(!nome)return;
   if(!cfg.turmas)cfg.turmas=[];
-  var existente=cfg.turmas.find(function(t){return t.nome.toLowerCase()===nome.toLowerCase();});
-  if(!existente){cfg.turmas.push({id:'tm'+Date.now(),nome:nome});await saveCfg();}
+  var data=document.getElementById('f-turma-data').value||'';
+  var vagasTxt=document.getElementById('f-turma-vagas').value;
+  var vagas=vagasTxt===''?null:Math.max(0,parseInt(vagasTxt)||0);
+  var existente=editTurmaId?cfg.turmas.find(function(t){return t.id===editTurmaId;}):cfg.turmas.find(function(t){return t.nome.toLowerCase()===nome.toLowerCase();});
+  if(existente){if(editTurmaId||data)existente.data=data;if(editTurmaId||vagas!=null)existente.vagas=vagas;}
+  else cfg.turmas.push({id:'tm'+Date.now(),nome:nome,data:data,vagas:vagas});
+  await saveCfg();
+  editTurmaId=null;
   closeM('modal-turma');
   popularSelectTurma(nome);
   if(document.getElementById('cfg-turmas'))renderConfig();
