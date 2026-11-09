@@ -227,6 +227,15 @@ textarea.fi{resize:vertical;min-height:60px}
 .tag-row{display:flex;flex-wrap:wrap;gap:7px;flex:1;margin-bottom:1rem;align-content:flex-start}
 .tag-chip{display:inline-flex;align-items:center;gap:7px;background:var(--G);border:1px solid var(--G2);border-radius:20px;padding:6px 8px 6px 13px;font-size:13.5px;color:var(--K);font-weight:500}
 .tag-chip .btn.xs{padding:3px}
+.cfg-form{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-end;max-width:640px}
+.cfg-form .fi{flex:1 1 150px;width:auto;min-width:0}
+.cfg-form .flbl{display:flex;flex-direction:column;gap:3px;margin:0;flex:1 1 130px}
+.cfg-form .flbl .fi{flex:none;width:100%}
+.cfg-lista{display:flex;flex-direction:column;gap:6px;margin-bottom:.75rem;max-width:640px}
+.cfg-item{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--G);border:1px solid var(--G2);border-radius:8px;padding:.5rem .75rem}
+.cfg-item-nome{font-size:13px;font-weight:600;color:var(--K);flex:1 1 140px;min-width:0}
+.cfg-item-sub{font-size:12px;color:var(--G3);font-weight:400}
+.cfg-item.inativo{opacity:.55}
 .estoque-section{background:var(--W);border:1px solid var(--G2);border-radius:var(--r-md);padding:1.1rem;box-shadow:var(--shadow-sm);margin-bottom:1rem}
 .est-hint{font-size:12.5px;color:var(--G3);margin-bottom:.875rem}
 .est-produto-nome{font-size:13.5px;font-weight:700;color:var(--K);margin-bottom:.5rem}
@@ -531,6 +540,16 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
     <select class="fi" id="f-cfg-resp-site" style="width:auto" onchange="salvarRespSite(this.value)"><option value="">Sem responsável</option></select>
   </div>
   <div class="divider" style="margin:1.25rem 0"></div>
+  <div class="slbl">Campanhas</div>
+  <div style="font-size:12px;color:var(--G3);margin-bottom:.75rem">Ações de marketing (ex: Lista CASA, Natal 2026). As ativas aparecem no campo "Campanha" do card e na tela de Campanhas dos Insights.</div>
+  <div id="cfg-campanhas"></div>
+  <div class="cfg-form">
+    <input class="fi" id="f-camp-nome" placeholder="Nome da campanha">
+    <label class="flbl">Início<input class="fi" type="date" id="f-camp-inicio"></label>
+    <label class="flbl">Fim<input class="fi" type="date" id="f-camp-fim"></label>
+    <button class="btn sm" onclick="addCampanha()">+ Adicionar</button>
+  </div>
+  <div class="divider" style="margin:1.25rem 0"></div>
   <div class="slbl">Turmas de Oficina</div>
   <div style="font-size:12px;color:var(--G3);margin-bottom:.75rem">Turmas disponíveis para selecionar nos cards do funil Serviços</div>
   <div id="cfg-turmas"></div>
@@ -598,6 +617,7 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
     <div><label class="flbl">Valor (R$)</label><input class="fi" type="number" id="f-valor" placeholder="120"></div>
     <div><label class="flbl">Próx. atividade</label><input class="fi" type="date" id="f-atv-data-modal"></div>
   </div>
+  <div class="fg fg1"><div><label class="flbl">Campanha (opcional)</label><select class="fi" id="f-campanha"></select></div></div>
   <div class="fg fg1"><div><label class="flbl">Descrição da atividade</label><input class="fi" id="f-atv-desc-modal" placeholder="Ex: Ligar, enviar proposta..."></div></div>
   <div class="fg fg1" id="wrap-produto-normal"><div>
     <label class="flbl">Produtos</label>
@@ -1129,7 +1149,8 @@ let cfg = {
     {id:'atelie',nome:'Ateliê'},{id:'busca',nome:'Google'},
     {id:'whatsapp',nome:'WhatsApp'},{id:'site',nome:'Site'},{id:'outro',nome:'Outro'}
   ],
-  nuvemshop_responsavel_padrao:''
+  nuvemshop_responsavel_padrao:'',
+  campanhas:[],artesas:[],metas:[]
 };
 let funilAtivo='d2c', filtroC='todos', filtroAtv='todos', filtroRes='todos', filtroTier='todos', filtroGL='todos', filtroAniversario='';
 let filtroOficinaFunil='', filtroOficinaContatos='', filtroTurmaFunil='', filtroTurmaOficinas='';
@@ -1211,6 +1232,7 @@ function getEtapa(fid,eid){const f=getFunil(fid);return f?f.etapas.find(e=>e.id=
 function fmtD(iso){if(!iso)return'';try{const[y,m,d]=(iso.split('T')[0]).split('-');return`${d}/${m}`;}catch(e){return '';}}
 function fmtDFull(iso){if(!iso)return'';try{const[y,m,d]=(iso.split('T')[0]).split('-');return`${d}/${m}/${y.slice(2)}`;}catch(e){return '';}}
 function fmtDatetime(iso){if(!iso)return'';try{var dt=new Date(iso);if(isNaN(dt))return fmtDFull(iso);var dd=String(dt.getDate()).padStart(2,'0');var mm=String(dt.getMonth()+1).padStart(2,'0');var yy=String(dt.getFullYear()).slice(2);var hh=String(dt.getHours()).padStart(2,'0');var mn=String(dt.getMinutes()).padStart(2,'0');return dd+'/'+mm+'/'+yy+' '+hh+':'+mn;}catch(e){return'';} }
+function escHtml(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function hojeISO(){const h=new Date();return h.getFullYear()+'-'+String(h.getMonth()+1).padStart(2,'0')+'-'+String(h.getDate()).padStart(2,'0');}
 function normDate(d){
   if(!d||String(d).trim()==='')return'';
@@ -1317,11 +1339,16 @@ async function loadCfg(){
     const rows=await sbGet('config','id=eq.1&select=dados');
     if(rows&&rows[0]&&rows[0].dados){
       const p=JSON.parse(rows[0].dados);
-      if(p&&p.funis&&p.funis.length>0){cfg=p;if(!cfg.campos_personalizados)cfg.campos_personalizados=[];if(!cfg.turmas)cfg.turmas=[];if(!cfg.canais||!cfg.canais.length)cfg.canais=CANAL_PADRAO.slice();if(cfg.nuvemshop_responsavel_padrao===undefined)cfg.nuvemshop_responsavel_padrao='';await seedServicosFunil();return;}
+      if(p&&p.funis&&p.funis.length>0){cfg=p;if(!cfg.campos_personalizados)cfg.campos_personalizados=[];if(!cfg.turmas)cfg.turmas=[];if(!cfg.canais||!cfg.canais.length)cfg.canais=CANAL_PADRAO.slice();if(cfg.nuvemshop_responsavel_padrao===undefined)cfg.nuvemshop_responsavel_padrao='';cfgListasNovas();await seedServicosFunil();return;}
     }
   }catch(e){console.warn('loadCfg error:',e);}
   try{const s=localStorage.getItem('psn_cfg4');if(s){const p=JSON.parse(s);if(p&&p.funis){cfg=p;if(!cfg.campos_personalizados)cfg.campos_personalizados=[];if(!cfg.turmas)cfg.turmas=[];if(!cfg.canais||!cfg.canais.length)cfg.canais=CANAL_PADRAO.slice();if(cfg.nuvemshop_responsavel_padrao===undefined)cfg.nuvemshop_responsavel_padrao='';}}}catch(e){}
+  cfgListasNovas();
   await seedServicosFunil();
+}
+// Listas da Config criadas no Insights v2 (podem não existir no JSON salvo).
+function cfgListasNovas(){
+  ['campanhas','artesas','metas'].forEach(function(k){if(!Array.isArray(cfg[k]))cfg[k]=[];});
 }
 async function saveCfg(){
   try{
@@ -1707,6 +1734,7 @@ async function doSync(){
         turma:String(meta.turma||''),
         itens:Array.isArray(meta.itens)?meta.itens:[],
         canal_desc:String(meta.canal_desc||''),
+        campanha_id:String(meta.campanha_id||''),
         // meta original inteiro: apiSave regrava por cima dele, pra não apagar
         // campo que outro lado (Edge Function/agente) tenha gravado.
         _meta:meta
@@ -1726,7 +1754,7 @@ async function apiSave(c){
     atv_desc:c.atv_desc||'',resultado:c.resultado||'',
     atv_hist:c.atv_hist||0,neg_hist:c.neg_hist||'',
     aniversario:c.aniversario||null,cod_marketup:c.cod_marketup||'',nf_emitida:c.nf_emitida||false,
-    meta:JSON.stringify(Object.assign({},c._meta||{},{email:c.email||'',cpf:c.cpf||'',endereco:c.endereco||'',notas:c.notas||'',log_hist:c.log_hist||[],campos:c.campos||{},cidade:c.cidade||'',uf:c.uf||'',cep:c.cep||'',nps:(c.nps!=null)?c.nps:null,oficinas_hist:c.oficinas_hist||[],oficina_atual:c.oficina_atual||'',aniversario_ano_enviado:c.aniversario_ano_enviado||'',card_titulo:c.card_titulo||'',turma:c.turma||'',itens:Array.isArray(c.itens)?c.itens:[],canal_desc:c.canal==='outro'?(c.canal_desc||''):''}))
+    meta:JSON.stringify(Object.assign({},c._meta||{},{email:c.email||'',cpf:c.cpf||'',endereco:c.endereco||'',notas:c.notas||'',log_hist:c.log_hist||[],campos:c.campos||{},cidade:c.cidade||'',uf:c.uf||'',cep:c.cep||'',nps:(c.nps!=null)?c.nps:null,oficinas_hist:c.oficinas_hist||[],oficina_atual:c.oficina_atual||'',aniversario_ano_enviado:c.aniversario_ano_enviado||'',card_titulo:c.card_titulo||'',turma:c.turma||'',itens:Array.isArray(c.itens)?c.itens:[],canal_desc:c.canal==='outro'?(c.canal_desc||''):'',campanha_id:c.campanha_id||''}))
   });
 }
 
@@ -2353,6 +2381,7 @@ function openContato(id=null,fid=null,eid=null){
   us.innerHTML='<option value="">Nenhum</option>'+cfg.usuarios.map(u=>`<option value="${u.id}">${u.nome}</option>`).join('');
   popularSelectsCanal(c?c.canal:null);
   document.getElementById('f-canal-desc').value=c?(c.canal_desc||''):'';
+  popularSelectCampanha(c?c.campanha_id:'');
   if(c){
     document.getElementById('f-nome').value=c.nome;
     document.getElementById('f-card-titulo').value=c.card_titulo||'';
@@ -2459,6 +2488,7 @@ async function saveContato(){
     et:isGanho(fid,eid)?'fechado':isPerdido(fid,eid)?'perdido':'atendimento',
     canal:document.getElementById('f-canal').value,
     canal_desc:document.getElementById('f-canal-desc').value.trim(),
+    campanha_id:document.getElementById('f-campanha').value,
     valor:parseFloat(document.getElementById('f-valor').value)||0,
     // Com lista de produtos, o campo texto "produto" vira o resumo dela (aparece
     // em relatórios/busca); sem lista, mantém o que já estava (ou a oficina).
@@ -4226,6 +4256,16 @@ function renderConfig(){
     respSiteEl.innerHTML='<option value="">Sem responsável</option>'+(cfg.usuarios||[]).map(function(u){return'<option value="'+u.id+'">'+u.nome+'</option>';}).join('');
     respSiteEl.value=cfg.nuvemshop_responsavel_padrao||'';
   }
+  var campEl=document.getElementById('cfg-campanhas');
+  if(campEl){
+    if(!cfg.campanhas.length)campEl.innerHTML='<div style="font-size:12px;color:var(--G3);font-style:italic;margin-bottom:.75rem">Nenhuma campanha criada ainda</div>';
+    else campEl.innerHTML='<div class="cfg-lista">'+cfg.campanhas.map(function(cp){
+      var per=(cp.inicio?fmtDFull(cp.inicio):'…')+' → '+(cp.fim?fmtDFull(cp.fim):'…');
+      return'<div class="cfg-item'+(cp.ativa?'':' inativo')+'"><div class="cfg-item-nome">'+escHtml(cp.nome)+' <span class="cfg-item-sub">'+per+'</span></div>'
+        +'<label class="cfg-item-sub" style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox"'+(cp.ativa?' checked':'')+' onchange="toggleCampanha(\''+cp.id+'\',this.checked)"> ativa</label>'
+        +'<button class="btn xs danger" onclick="delCampanha(\''+cp.id+'\')" title="Apagar">'+ic('trash')+'</button></div>';
+    }).join('')+'</div>';
+  }
   // turmas
   var turmasEl=document.getElementById('cfg-turmas');
   if(turmasEl){
@@ -4737,6 +4777,32 @@ function popularSelectCategoria(){
   sel.innerHTML='<option value="">-- Sem linha --</option>'+getCategorias().map(function(c){return'<option value="'+c.id+'">'+c.nome+'</option>';}).join('');
 }
 
+// ── CAMPANHAS ────────────────────────────────────────────
+async function addCampanha(){
+  var nome=document.getElementById('f-camp-nome').value.trim();
+  if(!nome){ss('er','Dê um nome à campanha');return;}
+  if(cfg.campanhas.find(function(c){return c.nome.toLowerCase()===nome.toLowerCase();})){ss('er','Já existe uma campanha com esse nome');return;}
+  cfg.campanhas.push({id:'cp'+Date.now(),nome:nome,inicio:document.getElementById('f-camp-inicio').value||'',fim:document.getElementById('f-camp-fim').value||'',ativa:true});
+  ['f-camp-nome','f-camp-inicio','f-camp-fim'].forEach(function(x){document.getElementById(x).value='';});
+  await saveCfg();renderConfig();
+}
+async function toggleCampanha(id,ativa){
+  var cp=cfg.campanhas.find(function(c){return c.id===id;});if(!cp)return;
+  cp.ativa=Boolean(ativa);await saveCfg();renderConfig();
+}
+async function delCampanha(id){
+  if(!confirm('Apagar esta campanha? Os cards ligados a ela ficam sem campanha. Para só tirar da lista, desmarque "ativa".'))return;
+  cfg.campanhas=cfg.campanhas.filter(function(c){return c.id!==id;});
+  await saveCfg();renderConfig();
+}
+function campanhaNome(id){var c=(cfg.campanhas||[]).find(function(x){return x.id===id;});return c?c.nome:'';}
+// Select do card: campanhas ativas + a atual do card, mesmo se já inativa.
+function popularSelectCampanha(atual){
+  var sel=document.getElementById('f-campanha');if(!sel)return;
+  var lista=(cfg.campanhas||[]).filter(function(c){return c.ativa||c.id===atual;});
+  sel.innerHTML='<option value="">Nenhuma</option>'+lista.map(function(c){return'<option value="'+c.id+'">'+escHtml(c.nome)+'</option>';}).join('');
+  sel.value=atual||'';
+}
 async function salvarRespSite(usuarioId){
   cfg.nuvemshop_responsavel_padrao=usuarioId||'';
   await saveCfg();
