@@ -540,6 +540,16 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
     <select class="fi" id="f-cfg-resp-site" style="width:auto" onchange="salvarRespSite(this.value)"><option value="">Sem responsável</option></select>
   </div>
   <div class="divider" style="margin:1.25rem 0"></div>
+  <div class="slbl">Metas do mês</div>
+  <div style="font-size:12px;color:var(--G3);margin-bottom:.75rem">Os cards do topo dos Insights mostram realizado ÷ meta quando o período tem meta. Cadastrar de novo o mesmo mês e tipo substitui o valor.</div>
+  <div id="cfg-metas"></div>
+  <div class="cfg-form">
+    <label class="flbl">Mês<input class="fi" type="month" id="f-meta-mes"></label>
+    <label class="flbl">Tipo<select class="fi" id="f-meta-tipo"><option value="receita_produto">Receita de produto (R$)</option><option value="receita_servico">Receita de serviço (R$)</option><option value="vendas">Nº de vendas</option></select></label>
+    <label class="flbl">Valor<input class="fi" type="number" min="0" step="0.01" id="f-meta-valor" placeholder="0"></label>
+    <button class="btn sm" onclick="addMeta()">+ Salvar meta</button>
+  </div>
+  <div class="divider" style="margin:1.25rem 0"></div>
   <div class="slbl">Campanhas</div>
   <div style="font-size:12px;color:var(--G3);margin-bottom:.75rem">Ações de marketing (ex: Lista CASA, Natal 2026). As ativas aparecem no campo "Campanha" do card e na tela de Campanhas dos Insights.</div>
   <div id="cfg-campanhas"></div>
@@ -4277,6 +4287,16 @@ function renderConfig(){
     respSiteEl.innerHTML='<option value="">Sem responsável</option>'+(cfg.usuarios||[]).map(function(u){return'<option value="'+u.id+'">'+u.nome+'</option>';}).join('');
     respSiteEl.value=cfg.nuvemshop_responsavel_padrao||'';
   }
+  var metasEl=document.getElementById('cfg-metas');
+  if(metasEl){
+    if(!cfg.metas.length)metasEl.innerHTML='<div style="font-size:12px;color:var(--G3);font-style:italic;margin-bottom:.75rem">Nenhuma meta cadastrada ainda</div>';
+    else metasEl.innerHTML='<div class="cfg-lista">'+cfg.metas.slice().sort(function(a,b){return b.mes.localeCompare(a.mes)||a.tipo.localeCompare(b.tipo);}).map(function(m){
+      var p=m.mes.split('-');
+      return'<div class="cfg-item"><div class="cfg-item-nome">'+p[1]+'/'+p[0]+' <span class="cfg-item-sub">'+META_TIPOS[m.tipo]+'</span></div>'
+        +'<span style="font-size:13px;font-weight:600">'+fmtMeta(m.tipo,m.valor)+'</span>'
+        +'<button class="btn xs danger" onclick="delMeta(\''+m.id+'\')" title="Apagar">'+ic('trash')+'</button></div>';
+    }).join('')+'</div>';
+  }
   var campEl=document.getElementById('cfg-campanhas');
   if(campEl){
     if(!cfg.campanhas.length)campEl.innerHTML='<div style="font-size:12px;color:var(--G3);font-style:italic;margin-bottom:.75rem">Nenhuma campanha criada ainda</div>';
@@ -4837,6 +4857,25 @@ function popularSelectCategoria(){
   var sel=document.getElementById('f-cat-categoria');if(!sel)return;
   sel.innerHTML='<option value="">-- Sem linha --</option>'+getCategorias().map(function(c){return'<option value="'+c.id+'">'+c.nome+'</option>';}).join('');
 }
+
+// ── METAS DO MÊS ─────────────────────────────────────────
+var META_TIPOS={receita_produto:'Receita de produto',receita_servico:'Receita de serviço',vendas:'Nº de vendas'};
+function fmtMeta(tipo,v){return tipo==='vendas'?String(Math.round(v))+' vendas':fmtValorBR(v);}
+async function addMeta(){
+  var mes=document.getElementById('f-meta-mes').value,tipo=document.getElementById('f-meta-tipo').value;
+  var valor=parseFloat(String(document.getElementById('f-meta-valor').value).replace(',','.'));
+  if(!mes||!(valor>0)){ss('er','Informe o mês e um valor maior que zero');return;}
+  var ex=cfg.metas.find(function(m){return m.mes===mes&&m.tipo===tipo;});
+  if(ex)ex.valor=valor;else cfg.metas.push({id:'mt'+Date.now(),mes:mes,tipo:tipo,valor:valor});
+  document.getElementById('f-meta-valor').value='';
+  await saveCfg();renderConfig();
+}
+async function delMeta(id){
+  if(!confirm('Apagar esta meta?'))return;
+  cfg.metas=cfg.metas.filter(function(m){return m.id!==id;});
+  await saveCfg();renderConfig();
+}
+function getMeta(mes,tipo){var m=(cfg.metas||[]).find(function(x){return x.mes===mes&&x.tipo===tipo;});return m?m.valor:null;}
 
 // ── CAMPANHAS ────────────────────────────────────────────
 async function addCampanha(){
