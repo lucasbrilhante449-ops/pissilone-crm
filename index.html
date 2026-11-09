@@ -1746,6 +1746,13 @@ async function doSync(){
         itens:Array.isArray(meta.itens)?meta.itens:[],
         canal_desc:String(meta.canal_desc||''),
         campanha_id:String(meta.campanha_id||''),
+        // Última mudança de etapa (base do "parado há X dias"). Só existe a
+        // partir do Insights v2; card antigo cai na data de criação.
+        ult_mov:String(meta.ult_mov||''),
+        _etapaOrig:String(r.etapa||''),
+        // Liga o card à conversa quando a API do chat existir (só leitura aqui;
+        // o _meta preserva o valor ao salvar).
+        conversa_id:String(meta.conversa_id||''),
         // meta original inteiro: apiSave regrava por cima dele, pra não apagar
         // campo que outro lado (Edge Function/agente) tenha gravado.
         _meta:meta
@@ -1757,6 +1764,8 @@ async function doSync(){
 }
 
 async function apiSave(c){
+  // Etapa diferente da que veio do banco (ou card novo) = movimentação.
+  if(c._etapaOrig!==c.etapa)c.ult_mov=new Date().toISOString();
   return sbUpsert('contatos',{
     id:c.id,nome:c.nome,tel:c.tel,et:c.et,canal:c.canal,
     valor:c.valor,produto:c.produto,obs:c.obs,data:c.data,compras:c.compras,
@@ -1765,7 +1774,7 @@ async function apiSave(c){
     atv_desc:c.atv_desc||'',resultado:c.resultado||'',
     atv_hist:c.atv_hist||0,neg_hist:c.neg_hist||'',
     aniversario:c.aniversario||null,cod_marketup:c.cod_marketup||'',nf_emitida:c.nf_emitida||false,
-    meta:JSON.stringify(Object.assign({},c._meta||{},{email:c.email||'',cpf:c.cpf||'',endereco:c.endereco||'',notas:c.notas||'',log_hist:c.log_hist||[],campos:c.campos||{},cidade:c.cidade||'',uf:c.uf||'',cep:c.cep||'',nps:(c.nps!=null)?c.nps:null,oficinas_hist:c.oficinas_hist||[],oficina_atual:c.oficina_atual||'',aniversario_ano_enviado:c.aniversario_ano_enviado||'',card_titulo:c.card_titulo||'',turma:c.turma||'',itens:Array.isArray(c.itens)?c.itens:[],canal_desc:c.canal==='outro'?(c.canal_desc||''):'',campanha_id:c.campanha_id||''}))
+    meta:JSON.stringify(Object.assign({},c._meta||{},{email:c.email||'',cpf:c.cpf||'',endereco:c.endereco||'',notas:c.notas||'',log_hist:c.log_hist||[],campos:c.campos||{},cidade:c.cidade||'',uf:c.uf||'',cep:c.cep||'',nps:(c.nps!=null)?c.nps:null,oficinas_hist:c.oficinas_hist||[],oficina_atual:c.oficina_atual||'',aniversario_ano_enviado:c.aniversario_ano_enviado||'',card_titulo:c.card_titulo||'',turma:c.turma||'',itens:Array.isArray(c.itens)?c.itens:[],canal_desc:c.canal==='outro'?(c.canal_desc||''):'',campanha_id:c.campanha_id||'',ult_mov:c.ult_mov||''}))
   });
 }
 
@@ -2506,6 +2515,7 @@ async function saveContato(){
     produto:(fid!=='servicos'&&cardItens.length)?resumoItensCard(cardItens):document.getElementById('f-produto').value.trim(),
     itens:fid!=='servicos'?cardItens.slice():(prev.itens||[]),
     _meta:prev._meta||{},
+    _etapaOrig:prev._etapaOrig,ult_mov:prev.ult_mov||'',
     turma:document.getElementById('f-turma').value,
     obs:document.getElementById('f-obs').value.trim(),
     data:prev.data||new Date().toISOString(),compras:prev.compras||0,
