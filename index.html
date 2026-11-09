@@ -736,9 +736,21 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
         <option value="pix">Pix</option>
         <option value="dinheiro">Dinheiro</option>
         <option value="debito">Débito</option>
+        <option value="boleto">Boleto</option>
         <option value="bonificacao">Bonificação</option>
       </select>
     </div>
+  </div>
+  <div class="fg fg2" style="margin-bottom:.75rem">
+    <div><label class="flbl">Canal da venda *</label>
+      <select class="fi" id="f-neg-canal" onchange="document.getElementById('f-neg-canal-desc').style.display=this.value==='outro'?'block':'none'"></select>
+      <input class="fi" id="f-neg-canal-desc" placeholder="Qual canal?" style="display:none;margin-top:4px">
+    </div>
+    <div><label class="flbl">Campanha</label><select class="fi" id="f-neg-campanha"></select></div>
+  </div>
+  <div class="fg fg2" style="margin-bottom:.75rem;grid-template-columns:1fr 90px">
+    <div><label class="flbl">Cidade da cliente *</label><input class="fi" id="f-neg-cidade" placeholder="Ex: Mossoró"></div>
+    <div><label class="flbl">UF *</label><input class="fi" id="f-neg-uf" maxlength="2" placeholder="RN" style="text-transform:uppercase"></div>
   </div>
   <div style="display:flex;gap:8px">
     <button class="btn primary full" onclick="confirmarGanho()">&#10003; Confirmar ganho</button>
@@ -918,6 +930,7 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
         <option value="pix">Pix</option>
         <option value="dinheiro">Dinheiro</option>
         <option value="debito">Débito</option>
+        <option value="boleto">Boleto</option>
         <option value="bonificacao">Bonificação</option>
       </select>
     </div>
@@ -1222,8 +1235,8 @@ function popularSelectsCanal(valorAtual){
   var ic2=document.getElementById('ins-canal');
   if(ic2){var prevI=ic2.value;ic2.innerHTML='<option value="todos">Todos canais</option>'+opts;ic2.value=prevI||'todos';}
 }
-const FORMA_PAG_LABEL={credito_vista:'Crédito à Vista',credito_parcelado:'Crédito Parcelado',pix:'Pix',dinheiro:'Dinheiro',debito:'Débito',bonificacao:'Bonificação'};
-const FORMA_PAG_COR={credito_vista:'var(--L)',credito_parcelado:'var(--L2)',pix:'var(--A)',dinheiro:'var(--A2)',debito:'var(--AM)',bonificacao:'var(--VD)'};
+const FORMA_PAG_LABEL={credito_vista:'Crédito à Vista',credito_parcelado:'Crédito Parcelado',pix:'Pix',dinheiro:'Dinheiro',debito:'Débito',boleto:'Boleto',bonificacao:'Bonificação'};
+const FORMA_PAG_COR={credito_vista:'var(--L)',credito_parcelado:'var(--L2)',pix:'var(--A)',dinheiro:'var(--A2)',debito:'var(--AM)',boleto:'var(--G3)',bonificacao:'var(--VD)'};
 const TAMANHO_ORDEM=['infantil','pp','p','m','g','gg','xg','unico'];
 
 // ── ÍCONES SVG (linha, 16x16, mesma linguagem visual dos ícones da sidebar) ──
@@ -2070,6 +2083,18 @@ function abrirModalGanho(id){
   var el=document.getElementById('f-neg-valor');if(el)el.value=c.valor||'';
   var elData=document.getElementById('f-neg-data');if(elData)elData.value=hojeISO();
   var fpEl=document.getElementById('f-neg-fp');if(fpEl)fpEl.value='';
+  // Canal, campanha e cidade/UF já vêm do card; a atendente só confirma.
+  var cnEl=document.getElementById('f-neg-canal');
+  cnEl.innerHTML=CANAIS.map(function(ca){return'<option value="'+ca.id+'">'+ca.nome+'</option>';}).join('');
+  cnEl.value=CANAIS.some(function(x){return x.id===c.canal;})?c.canal:'';
+  document.getElementById('f-neg-canal-desc').value=c.canal_desc||'';
+  document.getElementById('f-neg-canal-desc').style.display=cnEl.value==='outro'?'block':'none';
+  var cpEl=document.getElementById('f-neg-campanha');
+  var camps=(cfg.campanhas||[]).filter(function(x){return x.ativa||x.id===c.campanha_id;});
+  cpEl.innerHTML='<option value="">Nenhuma</option>'+camps.map(function(x){return'<option value="'+x.id+'">'+escHtml(x.nome)+'</option>';}).join('');
+  cpEl.value=c.campanha_id||'';
+  document.getElementById('f-neg-cidade').value=c.cidade||'';
+  document.getElementById('f-neg-uf').value=c.uf||'';
   var hist=parseNegHist(c);
   var ganhoAnts=hist.filter(function(h){return h.r==='ganho';});
   var prev=document.getElementById('f-neg-hist-preview');
@@ -2215,6 +2240,14 @@ async function confirmarGanho(){
   if(!pedidoItens.length){setFb('fb-neg','Adicione ao menos um produto ao pedido','er');return;}
   var fpNeg=(document.getElementById('f-neg-fp')||{value:''}).value;
   if(!fpNeg){setFb('fb-neg','Selecione a forma de pagamento','er');return;}
+  var canalNeg=document.getElementById('f-neg-canal').value;
+  var canalDescNeg=document.getElementById('f-neg-canal-desc').value.trim();
+  if(!canalNeg){setFb('fb-neg','Selecione o canal da venda','er');return;}
+  if(canalNeg==='outro'&&!canalDescNeg){setFb('fb-neg','Descreva o canal "Outro"','er');return;}
+  var cidadeNeg=document.getElementById('f-neg-cidade').value.trim();
+  var ufNeg=document.getElementById('f-neg-uf').value.trim().toUpperCase();
+  if(!cidadeNeg||!/^[A-Z]{2}$/.test(ufNeg)){setFb('fb-neg','Informe a cidade e a UF (2 letras) da cliente','er');return;}
+  var campanhaNeg=document.getElementById('f-neg-campanha').value;
   var valorNeg=parseFloat(document.getElementById('f-neg-valor').value)||0;
   var hist=parseNegHist(c);
   var ganhosAnt=hist.filter(function(h){return h.r==='ganho';});
@@ -2222,9 +2255,17 @@ async function confirmarGanho(){
   var dataGanho=(document.getElementById('f-neg-data')&&document.getElementById('f-neg-data').value)||hojeISO();
   var itensGanho=pedidoItens.map(function(it){var l=linhaDoItem(it,c.funil);return l?Object.assign({},it,{linha:l}):it;});
   var vendaId=c.id+'_'+Date.now();
-  hist.push({r:'ganho',d:dataGanho,m:'',v:valorNeg,itens:itensGanho,nf:false,fp:fpNeg,venda_id:vendaId});
+  // Canal e campanha ficam na venda (a 3ª compra de uma Pissifã pode vir de
+  // outro canal que a 1ª); o card guarda o canal de origem e a última campanha.
+  var vendaNeg={r:'ganho',d:dataGanho,m:'',v:valorNeg,itens:itensGanho,nf:false,fp:fpNeg,venda_id:vendaId,canal:canalNeg};
+  if(canalNeg==='outro')vendaNeg.canal_desc=canalDescNeg;
+  if(campanhaNeg)vendaNeg.campanha_id=campanhaNeg;
+  hist.push(vendaNeg);
   c.neg_hist=JSON.stringify(hist);
   c.valor=valorNeg;c.et='fechado';c.motivo_perda='';c.resultado='';
+  c.cidade=cidadeNeg;c.uf=ufNeg;
+  if(!c.canal||!CANAIS.some(function(x){return x.id===c.canal;})){c.canal=canalNeg;c.canal_desc=canalDescNeg;}
+  if(campanhaNeg)c.campanha_id=campanhaNeg;
   if(c.funil==='pissifa'){c.etapa='psf-ativo';}
   else if(c.funil==='d2c'){
     var movidoPissifa=isSegundoGanhoD2c&&moverParaPissifaAuto(c);
