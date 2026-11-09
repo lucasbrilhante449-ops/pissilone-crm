@@ -3102,18 +3102,21 @@ function metaHtml(realizado,meta,fmt){
 }
 // Barras verticais empilhadas produto × serviço, total no topo. Uma escala,
 // 2px de vão entre segmentos, ponta arredondada só no topo, tooltip nativo.
-function svgBarStack(data,vbW,vbH,cores){
+// nomes/detId: rótulos das duas séries no detalhe e o id da linha de detalhe
+// (padrão: produto × serviço, #mes-det).
+function svgBarStack(data,vbW,vbH,cores,nomes,detId){
   if(!data||!data.length)return'';
+  nomes=nomes||{p:'Produto',s:'Serviço'};detId=detId||'mes-det';
   var maxV=Math.max.apply(null,data.map(function(d){return d.p+d.s;}))||1;
   var pL=8,pR=8,pT=20,pB=22,n=data.length,slot=(vbW-pL-pR)/n,bw=Math.min(slot*0.62,46),ch=vbH-pT-pB,gap=2;
   var fmtK=function(v){return v>=1000?'R$'+(v/1000).toFixed(v>=10000?0:1).replace('.',',')+'k':'R$'+Math.round(v);};
-  var o='<svg viewBox="0 0 '+vbW+' '+vbH+'" width="100%" style="display:block;overflow:visible;max-width:720px;margin:0 auto" role="img" aria-label="Receita por mês, produto e serviço">';
+  var o='<svg viewBox="0 0 '+vbW+' '+vbH+'" width="100%" style="display:block;overflow:visible;max-width:720px;margin:0 auto" role="img" aria-label="Receita por mês, '+nomes.p+' e '+nomes.s+'">';
   o+='<line x1="'+pL+'" x2="'+(vbW-pR)+'" y1="'+(pT+ch)+'" y2="'+(pT+ch)+'" stroke="var(--G2)" stroke-width="1"/>';
   data.forEach(function(d,i){
     var x=pL+slot*i+(slot-bw)/2,tot=d.p+d.s;
     var hp=d.p/maxV*ch,hs=d.s/maxV*ch,yBase=pT+ch;
-    var tip=d.l+' — Total '+fmtValorBR(tot)+' · Produto '+fmtValorBR(d.p)+' · Serviço '+fmtValorBR(d.s);
-    o+='<g style="cursor:pointer" data-tip="'+tip+'" onclick="var e=document.getElementById(\'mes-det\');if(e)e.textContent=this.getAttribute(\'data-tip\')"><title>'+tip+'</title><rect x="'+x.toFixed(1)+'" y="'+pT+'" width="'+bw.toFixed(1)+'" height="'+ch+'" fill="transparent"/>';
+    var tip=d.l+' — Total '+fmtValorBR(tot)+' · '+nomes.p+' '+fmtValorBR(d.p)+' · '+nomes.s+' '+fmtValorBR(d.s);
+    o+='<g style="cursor:pointer" data-tip="'+tip+'" onclick="var e=document.getElementById(\''+detId+'\');if(e)e.textContent=this.getAttribute(\'data-tip\')"><title>'+tip+'</title><rect x="'+x.toFixed(1)+'" y="'+pT+'" width="'+bw.toFixed(1)+'" height="'+ch+'" fill="transparent"/>';
     var topo=null;
     if(hp>0){var yp=yBase-hp;o+='<rect x="'+x.toFixed(1)+'" y="'+yp.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+hp.toFixed(1)+'" fill="'+cores.p+'"/>';topo={y:yp,h:hp,c:cores.p};}
     if(hs>0){var ys=yBase-hp-(hp>0?gap:0)-hs;o+='<rect x="'+x.toFixed(1)+'" y="'+ys.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+hs.toFixed(1)+'" fill="'+cores.s+'"/>';topo={y:ys,h:hs,c:cores.s};}
@@ -3123,6 +3126,192 @@ function svgBarStack(data,vbW,vbH,cores){
     o+='<text x="'+(x+bw/2).toFixed(1)+'" y="'+(vbH-5)+'" text-anchor="middle" font-size="10.5" fill="var(--G3)" font-family="system-ui,Segoe UI,sans-serif">'+d.l+'</text></g>';
   });
   return o+'</svg>';
+}
+
+// ── ABAS DO INSIGHTS (Etapa 4) ───────────────────────────
+// Visão geral + telas de análise. Todas respeitam o período e os filtros.
+var insAba='geral';
+var INS_ABAS=[['geral','Visão geral'],['oficinas','Oficinas → produto'],['clientes','Novos × recorrentes'],['campanhas','Campanhas'],['impacto','Impacto (artesãs)']];
+function setInsAba(a){insAba=a;renderInsights();}
+function abasInsightsHtml(){
+  // Uma linha só, com rolagem lateral no celular.
+  return'<div class="funil-sel" style="margin-bottom:1rem;flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch">'+INS_ABAS.map(function(a){return'<button class="ft'+(insAba===a[0]?' active':'')+'" style="white-space:nowrap;flex-shrink:0" onclick="setInsAba(\''+a[0]+'\')">'+a[1]+'</button>';}).join('')+'</div>';
+}
+var fmtRS=function(v){return'R$'+Math.round(v||0).toLocaleString('pt-BR');};
+function insTabela(cab,linhas){
+  return'<div class="tab-scroll" style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:.75rem 1rem;margin-bottom:1rem"><table class="pie-tab"><thead><tr>'+cab.map(function(c){return'<th>'+c+'</th>';}).join('')+'</tr></thead><tbody>'+linhas.map(function(l){return'<tr>'+l.map(function(x){return'<td>'+x+'</td>';}).join('')+'</tr>';}).join('')+'</tbody></table></div>';
+}
+function insMc(n,l,s,extra){return'<div class="mc"'+(extra||'')+'><div class="mc-n">'+n+'</div><div class="mc-l">'+l+'</div>'+(s?'<div class="mc-s">'+s+'</div>':'')+'</div>';}
+// Vendas de produto (parte não-serviço de cada venda), da base inteira.
+function vendasProdutoPorCliente(allNegs){
+  var out=[];
+  allNegs.forEach(function(n){
+    if(n.r!=='ganho')return;
+    var v=ratearVenda(n).reduce(function(a,r){return r.cls.tipo==='produto'?a+r.v:a;},0);
+    if(v>0)out.push({k:chaveCliente(n.tel,n.cid),d:n.d,v:v,cid:n.cid});
+  });
+  return out;
+}
+
+// 4.A OFICINA → PRODUTO. Aluna = card do funil Serviços com ganho ou em
+// Inscrito/Participou (sem cancelamento). Data da oficina = data da turma;
+// sem ela, a data da inscrição (ganho).
+function insOficinasHtml(ctx){
+  var turmaPorNome={};(cfg.turmas||[]).forEach(function(t){turmaPorNome[t.nome]=t;});
+  var alunas=[];
+  ctx.baseContatos.forEach(function(c){
+    if(c.funil!=='servicos'||c.resultado==='perda')return;
+    var hist=parseNegHist(c),g=hist.filter(function(x){return x.r==='ganho';});
+    if(!g.length&&!isGanho('servicos',c.etapa))return;
+    var t=turmaPorNome[c.turma];
+    var e=getEtapa(c.funil,c.etapa);
+    alunas.push({c:c,k:chaveCliente(c.tel,c.id),turma:c.turma||'Sem turma',d:(t&&t.data)||(g[0]&&g[0].d)||String(c.data).slice(0,10),
+      receita:g.reduce(function(a,x){return a+(x.v||0);},0),participou:Boolean(e&&/participou/i.test(e.nome))});
+  });
+  var prod=vendasProdutoPorCliente(ctx.allNegs);
+  var alunasPer=filtNegsPer(alunas,false);
+  // Comprou produto em até 60 dias depois da oficina (cada aluna conta uma vez).
+  var compraram=alunasPer.filter(function(a){var lim=addDiasISO(a.d,60);return prod.some(function(p){return p.k===a.k&&p.d>=a.d&&p.d<=lim;});});
+  var chavesCompraram={};compraram.forEach(function(a){chavesCompraram[a.k]=1;});
+  var nAlunas=Object.keys(alunasPer.reduce(function(o,a){o[a.k]=1;return o;},{})).length;
+  var nCompraram=Object.keys(chavesCompraram).length;
+  // Receita de produto do período vinda de quem já era aluna na data da compra.
+  var desdeAluna={};alunas.forEach(function(a){if(!desdeAluna[a.k]||a.d<desdeAluna[a.k])desdeAluna[a.k]=a.d;});
+  var prodPer=filtNegsPer(prod,false);
+  var receitaAlunas=prodPer.filter(function(p){return desdeAluna[p.k]&&p.d>=desdeAluna[p.k];}).reduce(function(a,p){return a+p.v;},0);
+  var receitaProdPer=prodPer.reduce(function(a,p){return a+p.v;},0);
+  window.__insListas.alunas_compraram={titulo:'Alunas que compraram produto até 60 dias depois',itens:compraram.map(function(a){return{cid:a.c.id,sub:a.turma+' · oficina '+fmtDFull(a.d)};})};
+  var h='<div class="slbl">Oficina → produto</div>';
+  h+='<div class="mg" style="margin-bottom:1rem">';
+  h+=insMc(nAlunas,'Alunas no período','oficina com data no período');
+  h+=insMc(nCompraram+' <span style="font-size:.7em;color:var(--G3)">('+(nAlunas?Math.round(nCompraram/nAlunas*100):0)+'%)</span>','Compraram produto','até 60 dias depois',' style="cursor:pointer" onclick="abrirListaInsight(\'alunas_compraram\')"');
+  h+=insMc(fmtRS(receitaAlunas),'Receita de produto de alunas',(receitaProdPer?Math.round(receitaAlunas/receitaProdPer*100):0)+'% da receita de produto');
+  h+='</div>';
+  // Por turma: inscritas, participaram, receita da oficina e vendas de produto no dia (acervo).
+  var porTurma={};
+  alunasPer.forEach(function(a){var t=porTurma[a.turma]||(porTurma[a.turma]={nome:a.turma,d:a.d,insc:0,part:0,rec:0});t.insc++;if(a.participou)t.part++;t.rec+=a.receita;});
+  var linhas=Object.keys(porTurma).map(function(k){return porTurma[k];}).sort(function(a,b){return b.d.localeCompare(a.d);}).map(function(t){
+    var tc=turmaPorNome[t.nome];
+    var noDia=tc&&tc.data?prod.filter(function(p){return p.d===tc.data;}).reduce(function(a,p){return a+p.v;},0):null;
+    return[escHtml(t.nome),tc&&tc.data?fmtDFull(tc.data):'<span style="color:var(--G3)">sem data</span>',t.insc+(tc&&tc.vagas?' / '+tc.vagas:''),t.part,fmtRS(t.rec),noDia==null?'—':fmtRS(noDia)];
+  });
+  h+='<div class="slbl">Vendas por turma</div>';
+  h+=linhas.length?insTabela(['Turma','Data','Inscritas','Participaram','Receita oficina','Produto no dia'],linhas):'<div class="empty" style="margin-bottom:1rem">Nenhuma aluna com oficina no período.</div>';
+  h+='<div class="fat-dica" style="margin-top:0;border:0">"Produto no dia" soma as vendas de produto na data da turma (acervo levado à oficina). Precisa da data da turma, em Oficinas ou Config.</div>';
+  // Próximas turmas: ocupação.
+  var prox=(cfg.turmas||[]).filter(function(t){return t.data&&t.data>=hojeISO();}).sort(function(a,b){return a.data.localeCompare(b.data);});
+  h+='<div class="slbl" style="margin-top:1rem">Ocupação das próximas turmas</div>';
+  if(!prox.length)h+='<div class="empty">Nenhuma turma futura com data. Cadastre em Oficinas → "+ Nova turma".</div>';
+  else h+=insTabela(['Turma','Data','Inscritas','Vagas','Ocupação'],prox.map(function(t){var n=inscritosDaTurma(t).length;return[escHtml(t.nome),fmtDFull(t.data),n,t.vagas!=null?t.vagas:'—',t.vagas?Math.round(n/t.vagas*100)+'%':'—'];}));
+  return h;
+}
+
+// 4.B NOVOS × RECORRENTES. Venda de cliente nova = 1ª compra da cliente
+// (por telefone, na base inteira); as seguintes são recorrentes.
+function insClientesHtml(ctx){
+  var ganhos=ctx.allNegs.filter(function(n){return n.r==='ganho'&&n.d;}).slice().sort(function(a,b){return a.d.localeCompare(b.d);});
+  var visto={},porCli={};
+  ganhos.forEach(function(n){var k=chaveCliente(n.tel,n.cid);n._novo=!visto[k];visto[k]=1;(porCli[k]=porCli[k]||[]).push(n.d);});
+  var per=filtNegsPer(ganhos,false),meses={};
+  per.forEach(function(n){var m=n.d.slice(0,7),x=meses[m]||(meses[m]={nv:0,nn:0,rv:0,rn:0});if(n._novo){x.nv+=n.v||0;x.nn++;}else{x.rv+=n.v||0;x.rn++;}});
+  var ks=Object.keys(meses).sort().slice(-12);
+  var tot={nv:0,nn:0,rv:0,rn:0};ks.forEach(function(m){['nv','nn','rv','rn'].forEach(function(f){tot[f]+=meses[m][f];});});
+  var difs=[];Object.keys(porCli).forEach(function(k){var ds=porCli[k];if(ds.length>=2)difs.push(Math.round((new Date(ds[1]+'T12:00:00')-new Date(ds[0]+'T12:00:00'))/86400000));});
+  var media=difs.length?Math.round(difs.reduce(function(a,b){return a+b;},0)/difs.length):null;
+  var h='<div class="slbl">Novos × recorrentes</div><div class="mg" style="margin-bottom:1rem">';
+  h+=insMc(fmtRS(tot.nv),'Receita de novas',tot.nn+' vendas');
+  h+=insMc(fmtRS(tot.rv),'Receita de recorrentes',tot.rn+' vendas · '+((tot.nv+tot.rv)?Math.round(tot.rv/(tot.nv+tot.rv)*100):0)+'%');
+  h+=insMc(media!=null?media+' d':'—','Da 1ª à 2ª compra','média · mediana '+(difs.length?Math.round(mediana(difs))+' d':'—'));
+  h+='</div>';
+  if(!ks.length)return h+'<div class="empty">Nenhuma venda no período.</div>';
+  var vbW=window.innerWidth&&window.innerWidth<600?340:560;
+  h+='<div style="background:var(--W);border:1px solid var(--G2);border-radius:12px;padding:1rem .75rem .5rem;margin-bottom:1rem">';
+  h+='<div style="display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--G3);margin:0 .25rem .5rem"><span style="display:inline-flex;align-items:center"><span class="pie-sw" style="background:#1baf7a"></span>Novas</span><span style="display:inline-flex;align-items:center"><span class="pie-sw" style="background:#6250d6"></span>Recorrentes</span></div>';
+  h+=svgBarStack(ks.map(function(m){var p=m.split('-');return{p:meses[m].nv,s:meses[m].rv,l:p[1]+'/'+p[0].slice(2)};}),vbW,vbW<560?170:150,{p:'#1baf7a',s:'#6250d6'},{p:'Novas',s:'Recorrentes'},'cli-det');
+  h+='<div id="cli-det" style="font-size:12px;color:var(--K);min-height:16px;margin:.25rem .25rem 0"></div></div>';
+  h+=insTabela(['Mês','Novas (nº)','Novas (R$)','Recorrentes (nº)','Recorrentes (R$)'],ks.map(function(m){var p=m.split('-'),x=meses[m];return[p[1]+'/'+p[0],x.nn,fmtRS(x.nv),x.rn,fmtRS(x.rv)];}));
+  return h;
+}
+
+// 4.C CAMPANHAS. Card da campanha = meta.campanha_id; venda da campanha =
+// campanha gravada na venda, ou a do card quando a venda não tem.
+function insCampanhasHtml(ctx){
+  var h='<div class="slbl">Campanhas</div>';
+  var camps=cfg.campanhas||[];
+  if(!camps.length)return h+'<div class="empty">Nenhuma campanha cadastrada. Crie em Config → Campanhas e marque no card ou na venda.</div>';
+  var cardCamp={};ctx.baseContatos.forEach(function(c){cardCamp[c.id]=c.campanha_id||'';});
+  var negsPer=filtNegsPer(ctx.allNegs,false);
+  var linhas=camps.map(function(cp){
+    var cards=filtPer(ctx.baseContatos.filter(function(c){return c.campanha_id===cp.id;})).length;
+    var dela=negsPer.filter(function(n){return(n.campanha_id||cardCamp[n.cid])===cp.id;});
+    var g=dela.filter(function(n){return n.r==='ganho';}),p=dela.filter(function(n){return n.r==='perda';});
+    var rec=g.reduce(function(a,n){return a+(n.v||0);},0);
+    return{cp:cp,cards:cards,g:g.length,conv:(g.length+p.length)?Math.round(g.length/(g.length+p.length)*100):null,rec:rec};
+  }).sort(function(a,b){return b.rec-a.rec;});
+  return h+insTabela(['Campanha','Cards criados','Ganhos','Conversão','Receita','Ticket'],linhas.map(function(l){
+    return[escHtml(l.cp.nome)+(l.cp.ativa?'':' <span class="pie-sub">(inativa)</span>'),l.cards,l.g,l.conv==null?'—':l.conv+'%','<b>'+fmtRS(l.rec)+'</b>',l.g?fmtRS(l.rec/l.g):'—'];
+  }))+'<div class="fat-dica" style="margin-top:0;border:0">Considera o período filtrado. A campanha vem da venda (escolhida no ganho) ou, se não tiver, do card.</div>';
+}
+
+// 4.D IMPACTO: ARTESÃS. Item vendido cuja estampa (ou, sem ela, o produto)
+// tem artesã no Catálogo. Valor pago = peças × valor pago por peça.
+function artesaDoItem(it){
+  var e=it.estampa&&catalogo.estampas.find(function(x){return x.nome.toLowerCase()===String(it.estampa).toLowerCase();});
+  if(e&&e.artesaId)return{id:e.artesaId,pago:e.valorPagoArtesa};
+  var p=produtoCatalogoDoItem(itemProdutoEfetivo(it));
+  if(p&&p.artesaId)return{id:p.artesaId,pago:p.valorPagoArtesa};
+  return null;
+}
+function insImpactoHtml(ctx){
+  var h='<div class="slbl">Impacto: artesãs</div>';
+  var per=filtNegsPer(ctx.allNegs.filter(function(n){return n.r==='ganho';}),false);
+  var porA={},recProd=0,semValor=false;
+  per.forEach(function(n){ratearVenda(n).forEach(function(r){
+    if(r.cls.tipo!=='produto')return;recProd+=r.v;
+    var a=artesaDoItem(r.it);if(!a)return;
+    var x=porA[a.id]||(porA[a.id]={pecas:0,rec:0,pago:0});
+    var q=parseInt(r.it.qty)||1;x.pecas+=q;x.rec+=r.v;
+    if(a.pago!=null)x.pago+=q*a.pago;else semValor=true;
+  });});
+  var ativas=(cfg.artesas||[]).filter(function(a){return a.ativa;}).length;
+  var tot={pecas:0,rec:0,pago:0};Object.keys(porA).forEach(function(k){tot.pecas+=porA[k].pecas;tot.rec+=porA[k].rec;tot.pago+=porA[k].pago;});
+  h+='<div class="mg" style="margin-bottom:1rem">';
+  h+=insMc(ativas,'Artesãs ativas','cadastradas na Config');
+  h+=insMc(fmtRS(tot.pago),'Pago às artesãs',tot.pecas+' peças no período');
+  h+=insMc((recProd?Math.round(tot.rec/recProd*100):0)+'%','Da receita de produto',fmtRS(tot.rec)+' feitos por artesãs');
+  h+='</div>';
+  var ids=Object.keys(porA);
+  if(!ids.length)h+='<div class="empty">Nenhuma peça de artesã vendida no período. No Catálogo, marque "feito à mão" e escolha a artesã da peça.</div>';
+  else h+=insTabela(['Artesã','Peças','Receita gerada','Valor pago'],ids.sort(function(a,b){return porA[b].rec-porA[a].rec;}).map(function(id){return[escHtml(artesaNome(id)||'(apagada)'),porA[id].pecas,fmtRS(porA[id].rec),fmtRS(porA[id].pago)];}));
+  if(semValor)h+='<div class="fat-dica" style="margin-top:0;border:0">Há peças sem "valor pago por peça" no Catálogo: o valor pago está subestimado.</div>';
+  return h;
+}
+
+// 4.E QUALIDADE DOS DADOS (rodapé da Visão geral). Meta: tudo em 0%.
+function qualidadeDadosHtml(negGanhos){
+  var tot=negGanhos.length;
+  var cont={canal:0,fp:0,linha:0,cidade:0},lst={canal:[],fp:[],linha:[],cidade:[]};
+  negGanhos.forEach(function(n){
+    var c=contatos.find(function(x){return x.id===n.cid;})||{};
+    var sub=fmtDFull(n.d)+(n.v?' · '+fmtValorBR(n.v):'');
+    if(!n.canal||(n.canal==='outro'&&!n.canal_desc)){cont.canal++;lst.canal.push({cid:n.cid,sub:sub});}
+    if(!n.fp){cont.fp++;lst.fp.push({cid:n.cid,sub:sub});}
+    var semL=!(n.itens&&n.itens.length)||ratearVenda(n).some(function(r){return r.cls.tipo==='produto'&&r.cls.cat==='_sem';});
+    if(semL){cont.linha++;lst.linha.push({cid:n.cid,sub:sub+(n.itens&&n.itens.length?'':' · sem itens')});}
+    if(!c.cidade){cont.cidade++;lst.cidade.push({cid:n.cid,sub:sub});}
+  });
+  var nomes={canal:'sem canal',fp:'sem forma de pagamento',linha:'sem linha (ou sem itens)',cidade:'sem cidade'};
+  Object.keys(lst).forEach(function(k){window.__insListas['q_'+k]={titulo:'Vendas '+nomes[k],itens:lst[k]};});
+  var prodSemLinha=catalogo.produtos.filter(function(p){return p.natureza!=='servico'&&!normLinha(p.categoria);}).length;
+  var feitosSemArtesa=catalogo.estampas.concat(catalogo.produtos).filter(function(i){return i.feitoAMao&&!i.artesaId;}).length;
+  var celula=function(k){var pct=tot?Math.round(cont[k]/tot*100):0,ok=cont[k]===0;
+    return'<div class="mc ins-click" onclick="abrirListaInsight(\'q_'+k+'\')" style="'+(ok?'border-color:var(--VD);background:var(--VD2)':'')+'"><div class="mc-n" style="color:'+(ok?'var(--VD)':'var(--VM)')+'">'+(ok?'✓ 0%':pct+'%')+'</div><div class="mc-l">Ganhos '+nomes[k]+'</div><div class="mc-s">'+cont[k]+' de '+tot+'</div></div>';};
+  var catCel=function(n,l){var ok=n===0;return'<div class="mc" style="'+(ok?'border-color:var(--VD);background:var(--VD2)':'')+'"><div class="mc-n" style="color:'+(ok?'var(--VD)':'var(--AM)')+'">'+(ok?'✓ 0':n)+'</div><div class="mc-l">'+l+'</div></div>';};
+  var h='<div class="divider"></div><div class="slbl">Qualidade dos dados</div>';
+  h+='<div style="font-size:12px;color:var(--G3);margin-bottom:.6rem">Vendas do período com cadastro incompleto. Meta: tudo verde. Toque para ver a lista e corrigir.</div>';
+  h+='<div class="mg" style="margin-bottom:.6rem">'+['canal','fp','linha','cidade'].map(celula).join('')+'</div>';
+  h+='<div class="mg" style="margin-bottom:1rem">'+catCel(prodSemLinha,'Produtos sem linha (Catálogo)')+catCel(feitosSemArtesa,'Feitos à mão sem artesã')+'</div>';
+  return h;
 }
 
 function renderInsights(){
@@ -3149,7 +3338,7 @@ function renderInsights(){
     // canal: o gravado na venda (Insights v2) ou o do card. primeiro: 1º ganho
     // do card, base do ciclo de venda (criação do card → ganho).
     var jaGanhou=false;
-    negHist.forEach(function(x){var primeiro=x.r==='ganho'&&!jaGanhou;if(x.r==='ganho')jaGanhou=true;allNegs.push({r:x.r,d:x.d||fb,m:x.m,mt:x.mt||'',v:x.v,itens:x.itens||[],fp:x.fp||'',canal:x.canal||c.canal||'outro',campanha_id:x.campanha_id||'',primeiro:primeiro,cdata:fb,cid:c.id,tel:c.tel,funil:c.funil,usuario:c.usuario});});
+    negHist.forEach(function(x){var primeiro=x.r==='ganho'&&!jaGanhou;if(x.r==='ganho')jaGanhou=true;allNegs.push({r:x.r,d:x.d||fb,m:x.m,mt:x.mt||'',v:x.v,itens:x.itens||[],fp:x.fp||'',canal:x.canal||c.canal||'outro',canal_desc:x.canal?(x.canal_desc||''):(c.canal_desc||''),campanha_id:x.campanha_id||'',primeiro:primeiro,cdata:fb,cid:c.id,tel:c.tel,funil:c.funil,usuario:c.usuario});});
     // Contatos em "Cliente Novo" (D2C) ou "Fechado" (B2B) sem entrada formal de ganho = ganho implícito
     var temGanho=negHist.some(function(x){return x.r==='ganho';});
     var eAlvo=getEtapa(c.funil,c.etapa);var nAlvo=eAlvo?eAlvo.nome.toLowerCase():'';
@@ -3157,6 +3346,14 @@ function renderInsights(){
     if(!temGanho&&isGanhoFinal){allNegs.push({r:'ganho',d:fb,m:'',v:c.valor||0,itens:[],canal:c.canal||'outro',primeiro:true,cdata:fb,implicito:true,cid:c.id,tel:c.tel,funil:c.funil,usuario:c.usuario});}
   });
   if(iFunil!=='todos')allNegs=allNegs.filter(function(n){return n.funil===iFunil;});
+  // Abas de análise (Etapa 4): mesmas vendas e filtros, tela própria.
+  window.__insListas={};
+  if(insAba!=='geral'){
+    var ctxAba={allNegs:allNegs,baseContatos:baseContatos};
+    var telas={oficinas:insOficinasHtml,clientes:insClientesHtml,campanhas:insCampanhasHtml,impacto:insImpactoHtml};
+    document.getElementById('ins-content').innerHTML=abasInsightsHtml()+(telas[insAba]||function(){return'';})(ctxAba);
+    return;
+  }
   var ganhosPorCliente={};
   // Agrupado por telefone (não por id de card): desde que o card passou a MOVER pro Pissifã na
   // 2ª compra (em vez de duplicar), a 1ª compra pode acabar "dentro" de um card hoje com
@@ -3242,7 +3439,7 @@ function renderInsights(){
     atelie:{titulo:'Visitas ao Ateliê',itens:canalBase.filter(function(c){return c.canal==='atelie'&&contatoTeveEventoNoPeriodo(c);}).map(function(c){return{cid:c.id};})}
   };
   var mesesMap={};negGanhos.forEach(function(n){var m=(n.d||'').slice(0,7);if(!m||m.length<7)return;if(!mesesMap[m])mesesMap[m]={p:0,s:0};ratearVenda(n).forEach(function(r){mesesMap[m][r.cls.tipo==='servico'?'s':'p']+=r.v;});});var mesesKeys=Object.keys(mesesMap).sort();if(mesesKeys.length>12)mesesKeys=mesesKeys.slice(mesesKeys.length-12);var mesesData=mesesKeys.map(function(m){var p=m.split('-');return{p:mesesMap[m].p,s:mesesMap[m].s,l:p[1]+'/'+p[0].slice(2)};});
-  var h='';
+  var h=abasInsightsHtml();
   // ── HERO CARDS ──
   var fmtR=function(v){return'R$'+Math.round(v).toLocaleString('pt-BR');};
   var metaProd=metaDoPeriodo('receita_produto'),metaServ=metaDoPeriodo('receita_servico'),metaVendas=metaDoPeriodo('vendas');
@@ -3572,6 +3769,8 @@ function renderInsights(){
     });
     h+='</div></div>';
   }
+  // ── QUALIDADE DOS DADOS (rodapé) ──
+  h+=qualidadeDadosHtml(negGanhos);
   document.getElementById('ins-content').innerHTML=h;
   renderInsightsPissifa();
 }
