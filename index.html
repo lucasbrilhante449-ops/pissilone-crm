@@ -520,9 +520,8 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
   <button class="btn sm" onclick="openUserModal()">+ Novo usuário</button>
   <div class="divider" style="margin:1.25rem 0"></div>
   <div class="slbl">Canais de Origem</div>
-  <div style="font-size:12px;color:var(--G3);margin-bottom:.75rem">Opções disponíveis no campo "Canal" do contato e no filtro dos Insights</div>
+  <div style="font-size:12px;color:var(--G3);margin-bottom:.75rem">Lista fixa, usada no campo "Canal" do card e nos Insights. "Outro" pede a descrição do canal.</div>
   <div id="cfg-canais"></div>
-  <button class="btn sm" onclick="openCanalModal()">+ Novo canal</button>
   <div class="divider" style="margin:1.25rem 0"></div>
   <div class="slbl">Linhas da marca</div>
   <div style="font-size:12px;color:var(--G3);margin-bottom:.75rem">Lista fixa, usada nos Insights. A linha é escolhida no Catálogo: na estampa (vale primeiro) ou no produto. Oficinas entram como serviço, fora das linhas. "Feito à mão" não é linha: é uma marcação na estampa/produto.</div>
@@ -593,7 +592,8 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
   </div>
   <div class="fg fg3">
     <div><label class="flbl">Canal</label>
-      <select class="fi" id="f-canal"></select>
+      <select class="fi" id="f-canal" onchange="updCanalDesc()"></select>
+      <input class="fi" id="f-canal-desc" placeholder="Qual canal?" style="display:none;margin-top:4px">
     </div>
     <div><label class="flbl">Valor (R$)</label><input class="fi" type="number" id="f-valor" placeholder="120"></div>
     <div><label class="flbl">Próx. atividade</label><input class="fi" type="date" id="f-atv-data-modal"></div>
@@ -967,16 +967,6 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
 </div>
 </div>
 
-<!-- MODAL CANAL DE ORIGEM -->
-<div class="overlay" id="modal-canal" style="display:none">
-<div class="modal">
-  <div class="mtitle"><span id="mcanal-title">Novo canal</span><button class="mcl" onclick="closeM('modal-canal')">✕</button></div>
-  <div class="fg fg1" style="margin-bottom:1rem"><div><label class="flbl">Nome do canal</label><input class="fi" id="f-canal-nome" placeholder="Ex: Feira, Grupo WhatsApp..." onkeydown="if(event.key==='Enter')saveCanal()"></div></div>
-  <button class="btn primary full" onclick="saveCanal()">Salvar</button>
-  <div class="fb" id="fb-canal"></div>
-</div>
-</div>
-
 <!-- MODAL CAMPO PERSONALIZADO -->
 <div class="overlay" id="modal-campo" style="display:none">
 <div class="modal" style="max-width:440px">
@@ -1158,12 +1148,27 @@ let dragEncomendaId=null;
 var pedidoItens=[];
 var editNegItens=[];
 
-const CANAL_PADRAO=[{id:'instagram',nome:'Instagram'},{id:'story',nome:'Story'},{id:'anuncio',nome:'Anúncio'},{id:'indicacao',nome:'Indicação'},{id:'atelie',nome:'Ateliê'},{id:'busca',nome:'Google'},{id:'whatsapp',nome:'WhatsApp'},{id:'site',nome:'Site'},{id:'outro',nome:'Outro'}];
-function canalLabel(id){if(!id)return'';var c=(cfg.canais||[]).find(function(x){return x.id===id;});return c?c.nome:id;}
+// Canais de aquisição: lista fixa (os Insights comparam canal a canal, então
+// não é editável na Config). Os ids já gravados nos cards foram mantidos;
+// "busca" (Google) saiu da lista mas segue com nome se aparecer num card antigo.
+// cfg.canais ficou no banco só por compatibilidade e não é mais lido.
+const CANAIS=[
+  {id:'instagram',nome:'Instagram (post/reels)'},{id:'story',nome:'Story'},
+  {id:'anuncio',nome:'Anúncio'},{id:'whatsapp',nome:'WhatsApp'},
+  {id:'site',nome:'Site'},{id:'atelie',nome:'Ateliê'},{id:'feira',nome:'Feira'},
+  {id:'oficina',nome:'Oficina (aluna)'},{id:'indicacao',nome:'Indicação'},{id:'outro',nome:'Outro'}
+];
+const CANAL_LEGADO={busca:'Google'};
+const CANAL_PADRAO=CANAIS;
+function canalLabel(id){if(!id)return'';var c=CANAIS.find(function(x){return x.id===id;});return c?c.nome:(CANAL_LEGADO[id]||id);}
+function updCanalDesc(){
+  var w=document.getElementById('f-canal-desc'),fc=document.getElementById('f-canal');
+  if(w&&fc)w.style.display=fc.value==='outro'?'block':'none';
+}
 function popularSelectsCanal(valorAtual){
-  var opts=(cfg.canais||[]).map(function(ca){return'<option value="'+ca.id+'">'+ca.nome+'</option>';}).join('');
+  var opts=CANAIS.map(function(ca){return'<option value="'+ca.id+'">'+ca.nome+'</option>';}).join('');
   var fc=document.getElementById('f-canal');
-  if(fc){var prev=valorAtual!==undefined?valorAtual:fc.value;fc.innerHTML=opts;fc.value=prev||(cfg.canais[0]?cfg.canais[0].id:'');}
+  if(fc){var prev=valorAtual!==undefined?valorAtual:fc.value;fc.innerHTML=opts;if(prev&&!CANAIS.some(function(x){return x.id===prev;}))fc.innerHTML+='<option value="'+prev+'">'+canalLabel(prev)+'</option>';fc.value=prev||CANAIS[0].id;updCanalDesc();}
   var ic2=document.getElementById('ins-canal');
   if(ic2){var prevI=ic2.value;ic2.innerHTML='<option value="todos">Todos canais</option>'+opts;ic2.value=prevI||'todos';}
 }
@@ -1701,6 +1706,7 @@ async function doSync(){
         card_titulo:String(meta.card_titulo||''),
         turma:String(meta.turma||''),
         itens:Array.isArray(meta.itens)?meta.itens:[],
+        canal_desc:String(meta.canal_desc||''),
         // meta original inteiro: apiSave regrava por cima dele, pra não apagar
         // campo que outro lado (Edge Function/agente) tenha gravado.
         _meta:meta
@@ -1720,7 +1726,7 @@ async function apiSave(c){
     atv_desc:c.atv_desc||'',resultado:c.resultado||'',
     atv_hist:c.atv_hist||0,neg_hist:c.neg_hist||'',
     aniversario:c.aniversario||null,cod_marketup:c.cod_marketup||'',nf_emitida:c.nf_emitida||false,
-    meta:JSON.stringify(Object.assign({},c._meta||{},{email:c.email||'',cpf:c.cpf||'',endereco:c.endereco||'',notas:c.notas||'',log_hist:c.log_hist||[],campos:c.campos||{},cidade:c.cidade||'',uf:c.uf||'',cep:c.cep||'',nps:(c.nps!=null)?c.nps:null,oficinas_hist:c.oficinas_hist||[],oficina_atual:c.oficina_atual||'',aniversario_ano_enviado:c.aniversario_ano_enviado||'',card_titulo:c.card_titulo||'',turma:c.turma||'',itens:Array.isArray(c.itens)?c.itens:[]}))
+    meta:JSON.stringify(Object.assign({},c._meta||{},{email:c.email||'',cpf:c.cpf||'',endereco:c.endereco||'',notas:c.notas||'',log_hist:c.log_hist||[],campos:c.campos||{},cidade:c.cidade||'',uf:c.uf||'',cep:c.cep||'',nps:(c.nps!=null)?c.nps:null,oficinas_hist:c.oficinas_hist||[],oficina_atual:c.oficina_atual||'',aniversario_ano_enviado:c.aniversario_ano_enviado||'',card_titulo:c.card_titulo||'',turma:c.turma||'',itens:Array.isArray(c.itens)?c.itens:[],canal_desc:c.canal==='outro'?(c.canal_desc||''):''}))
   });
 }
 
@@ -2346,6 +2352,7 @@ function openContato(id=null,fid=null,eid=null){
   const us=document.getElementById('f-user');
   us.innerHTML='<option value="">Nenhum</option>'+cfg.usuarios.map(u=>`<option value="${u.id}">${u.nome}</option>`).join('');
   popularSelectsCanal(c?c.canal:null);
+  document.getElementById('f-canal-desc').value=c?(c.canal_desc||''):'';
   if(c){
     document.getElementById('f-nome').value=c.nome;
     document.getElementById('f-card-titulo').value=c.card_titulo||'';
@@ -2451,6 +2458,7 @@ async function saveContato(){
     tel:document.getElementById('f-tel').value.trim(),
     et:isGanho(fid,eid)?'fechado':isPerdido(fid,eid)?'perdido':'atendimento',
     canal:document.getElementById('f-canal').value,
+    canal_desc:document.getElementById('f-canal-desc').value.trim(),
     valor:parseFloat(document.getElementById('f-valor').value)||0,
     // Com lista de produtos, o campo texto "produto" vira o resumo dela (aparece
     // em relatórios/busca); sem lista, mantém o que já estava (ou a oficina).
@@ -2785,12 +2793,13 @@ function renderFaturamentoTipoCategoria(negGanhos){
 }
 
 // Paleta categórica (8 cores, ordem fixa, validada pra daltonismo — skill dataviz).
-// A cor segue o CANAL (posição dele em cfg.canais), nunca o ranking: o mesmo
+// A cor segue o CANAL (posição dele em CANAIS), nunca o ranking: o mesmo
 // canal mantém a cor quando o período/filtro muda a ordem.
 var CORES_CANAL=['#2a78d6','#eb6834','#1baf7a','#eda100','#e87ba4','#008300','#6250d6','#e34948'];
 var COR_OUTROS='#8a909c';
 function corDoCanal(k){
-  var ids=(cfg.canais||[]).map(function(c){return c.id;});
+  // 10 canais e 8 cores: Indicação e Outro ficam no cinza de "outros".
+  var ids=CANAIS.map(function(c){return c.id;});
   var i=ids.indexOf(k);
   return i>=0&&i<CORES_CANAL.length?CORES_CANAL[i]:COR_OUTROS;
 }
@@ -4206,18 +4215,7 @@ function renderConfig(){
   // canais de origem
   var canaisEl=document.getElementById('cfg-canais');
   if(canaisEl){
-    var canaisArr=cfg.canais||[];
-    if(!canaisArr.length){
-      canaisEl.innerHTML='<div style="font-size:12px;color:var(--G3);font-style:italic;margin-bottom:.75rem">Nenhum canal cadastrado</div>';
-    }else{
-      var cnh='';
-      canaisArr.forEach(function(ca){
-        cnh+='<span class="tag-chip">'+ca.nome
-          +'<button class="btn xs" onclick="openCanalModal(\''+ca.id+'\')" title="Editar">'+ic('pencil')+'</button>'
-          +'<button class="btn xs danger" onclick="delCanal(\''+ca.id+'\')" title="Remover">'+ic('trash')+'</button></span>';
-      });
-      canaisEl.innerHTML='<div class="tag-row" style="margin-bottom:.75rem">'+cnh+'</div>';
-    }
+    canaisEl.innerHTML='<div class="tag-row" style="margin-bottom:.75rem">'+CANAIS.map(function(ca){return'<span class="tag-chip" style="padding-right:13px">'+ca.nome+'</span>';}).join('')+'</div>';
   }
   var catEl=document.getElementById('cfg-categorias');
   if(catEl){
@@ -4739,51 +4737,6 @@ function popularSelectCategoria(){
   sel.innerHTML='<option value="">-- Sem linha --</option>'+getCategorias().map(function(c){return'<option value="'+c.id+'">'+c.nome+'</option>';}).join('');
 }
 
-// ── CANAIS DE ORIGEM ─────────────────────────────────────
-let editCanalId=null;
-function slugCanal(nome){
-  var base=String(nome||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
-  if(!base)base='canal';
-  var ids=(cfg.canais||[]).map(function(c){return c.id;});
-  var slug=base,n=2;
-  while(ids.indexOf(slug)!==-1){slug=base+'_'+n;n++;}
-  return slug;
-}
-function openCanalModal(id){
-  editCanalId=id||null;
-  var atual=id?(cfg.canais||[]).find(function(c){return c.id===id;}):null;
-  document.getElementById('mcanal-title').textContent=id?'Editar canal':'Novo canal';
-  document.getElementById('f-canal-nome').value=atual?atual.nome:'';
-  document.getElementById('fb-canal').textContent='';
-  document.getElementById('modal-canal').style.display='flex';
-  setTimeout(function(){document.getElementById('f-canal-nome').focus();},50);
-}
-async function saveCanal(){
-  var nome=document.getElementById('f-canal-nome').value.trim();
-  if(!nome){setFb('fb-canal','Nome obrigatório','er');return;}
-  if(!cfg.canais)cfg.canais=[];
-  if(editCanalId){
-    var dupEdit=cfg.canais.find(function(c){return c.id!==editCanalId&&c.nome.toLowerCase()===nome.toLowerCase();});
-    if(dupEdit){setFb('fb-canal','Já existe um canal com esse nome','er');return;}
-    var atual=cfg.canais.find(function(c){return c.id===editCanalId;});
-    if(atual)atual.nome=nome;
-  }else{
-    var existente=cfg.canais.find(function(c){return c.nome.toLowerCase()===nome.toLowerCase();});
-    if(existente){setFb('fb-canal','Já existe um canal com esse nome','er');return;}
-    cfg.canais.push({id:slugCanal(nome),nome:nome});
-  }
-  await saveCfg();
-  closeM('modal-canal');
-  popularSelectsCanal();
-  if(document.getElementById('cfg-canais'))renderConfig();
-}
-async function delCanal(id){
-  if(!confirm('Remover este canal da lista de seleção? Contatos que já usam esse canal mantêm o valor salvo, só deixa de aparecer como opção.'))return;
-  cfg.canais=(cfg.canais||[]).filter(function(c){return c.id!==id;});
-  await saveCfg();
-  popularSelectsCanal();
-  renderConfig();
-}
 async function salvarRespSite(usuarioId){
   cfg.nuvemshop_responsavel_padrao=usuarioId||'';
   await saveCfg();
