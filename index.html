@@ -814,13 +814,6 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
       <div><div id="atv-atual-data" style="font-size:13px;font-weight:600;color:var(--K)"></div><div id="atv-atual-desc" style="font-size:13px;color:var(--G3);margin-top:2px"></div></div>
       <button class="btn sm" id="btn-checkpoint" onclick="checkpointAtv()" style="white-space:nowrap">✓ Check</button>
     </div>
-    <div id="atv-regua" style="display:none;margin-top:.5rem">
-      <div id="atv-regua-txt" style="font-size:12px;color:var(--G3);margin-bottom:.4rem"></div>
-      <div style="display:flex;gap:8px">
-        <button class="btn sm full" onclick="checkpointAtv(false)">✓ Respondeu</button>
-        <button class="btn sm danger full" onclick="checkpointAtv(true)">✗ Sem resposta</button>
-      </div>
-    </div>
   </div>
   <div class="divider" id="atv-divider" style="display:none"></div>
   <div class="flbl" style="margin-bottom:.5rem">Nova atividade</div>
@@ -1780,7 +1773,6 @@ async function doSync(){
         // partir do Insights v2; card antigo cai na data de criação.
         ult_mov:String(meta.ult_mov||''),
         _etapaOrig:String(r.etapa||''),
-        regua_n:parseInt(meta.regua_n)||0,
         // Liga o card à conversa quando a API do chat existir (só leitura aqui;
         // o _meta preserva o valor ao salvar).
         conversa_id:String(meta.conversa_id||''),
@@ -1796,8 +1788,7 @@ async function doSync(){
 
 async function apiSave(c){
   // Etapa diferente da que veio do banco (ou card novo) = movimentação.
-  // Na mudança, a régua de follow-up recomeça.
-  if(c._etapaOrig!==c.etapa){c.ult_mov=new Date().toISOString();c.regua_n=0;}
+  if(c._etapaOrig!==c.etapa)c.ult_mov=new Date().toISOString();
   return sbUpsert('contatos',{
     id:c.id,nome:c.nome,tel:c.tel,et:c.et,canal:c.canal,
     valor:c.valor,produto:c.produto,obs:c.obs,data:c.data,compras:c.compras,
@@ -1806,7 +1797,7 @@ async function apiSave(c){
     atv_desc:c.atv_desc||'',resultado:c.resultado||'',
     atv_hist:c.atv_hist||0,neg_hist:c.neg_hist||'',
     aniversario:c.aniversario||null,cod_marketup:c.cod_marketup||'',nf_emitida:c.nf_emitida||false,
-    meta:JSON.stringify(Object.assign({},c._meta||{},{email:c.email||'',cpf:c.cpf||'',endereco:c.endereco||'',notas:c.notas||'',log_hist:c.log_hist||[],campos:c.campos||{},cidade:c.cidade||'',uf:c.uf||'',cep:c.cep||'',nps:(c.nps!=null)?c.nps:null,oficinas_hist:c.oficinas_hist||[],oficina_atual:c.oficina_atual||'',aniversario_ano_enviado:c.aniversario_ano_enviado||'',card_titulo:c.card_titulo||'',turma:c.turma||'',itens:Array.isArray(c.itens)?c.itens:[],canal_desc:c.canal==='outro'?(c.canal_desc||''):'',campanha_id:c.campanha_id||'',ult_mov:c.ult_mov||'',regua_n:c.regua_n||0}))
+    meta:JSON.stringify(Object.assign({},c._meta||{},{email:c.email||'',cpf:c.cpf||'',endereco:c.endereco||'',notas:c.notas||'',log_hist:c.log_hist||[],campos:c.campos||{},cidade:c.cidade||'',uf:c.uf||'',cep:c.cep||'',nps:(c.nps!=null)?c.nps:null,oficinas_hist:c.oficinas_hist||[],oficina_atual:c.oficina_atual||'',aniversario_ano_enviado:c.aniversario_ano_enviado||'',card_titulo:c.card_titulo||'',turma:c.turma||'',itens:Array.isArray(c.itens)?c.itens:[],canal_desc:c.canal==='outro'?(c.canal_desc||''):'',campanha_id:c.campanha_id||'',ult_mov:c.ult_mov||''}))
   });
 }
 
@@ -2385,11 +2376,7 @@ function openAtv(id){
     document.getElementById('atv-atual-data').style.color=s==='atrasada'?'var(--VM)':s==='hoje'?'var(--VD)':'var(--K)';
     document.getElementById('atv-atual-desc').textContent=c.atv_desc||'(sem descrição)';
     document.getElementById('atv-atual-desc').style.fontStyle=c.atv_desc?'normal':'italic';
-    // Card em negociação: a conclusão diz se a cliente respondeu (régua).
-    var emRegua=isNegociacao(c.funil,c.etapa);
-    document.getElementById('btn-checkpoint').style.display=emRegua?'none':'inline-flex';
-    document.getElementById('atv-regua').style.display=emRegua?'block':'none';
-    if(emRegua)document.getElementById('atv-regua-txt').textContent='Régua de follow-up: '+(c.regua_n||0)+' de 3 sem resposta.';
+    document.getElementById('btn-checkpoint').style.display='inline-flex';
   }else{wrap.style.display='none';divider.style.display='none';}
   // Sugestão de próxima atividade: follow-up amanhã (editável).
   document.getElementById('f-atv-data').value=addDiasISO(hojeISO(),1);
@@ -2397,40 +2384,25 @@ function openAtv(id){
   document.getElementById('modal-atv').style.display='flex';
 }
 
-// ── RÉGUA DE FOLLOW-UP (D+1, D+3, D+7) ───────────────────
-// Card entra em negociação → follow-up 1 em D+1. A cada "Sem resposta",
-// agenda o próximo (D+3, D+7, contados da entrada). No 3º sem resposta,
-// abre a perda com "Não respondeu" marcado. "Respondeu" zera a régua.
-// meta.regua_n conta os sem resposta; zera quando a etapa muda (apiSave).
-var REGUA_PROX_DIAS=[2,4]; // depois do 1º: +2 (D+3); depois do 2º: +4 (D+7)
+// ── PRÓXIMA ATIVIDADE AUTOMÁTICA ─────────────────────────
+// Todo card aberto sai com próxima atividade, sem clique a mais: card novo
+// ou movido para etapa aberta sem atividade futura ganha follow-up em D+1.
+// (Se a cliente respondeu ou não vai vir da API do chat, via conversa_id.)
 function addDiasISO(iso,n){var d=new Date(iso+'T12:00:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
-// Agenda follow-up em D+1 se o card aberto não tem atividade futura.
 // Devolve true se agendou.
 function agendarFollowupSeVazio(c){
   if(isGanho(c.funil,c.etapa)||isPerdido(c.funil,c.etapa))return false;
   var s=atvStatus(c);if(s==='hoje'||s==='agendada')return false;
-  var neg=isNegociacao(c.funil,c.etapa);
   c.atv_data=addDiasISO(hojeISO(),1);
-  c.atv_desc=neg?'Follow-up 1 (régua)':'Follow-up';
+  c.atv_desc='Follow-up';
   if(!Array.isArray(c.log_hist))c.log_hist=[];
   c.log_hist.push({tipo:'atv_criada',d:new Date().toISOString(),txt:c.atv_desc,data_agendada:c.atv_data});
   return true;
 }
-// Conclui a atividade atual. semResposta: true/false na régua; undefined fora dela.
-// Devolve true quando a régua chegou ao 3º sem resposta.
-function concluirAtividade(c,semResposta){
-  var descAtv=c.atv_desc||'';
+function concluirAtividade(c){
   if(!Array.isArray(c.log_hist))c.log_hist=[];
-  c.log_hist.push({tipo:'atv_concluida',d:new Date().toISOString(),txt:(descAtv||'Atividade')+(semResposta===true?' — sem resposta':semResposta===false?' — respondeu':'')});
+  c.log_hist.push({tipo:'atv_concluida',d:new Date().toISOString(),txt:c.atv_desc||'Atividade'});
   c.atv_hist=(c.atv_hist||0)+1;c.atv_data='';c.atv_desc='';
-  if(semResposta===false)c.regua_n=0;
-  if(semResposta!==true)return false;
-  c.regua_n=(c.regua_n||0)+1;
-  if(c.regua_n>=3)return true;
-  c.atv_data=addDiasISO(hojeISO(),REGUA_PROX_DIAS[c.regua_n-1]);
-  c.atv_desc='Follow-up '+(c.regua_n+1)+' (régua)';
-  c.log_hist.push({tipo:'atv_criada',d:new Date().toISOString(),txt:c.atv_desc,data_agendada:c.atv_data});
-  return false;
 }
 
 async function saveAtv(){
@@ -2460,15 +2432,14 @@ async function clearAtv(){
   closeM('modal-atv');atvCid=null;
 }
 
-async function checkpointAtv(semResposta){
+async function checkpointAtv(){
   const c=contatos.find(x=>x.id===atvCid);if(!c)return;
   const btn=document.getElementById('btn-checkpoint');if(btn){btn.textContent='Salvando...';btn.disabled=true;}
   var descAtv=c.atv_desc||'';
-  var pedirPerda=concluirAtividade(c,semResposta);
+  concluirAtividade(c);
   ss('ld','Concluída...');try{await apiSave(c);logAction('atividade_concluida',(c.nome||atvCid)+(descAtv?' - '+descAtv:''));await doSync();closeM('modal-atv');}catch(ex){ss('er','Erro');}
   if(btn){btn.disabled=false;btn.textContent='✓ Check';}
-  var cid=atvCid;atvCid=null;
-  if(pedirPerda){abrirModalPerda(cid,'Não respondeu');setFb('fb-perda','3 follow-ups sem resposta. Confirme a perda ou cancele para manter o card aberto.','info');}
+  atvCid=null;
 }
 
 // ── CONTATO MODAL ────────────────────────────────────────
@@ -2644,7 +2615,7 @@ async function saveContato(){
     produto:(fid!=='servicos'&&cardItens.length)?resumoItensCard(cardItens):document.getElementById('f-produto').value.trim(),
     itens:fid!=='servicos'?cardItens.slice():(prev.itens||[]),
     _meta:prev._meta||{},
-    _etapaOrig:prev._etapaOrig,ult_mov:prev.ult_mov||'',regua_n:prev.regua_n||0,
+    _etapaOrig:prev._etapaOrig,ult_mov:prev.ult_mov||'',
     turma:document.getElementById('f-turma').value,
     obs:document.getElementById('f-obs').value.trim(),
     data:prev.data||new Date().toISOString(),compras:prev.compras||0,
@@ -3983,8 +3954,6 @@ async function checkpointAtvDetail(){
   if(!currentDetailId)return;
   var c=contatos.find(function(x){return x.id===currentDetailId;});
   if(!c||!c.atv_data)return;
-  // Em negociação, a conclusão precisa dizer se respondeu: vai pro modal da régua.
-  if(isNegociacao(c.funil,c.etapa)){openAtvFromDetail();return;}
   var descAtv=c.atv_desc||'';
   concluirAtividade(c);
   ss('ld','Concluída...');
