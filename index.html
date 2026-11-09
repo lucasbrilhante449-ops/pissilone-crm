@@ -597,7 +597,10 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
   <div id="log-content"><div class="empty">Carregando...</div></div>
 </div>
 <div id="pane-oficinas" class="pane">
-  <div style="font-size:16px;font-weight:700;color:var(--K);margin-bottom:1rem">🎨 Oficinas</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:1rem">
+    <div style="font-size:16px;font-weight:700;color:var(--K)">🎨 Oficinas</div>
+    <button class="btn sm laranja" onclick="openTurmaModal()">+ Nova turma</button>
+  </div>
   <div id="oficinas-content"></div>
 </div>
 <div id="pane-encomendas" class="pane">
@@ -1004,6 +1007,7 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
 <div class="modal">
   <div class="mtitle"><span id="mturma-title">Nova turma</span><button class="mcl" onclick="closeM('modal-turma')">✕</button></div>
   <div class="fg fg1" style="margin-bottom:.75rem"><div><label class="flbl">Nome da turma</label><input class="fi" id="f-turma-nome" placeholder="Ex: Carmorita 2..."></div></div>
+  <div class="fg fg1" style="margin-bottom:.75rem"><div><label class="flbl">Oficina</label><select class="fi" id="f-turma-oficina"></select></div></div>
   <div class="fg fg2" style="margin-bottom:1rem">
     <div><label class="flbl">Data da oficina</label><input class="fi" type="date" id="f-turma-data"></div>
     <div><label class="flbl">Vagas abertas</label><input class="fi" type="number" min="0" id="f-turma-vagas" placeholder="Ex: 15"></div>
@@ -2568,6 +2572,8 @@ async function saveContato(){
     await doSync();
     var insPane=document.getElementById('pane-insights');
     if(insPane&&insPane.classList.contains('active'))renderInsights();
+    var ofPane=document.getElementById('pane-oficinas');
+    if(ofPane&&ofPane.classList.contains('active'))renderOficinas();
   }
   catch(ex){setFb('fb-c','Erro ao salvar','er');console.error(ex);}
   document.getElementById('btn-sc').disabled=false;
@@ -4330,7 +4336,7 @@ function renderConfig(){
     }else{
       var th='';
       turmasArr.forEach(function(t){
-        var tSub=[t.data?fmtDFull(t.data):'sem data',t.vagas!=null?t.vagas+' vagas':'sem vagas'].join(' · ');
+        var tSub=[oficinaDaTurma(t)||'sem oficina',t.data?fmtDFull(t.data):'sem data',t.vagas!=null?t.vagas+' vagas':'sem vagas'].map(escHtml).join(' · ');
         th+='<div style="display:flex;align-items:center;gap:6px;background:var(--G);border-radius:20px;padding:5px 12px"><span style="font-size:13px">🎓 '+escHtml(t.nome)+' <span style="color:var(--G3);font-size:12px">'+tSub+'</span></span><button class="btn xs" onclick="openTurmaModal(\''+t.id+'\')" title="Editar data e vagas">'+ic('pencil')+'</button><button class="btn xs danger" onclick="delTurma(\''+t.id+'\')">✕</button></div>';
       });
       turmasEl.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.75rem">'+th+'</div>';
@@ -4823,6 +4829,11 @@ function openTurmaModal(id){
   var t=id?(cfg.turmas||[]).find(function(x){return x.id===id;}):null;
   var nomeEl=document.getElementById('f-turma-nome');
   nomeEl.value=t?t.nome:'';nomeEl.disabled=Boolean(t);
+  var ofs=oficinasCatalogo(),ofSel=document.getElementById('f-turma-oficina');
+  ofSel.innerHTML=(ofs.length===1?'':'<option value="">Selecione...</option>')+ofs.map(function(o){return'<option value="'+escHtml(o)+'">'+escHtml(o)+'</option>';}).join('');
+  // Aberto de dentro do card (Serviços): já vem com a oficina escolhida lá.
+  var ofCard=document.getElementById('modal-c').style.display==='flex'?(document.getElementById('f-produto')||{value:''}).value:'';
+  ofSel.value=t?(t.oficina||oficinaDaTurma(t)):(ofCard||ofSel.value);
   document.getElementById('f-turma-data').value=t&&t.data?t.data:'';
   document.getElementById('f-turma-vagas').value=t&&t.vagas!=null?t.vagas:'';
   document.getElementById('mturma-title').textContent=t?'Editar turma':'Nova turma';
@@ -4836,9 +4847,10 @@ async function saveTurma(){
   var data=document.getElementById('f-turma-data').value||'';
   var vagasTxt=document.getElementById('f-turma-vagas').value;
   var vagas=vagasTxt===''?null:Math.max(0,parseInt(vagasTxt)||0);
+  var oficina=document.getElementById('f-turma-oficina').value||'';
   var existente=editTurmaId?cfg.turmas.find(function(t){return t.id===editTurmaId;}):cfg.turmas.find(function(t){return t.nome.toLowerCase()===nome.toLowerCase();});
-  if(existente){if(editTurmaId||data)existente.data=data;if(editTurmaId||vagas!=null)existente.vagas=vagas;}
-  else cfg.turmas.push({id:'tm'+Date.now(),nome:nome,data:data,vagas:vagas});
+  if(existente){if(editTurmaId||data)existente.data=data;if(editTurmaId||vagas!=null)existente.vagas=vagas;if(editTurmaId||oficina)existente.oficina=oficina;}
+  else cfg.turmas.push({id:'tm'+Date.now(),nome:nome,oficina:oficina,data:data,vagas:vagas});
   await saveCfg();
   editTurmaId=null;
   closeM('modal-turma');
@@ -4965,6 +4977,38 @@ function turmasConhecidas(lista){
   });
   if(lista.some(function(c){return !c.turma;}))out.push('Sem turma');
   return out;
+}
+function oficinasCatalogo(){return catalogo.produtos.filter(function(p){return p.natureza==='servico';}).map(function(p){return p.nome;});}
+// Oficina da turma: a gravada nela; turma antiga sem oficina usa a única do
+// Catálogo, ou a oficina mais comum entre os cards dessa turma.
+function oficinaDaTurma(t){
+  if(t.oficina)return t.oficina;
+  var ofs=oficinasCatalogo();if(ofs.length===1)return ofs[0];
+  var cont={};contatos.forEach(function(c){if(c.funil==='servicos'&&c.turma===t.nome&&c.produto)cont[c.produto]=(cont[c.produto]||0)+1;});
+  var top=Object.keys(cont).sort(function(a,b){return cont[b]-cont[a];})[0];
+  return top||'';
+}
+// Turmas da oficina na tabela "Por turma": as que têm card + as cadastradas
+// na Config para essa oficina, mesmo ainda sem inscrito.
+function turmasDaOficina(nome,contsOficina){
+  var out=turmasConhecidas(contsOficina),semTurma=out.indexOf('Sem turma');
+  if(semTurma>=0)out.splice(semTurma,1);
+  (cfg.turmas||[]).forEach(function(t){if(oficinaDaTurma(t)===nome&&out.indexOf(t.nome)===-1)out.push(t.nome);});
+  if(semTurma>=0)out.push('Sem turma');
+  return out;
+}
+// Inscritos = cards da turma em etapa de ganho (Inscrito/Participou), sem cancelamento.
+function inscritosDaTurma(t){
+  return contatos.filter(function(c){return c.funil==='servicos'&&c.turma===t.nome&&c.resultado!=='perda'&&isGanho('servicos',c.etapa);});
+}
+// "+ Inscrito": abre o cadastro do card já no funil Serviços, com oficina e
+// turma preenchidas. A etapa é escolhida no próprio cadastro.
+function novoInscrito(turmaId){
+  var t=(cfg.turmas||[]).find(function(x){return x.id===turmaId;});if(!t)return;
+  openContato(null,'servicos');
+  document.getElementById('f-produto').value=oficinaDaTurma(t);
+  updEtapas();
+  popularSelectTurma(t.nome);
 }
 async function migrarTurmasDeTitulos(){
   var re=/^\[([^\]]+)\]\s*-?\s*(.*)$/;
@@ -5203,24 +5247,50 @@ function renderOficinas(){
   var gridCols='1.6fr repeat('+nCols+',1fr) .8fr';
   var h='';
 
+  // Turmas cadastradas: próximas primeiro (por data), depois as passadas e as sem data.
+  var hoje=hojeISO();
+  var turmas=(cfg.turmas||[]).slice().sort(function(a,b){
+    var fa=a.data&&a.data>=hoje,fb=b.data&&b.data>=hoje;
+    if(fa!==fb)return fa?-1:1;
+    if(fa)return a.data.localeCompare(b.data);
+    return (b.data||'').localeCompare(a.data||'');
+  });
+  h+='<div class="slbl">Turmas</div>';
+  if(!turmas.length)h+='<div class="empty" style="margin-bottom:1rem">Nenhuma turma cadastrada. Use "+ Nova turma".</div>';
+  else{
+    h+='<div class="cfg-lista" style="max-width:none;margin-bottom:1.25rem">';
+    turmas.forEach(function(t){
+      var insc=inscritosDaTurma(t).length;
+      var passada=t.data&&t.data<hoje;
+      var ocup=t.vagas?insc+' / '+t.vagas+' vagas ('+Math.round(insc/t.vagas*100)+'%)':insc+' inscrita'+(insc!==1?'s':'');
+      h+='<div class="cfg-item'+(passada?' inativo':'')+'" style="background:var(--W)">';
+      h+='<div class="cfg-item-nome">🎓 '+escHtml(t.nome)+'<div class="cfg-item-sub">'+escHtml(oficinaDaTurma(t)||'sem oficina')+' · '+(t.data?fmtDFull(t.data):'sem data')+' · '+ocup+'</div></div>';
+      h+='<button class="btn xs laranja" onclick="novoInscrito(\''+t.id+'\')">+ Inscrito</button>';
+      h+='<button class="btn xs" onclick="openTurmaModal(\''+t.id+'\')" title="Editar data, vagas e oficina">'+ic('pencil')+'</button>';
+      h+='</div>';
+    });
+    h+='</div>';
+  }
+
   h+='<div class="slbl">Geral</div>';
   h+=tabelaOficinasHtml(nomes,etapasServ,contatosServ,gridCols,null);
 
   h+='<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:1.5rem 0 .75rem">';
   h+='<div class="slbl" style="margin:0">Por turma</div>';
-  var todasTurmas=turmasConhecidas(contatosServ);
+  var todasTurmas=turmasConhecidas(contatosServ).filter(function(t){return t!=='Sem turma';});
+  (cfg.turmas||[]).forEach(function(t){if(todasTurmas.indexOf(t.nome)===-1)todasTurmas.push(t.nome);});
+  if(contatosServ.some(function(c){return !c.turma;}))todasTurmas.push('Sem turma');
   h+='<select class="fi" style="width:auto;font-size:13px;height:32px" id="filtro-turma-oficinas" onchange="setFiltroTurmaOficinas(this.value)"><option value="">Todas as turmas</option>'+todasTurmas.map(function(t){return'<option value="'+t.replace(/"/g,'&quot;')+'"'+(filtroTurmaOficinas===t?' selected':'')+'>'+t+'</option>';}).join('')+'</select>';
   h+='</div>';
   var algumaTurma=false;
   nomes.forEach(function(nome){
     var contsOficina=contatosServ.filter(function(c){return c.produto===nome;});
-    if(!contsOficina.length)return;
-    var turmasDaOficina=turmasConhecidas(contsOficina);
-    if(filtroTurmaOficinas)turmasDaOficina=turmasDaOficina.filter(function(t){return t===filtroTurmaOficinas;});
-    if(!turmasDaOficina.length)return;
+    var listaTurmas=turmasDaOficina(nome,contsOficina);
+    if(filtroTurmaOficinas)listaTurmas=listaTurmas.filter(function(t){return t===filtroTurmaOficinas;});
+    if(!listaTurmas.length)return;
     algumaTurma=true;
     h+='<div style="font-size:13px;font-weight:700;color:var(--K);margin:1rem 0 .5rem">'+nome+'</div>';
-    h+=tabelaOficinasHtml(turmasDaOficina,etapasServ,contsOficina,gridCols,nome);
+    h+=tabelaOficinasHtml(listaTurmas,etapasServ,contsOficina,gridCols,nome);
   });
   if(!algumaTurma)h+='<div class="empty">Nenhuma turma registrada ainda. Selecione a turma ao criar/editar um card do funil Serviços.</div>';
 
