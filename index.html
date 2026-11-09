@@ -550,6 +550,17 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
     <button class="btn sm" onclick="addCampanha()">+ Adicionar</button>
   </div>
   <div class="divider" style="margin:1.25rem 0"></div>
+  <div class="slbl">Artesãs</div>
+  <div style="font-size:12px;color:var(--G3);margin-bottom:.75rem">Quem faz as peças feitas à mão. No Catálogo, cada peça marcada como "feito à mão" diz a artesã e quanto ela recebe por peça.</div>
+  <div id="cfg-artesas"></div>
+  <div class="cfg-form">
+    <input class="fi" id="f-art-nome" placeholder="Nome">
+    <input class="fi" id="f-art-cidade" placeholder="Cidade">
+    <input class="fi" id="f-art-tecnica" placeholder="Técnica (crochê, bordado...)">
+    <input class="fi" id="f-art-contato" placeholder="Contato (WhatsApp)">
+    <button class="btn sm" onclick="addArtesa()">+ Adicionar</button>
+  </div>
+  <div class="divider" style="margin:1.25rem 0"></div>
   <div class="slbl">Turmas de Oficina</div>
   <div style="font-size:12px;color:var(--G3);margin-bottom:.75rem">Turmas disponíveis para selecionar nos cards do funil Serviços</div>
   <div id="cfg-turmas"></div>
@@ -1365,10 +1376,10 @@ async function loadCatalogo(){
     var rows=await resp.json();
     catalogo={estampas:[],cores:[],tamanhos:[],produtos:[]};
     (Array.isArray(rows)?rows:[]).forEach(function(r){
-      if(r.tipo==='estampa'){var idsNs=[];try{idsNs=r.nuvemshop_produto_ids?JSON.parse(r.nuvemshop_produto_ids):[];}catch(e){idsNs=[];}catalogo.estampas.push({id:r.id,nome:r.nome,descricao:r.descricao||'',fotoUrl:r.foto_url||'',nuvemshopProdutoIds:idsNs,valor:(r.valor!==null&&r.valor!==undefined)?parseFloat(r.valor):null,valorOriginal:(r.valor_original!==null&&r.valor_original!==undefined)?parseFloat(r.valor_original):null,urlSite:r.url_site||'',feitoAMao:r.feito_a_mao===true,categoria:r.categoria||''});}
+      if(r.tipo==='estampa'){var idsNs=[];try{idsNs=r.nuvemshop_produto_ids?JSON.parse(r.nuvemshop_produto_ids):[];}catch(e){idsNs=[];}catalogo.estampas.push({id:r.id,nome:r.nome,descricao:r.descricao||'',fotoUrl:r.foto_url||'',nuvemshopProdutoIds:idsNs,valor:(r.valor!==null&&r.valor!==undefined)?parseFloat(r.valor):null,valorOriginal:(r.valor_original!==null&&r.valor_original!==undefined)?parseFloat(r.valor_original):null,urlSite:r.url_site||'',feitoAMao:r.feito_a_mao===true,categoria:r.categoria||'',artesaId:r.artesa_id||'',valorPagoArtesa:(r.valor_pago_artesa!==null&&r.valor_pago_artesa!==undefined)?parseFloat(r.valor_pago_artesa):null});}
       else if(r.tipo==='cor')catalogo.cores.push({id:r.id,nome:r.nome,fotoUrl:r.foto_url||''});
       else if(r.tipo==='tamanho')catalogo.tamanhos.push({id:r.id,nome:r.nome});
-      else if(r.tipo==='produto')catalogo.produtos.push({id:r.id,nome:r.nome,categoria:r.categoria||'',temVariacao:Boolean(r.tem_variacao),natureza:r.natureza||'produto',valor:(r.valor!==null&&r.valor!==undefined)?parseFloat(r.valor):null,feitoAMao:r.feito_a_mao===true});
+      else if(r.tipo==='produto')catalogo.produtos.push({id:r.id,nome:r.nome,categoria:r.categoria||'',temVariacao:Boolean(r.tem_variacao),natureza:r.natureza||'produto',valor:(r.valor!==null&&r.valor!==undefined)?parseFloat(r.valor):null,feitoAMao:r.feito_a_mao===true,artesaId:r.artesa_id||'',valorPagoArtesa:(r.valor_pago_artesa!==null&&r.valor_pago_artesa!==undefined)?parseFloat(r.valor_pago_artesa):null});
     });
     catalogo.tamanhos=ordenarTamanhos(catalogo.tamanhos);
   }catch(e){console.warn('loadCatalogo error:',e);}
@@ -4266,6 +4277,16 @@ function renderConfig(){
         +'<button class="btn xs danger" onclick="delCampanha(\''+cp.id+'\')" title="Apagar">'+ic('trash')+'</button></div>';
     }).join('')+'</div>';
   }
+  var artEl=document.getElementById('cfg-artesas');
+  if(artEl){
+    if(!cfg.artesas.length)artEl.innerHTML='<div style="font-size:12px;color:var(--G3);font-style:italic;margin-bottom:.75rem">Nenhuma artesã cadastrada ainda</div>';
+    else artEl.innerHTML='<div class="cfg-lista">'+cfg.artesas.map(function(a){
+      var sub=[a.cidade,a.tecnica,a.contato].filter(Boolean).map(escHtml).join(' · ');
+      return'<div class="cfg-item'+(a.ativa?'':' inativo')+'"><div class="cfg-item-nome">'+escHtml(a.nome)+(sub?' <span class="cfg-item-sub">'+sub+'</span>':'')+'</div>'
+        +'<label class="cfg-item-sub" style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox"'+(a.ativa?' checked':'')+' onchange="toggleArtesa(\''+a.id+'\',this.checked)"> ativa</label>'
+        +'<button class="btn xs danger" onclick="delArtesa(\''+a.id+'\')" title="Apagar">'+ic('trash')+'</button></div>';
+    }).join('')+'</div>';
+  }
   // turmas
   var turmasEl=document.getElementById('cfg-turmas');
   if(turmasEl){
@@ -4445,6 +4466,7 @@ function renderPecasSection(){
       getCategorias().forEach(function(ct){h+='<option value="'+ct.id+'"'+(normLinha(item.categoria)===ct.id?' selected':'')+'>'+ct.nome+'</option>';});
       h+='</select>';
       h+='<label class="peca-check" style="font-size:12.5px;font-weight:500"><input type="checkbox"'+(item.feitoAMao?' checked':'')+' onchange="setFeitoAMao(\''+idEsc+'\',this.checked)"> Feito à mão</label>';
+      h+=artesaCtrlsHtml(item);
       if(vinculado&&item.fotoUrl){
         if(item.urlSite){
           var urlEsc=item.urlSite.replace(/"/g,'&quot;');
@@ -4498,6 +4520,7 @@ function renderProdutosSection(){
         h+='</select>';
         h+='<label style="display:flex;align-items:center;gap:5px;font-size:12.5px;color:var(--G3);cursor:pointer"><input type="checkbox"'+(item.temVariacao?' checked':'')+' onchange="setVariacaoProduto(\''+item.id+'\',this.checked)"> estampa/cor/tam.</label>';
         h+='<label style="display:flex;align-items:center;gap:5px;font-size:12.5px;color:var(--G3);cursor:pointer" title="Peça artesanal. Em produto com estampa, vale a marcação da estampa."><input type="checkbox"'+(item.feitoAMao?' checked':'')+' onchange="setFeitoAMao(\''+item.id+'\',this.checked)"> feito à mão</label>';
+        h+=artesaCtrlsHtml(item);
       }
       h+='</div></div></div>';
     });
@@ -4636,6 +4659,34 @@ async function setFeitoAMao(id,feito){
     await loadCatalogo();
     renderCatalogo();
   }catch(e){ss('er','Erro ao salvar "feito à mão"');}
+}
+// Artesã responsável e valor pago por unidade (só em peça feita à mão).
+// As colunas vêm de supabase-migration-catalogo-artesa.sql: sem ela rodada,
+// o PATCH volta 400 e o aviso diz o que fazer.
+async function patchCatalogoArtesa(id,campos){
+  try{
+    var resp=await fetch(SB_URL+'/rest/v1/catalogo?id=eq.'+id,{method:'PATCH',headers:SB_HDR,body:JSON.stringify(campos)});
+    if(!resp.ok){var t=await resp.text();ss('er',/artesa/.test(t)?'Falta rodar a migração de artesã no Supabase':'Erro ao salvar artesã');console.warn(t);return;}
+    await loadCatalogo();
+    renderCatalogo();
+  }catch(e){ss('er','Erro ao salvar artesã');}
+}
+function setArtesaItem(id,artesaId){patchCatalogoArtesa(id,{artesa_id:artesaId||null});}
+function setValorPagoArtesa(id,valor){
+  var v=String(valor||'').trim().replace(',','.');
+  var num=v===''?null:parseFloat(v);
+  if(num!==null&&isNaN(num)){ss('er','Valor inválido');return;}
+  patchCatalogoArtesa(id,{valor_pago_artesa:num});
+}
+function artesaCtrlsHtml(item){
+  if(!item.feitoAMao)return'';
+  var idEsc=String(item.id);
+  var lista=(cfg.artesas||[]).filter(function(a){return a.ativa||a.id===item.artesaId;});
+  var h='<select class="fi" title="Artesã que faz a peça" onchange="setArtesaItem(\''+idEsc+'\',this.value)"><option value="">Artesã?</option>';
+  lista.forEach(function(a){h+='<option value="'+a.id+'"'+(item.artesaId===a.id?' selected':'')+'>'+escHtml(a.nome)+'</option>';});
+  h+='</select>';
+  h+='<input class="fi" style="width:110px" title="Valor pago à artesã por peça" placeholder="Pago/peça R$" value="'+(item.valorPagoArtesa!=null?String(item.valorPagoArtesa).replace('.',','):'')+'" onchange="setValorPagoArtesa(\''+idEsc+'\',this.value)">';
+  return h;
 }
 async function setValorProduto(id,valor){
   try{
@@ -4795,6 +4846,27 @@ async function delCampanha(id){
   cfg.campanhas=cfg.campanhas.filter(function(c){return c.id!==id;});
   await saveCfg();renderConfig();
 }
+// ── ARTESÃS ──────────────────────────────────────────────
+async function addArtesa(){
+  var v=function(x){return document.getElementById(x).value.trim();};
+  var nome=v('f-art-nome');
+  if(!nome){ss('er','Informe o nome da artesã');return;}
+  if(cfg.artesas.find(function(a){return a.nome.toLowerCase()===nome.toLowerCase();})){ss('er','Essa artesã já está cadastrada');return;}
+  cfg.artesas.push({id:'ar'+Date.now(),nome:nome,cidade:v('f-art-cidade'),tecnica:v('f-art-tecnica'),contato:v('f-art-contato'),ativa:true});
+  ['f-art-nome','f-art-cidade','f-art-tecnica','f-art-contato'].forEach(function(x){document.getElementById(x).value='';});
+  await saveCfg();renderConfig();
+}
+async function toggleArtesa(id,ativa){
+  var a=cfg.artesas.find(function(x){return x.id===id;});if(!a)return;
+  a.ativa=Boolean(ativa);await saveCfg();renderConfig();
+}
+async function delArtesa(id){
+  var usada=catalogo.estampas.concat(catalogo.produtos).some(function(i){return i.artesaId===id;});
+  if(!confirm(usada?'Esta artesã está ligada a peças do Catálogo, que vão ficar sem artesã. Para só tirar da lista, desmarque "ativa". Apagar mesmo assim?':'Apagar esta artesã?'))return;
+  cfg.artesas=cfg.artesas.filter(function(a){return a.id!==id;});
+  await saveCfg();renderConfig();
+}
+function artesaNome(id){var a=(cfg.artesas||[]).find(function(x){return x.id===id;});return a?a.nome:'';}
 function campanhaNome(id){var c=(cfg.campanhas||[]).find(function(x){return x.id===id;});return c?c.nome:'';}
 // Select do card: campanhas ativas + a atual do card, mesmo se já inativa.
 function popularSelectCampanha(atual){
