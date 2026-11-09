@@ -409,9 +409,48 @@ function mapearFormaPagamento(order: any): string {
   if (metodo.includes('debit')) return 'debito'
   if (metodo.includes('credit')) return 'credito_vista'
   if (metodo === 'cash' || metodo.includes('efectivo')) return 'dinheiro'
-  // boleto/ticket e gateways não reconhecidos ficam em branco — melhor vazio
-  // (editável depois no CRM) do que rotular errado a forma de pagamento.
+  if (metodo === 'ticket' || metodo.includes('boleto') || gateway.includes('boleto')) return 'boleto'
+  // Gateways não reconhecidos ficam em branco — melhor vazio (editável depois
+  // no CRM) do que rotular errado a forma de pagamento.
   return ''
+}
+
+// Estado vem por extenso no endereço da Nuvemshop ("Rio Grande do Norte");
+// o CRM guarda a sigla. Já vindo como sigla, mantém.
+const UF_POR_NOME: Record<string, string> = {
+  'acre': 'AC', 'alagoas': 'AL', 'amapa': 'AP', 'amazonas': 'AM', 'bahia': 'BA', 'ceara': 'CE',
+  'distrito federal': 'DF', 'espirito santo': 'ES', 'goias': 'GO', 'maranhao': 'MA', 'mato grosso': 'MT',
+  'mato grosso do sul': 'MS', 'minas gerais': 'MG', 'para': 'PA', 'paraiba': 'PB', 'parana': 'PR',
+  'pernambuco': 'PE', 'piaui': 'PI', 'rio de janeiro': 'RJ', 'rio grande do norte': 'RN',
+  'rio grande do sul': 'RS', 'rondonia': 'RO', 'roraima': 'RR', 'santa catarina': 'SC',
+  'sao paulo': 'SP', 'sergipe': 'SE', 'tocantins': 'TO',
+}
+function ufDaProvincia(v: string): string {
+  const n = normComparar(v)
+  if (/^[a-z]{2}$/.test(n)) return n.toUpperCase()
+  return UF_POR_NOME[n] || ''
+}
+// Cidade/UF da cliente: endereço de entrega; sem ele, o de cobrança.
+function cidadeUfDoPedido(order: any): { cidade: string; uf: string } {
+  const end = order?.shipping_address || {}
+  const cidade = (nsText(end.city) || nsText(order?.billing_city)).trim()
+  const uf = ufDaProvincia(nsText(end.province) || nsText(order?.billing_province))
+  return { cidade, uf }
+}
+// UTM da primeira página que a cliente abriu na loja (landing_url). Só grava
+// o que existir; pedido sem UTM não ganha campo nenhum.
+function utmDoPedido(order: any): Record<string, string> {
+  const out: Record<string, string> = {}
+  const url = nsText(order?.landing_url)
+  if (!url) return out
+  try {
+    const params = new URL(url, 'https://pissilone.com.br').searchParams
+    for (const k of ['utm_source', 'utm_medium', 'utm_campaign']) {
+      const v = params.get(k)
+      if (v) out[k] = v
+    }
+  } catch (_e) { /* landing_url malformada: segue sem UTM */ }
+  return out
 }
 
 // Normaliza pra comparar cor/tamanho tolerando acento e maiúscula/minúscula.
@@ -513,13 +552,19 @@ export async function webhookNuvemshopPedido(supabase: SupabaseClient, body: any
   const vendaId = c.id + '_' + Date.now()
   const valor = nsNumber(order.total)
 
+  // Canal da venda é sempre o site (o card pode ter vindo de outro canal antes).
+  const utm = utmDoPedido(order)
   hist.push({
     r: 'ganho', d: dataGanho, m: '', v: valor, itens: itensGanho, nf: false,
-    fp: mapearFormaPagamento(order), venda_id: vendaId,
+    fp: mapearFormaPagamento(order), venda_id: vendaId, canal: 'site', ...utm,
     origem: 'nuvemshop', pedido_nuvemshop: String(orderId),
   })
   c.neg_hist = JSON.stringify(hist)
   c.valor = valor; c.et = 'fechado'; c.motivo_perda = ''; c.resultado = ''
+  const { cidade, uf } = cidadeUfDoPedido(order)
+  if (cidade) c.cidade = cidade
+  if (uf) c.uf = uf
+  if (Object.keys(utm).length) c._meta = { ...(c._meta || {}), ...utm }
 
   if (c.funil === 'pissifa') {
     c.etapa = 'psf-ativo'
