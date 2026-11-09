@@ -794,17 +794,9 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
 <div class="overlay" id="modal-perda" style="display:none">
 <div class="modal">
   <div class="mtitle"><span>Motivo de perda</span><button class="mcl" onclick="closeM('modal-perda')">✕</button></div>
-  <div class="chips">
-    <button class="chip" onclick="selM(this,'Preço alto')">Preço alto</button>
-    <button class="chip" onclick="selM(this,'Não respondeu')">Não respondeu</button>
-    <button class="chip" onclick="selM(this,'Comprou em outro lugar')">Outro lugar</button>
-    <button class="chip" onclick="selM(this,'Não tinha tamanho')">Sem tamanho</button>
-    <button class="chip" onclick="selM(this,'Prazo muito longo')">Prazo longo</button>
-    <button class="chip" onclick="selM(this,'Mudou de ideia')">Mudou de ideia</button>
-    <button class="chip" onclick="selM(this,'Sem dinheiro agora')">Sem dinheiro</button>
-    <button class="chip" onclick="selM(this,'Frete caro')">Frete caro</button>
-  </div>
-  <div class="fg fg1" style="margin-bottom:1rem"><div><label class="flbl">Outro motivo</label><input class="fi" id="f-motivo" placeholder="Descreva..."></div></div>
+  <div class="chips" id="chips-perda"></div>
+  <div class="fg fg1" id="wrap-motivo-outro" style="margin-bottom:1rem;display:none"><div><label class="flbl">Qual foi o motivo? *</label><input class="fi" id="f-motivo" placeholder="Descreva..."></div></div>
+  <div class="fb" id="fb-perda" style="margin-bottom:.5rem"></div>
   <div style="display:flex;gap:8px">
     <button class="btn danger full" onclick="confirmPerda()">Confirmar perda</button>
     <button class="btn full" onclick="cancelPerda()">Cancelar</button>
@@ -2051,7 +2043,7 @@ async function dropCard(etapaId){
       if(jaTemGanho){c.etapa=etapaId;c.et='fechado';dragId=null;ss('ld','Movendo...');try{await apiSave(c);await doSync();}catch(ex){ss('er','Erro ao mover');}return;}
       ganhoCid=dragId;dragId=null;abrirModalGanho(ganhoCid);return;
     }
-    if(isPerdaAlvo){perdaCid=dragId;dragId=null;document.getElementById('modal-perda').style.display='flex';return;}
+    if(isPerdaAlvo){var pid=dragId;dragId=null;abrirModalPerda(pid);return;}
   }
   if(c.funil==='servicos'&&nAlvo.includes('participou'))registrarParticipacao(c,'participou');
   c.etapa=etapaId;c.et='atendimento';dragId=null;
@@ -2059,11 +2051,15 @@ async function dropCard(etapaId){
 }
 
 // ── RESULTADO ────────────────────────────────────────────
-function selM(btn,m){document.querySelectorAll('.chip').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');motivoSel=m;}
+function selM(btn,m){
+  document.querySelectorAll('.chip').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');motivoSel=m;
+  var w=document.getElementById('wrap-motivo-outro');if(w)w.style.display=m==='Outro'?'block':'none';
+  if(m==='Outro')setTimeout(function(){document.getElementById('f-motivo').focus();},30);
+}
 
 function setResultado(id,resultado){
   const c=contatos.find(x=>x.id===id);if(!c)return;
-  if(resultado==='perda'){perdaCid=id;document.getElementById('modal-perda').style.display='flex';return;}
+  if(resultado==='perda'){abrirModalPerda(id);return;}
   abrirModalGanho(id);
 }
 
@@ -2298,12 +2294,29 @@ function moverParaPissifaAuto(c){
   return true;
 }
 
+// Motivos de perda: lista fixa e obrigatória (os Insights agrupam por ela).
+// Os textos são os mesmos já gravados no histórico, pra continuar agrupando.
+// "Outro" exige descrição: fica m='Outro' e o texto em mt.
+var MOTIVOS_PERDA=['Não respondeu','Preço alto','Sem dinheiro agora','Não tinha tamanho','Prazo muito longo','Indisponibilidade','Mudou de ideia','Outro'];
+function abrirModalPerda(id,motivoPre){
+  perdaCid=id;motivoSel='';
+  document.getElementById('chips-perda').innerHTML=MOTIVOS_PERDA.map(function(m){return'<button class="chip" onclick="selM(this,\''+m+'\')">'+m+'</button>';}).join('');
+  document.getElementById('f-motivo').value='';
+  document.getElementById('wrap-motivo-outro').style.display='none';
+  setFb('fb-perda','','');
+  if(motivoPre){var b=[].slice.call(document.querySelectorAll('#chips-perda .chip')).find(function(x){return x.textContent===motivoPre;});if(b)selM(b,motivoPre);}
+  document.getElementById('modal-perda').style.display='flex';
+}
 async function confirmPerda(){
   const outro=document.getElementById('f-motivo').value.trim();
-  const motivo=outro||motivoSel||'Não informado';
+  if(!motivoSel){setFb('fb-perda','Escolha o motivo da perda','er');return;}
+  if(motivoSel==='Outro'&&!outro){setFb('fb-perda','Descreva o motivo','er');return;}
+  const motivo=motivoSel==='Outro'?'Outro: '+outro:motivoSel;
   const c=contatos.find(x=>x.id===perdaCid);if(!c){closeM('modal-perda');return;}
   const hist=parseNegHist(c);
-  hist.push({r:'perda',d:hojeISO(),m:motivo});
+  const regPerda={r:'perda',d:hojeISO(),m:motivoSel};
+  if(motivoSel==='Outro')regPerda.mt=outro;
+  hist.push(regPerda);
   c.neg_hist=JSON.stringify(hist);
   c.motivo_perda=motivo;c.et='perdido';c.resultado='perda';
   if(c.funil==='pissifa'){c.etapa='psf-inativo';c.resultado='';}
