@@ -3282,6 +3282,8 @@ function renderInsights(){
   h+='<div style="font-size:12px;margin-top:6px">'+(hasPrev&&ganhosPrev.length>0?varPct(Math.round(tkMedio),Math.round(tkMedioPrev)):'<span style="color:var(--G3)">por ganho</span>')+'</div>';
   h+='</div>';
   h+='</div>';
+  // ── PISSIFÃ (logo abaixo das métricas principais; base inteira, sem período) ──
+  h+='<div class="slbl">Pissif&#227; &mdash; clientes recorrentes</div><div id="ins-pissifa-bloco" style="margin-bottom:1rem"></div>';
   // ── MINI STATS ──
   h+='<div class="mg" style="margin-bottom:1rem">';
   h+='<div class="mc ins-click" onclick="abrirListaInsight(\'negociacoes\')" title="Ver a lista"><div class="mc-n">'+baseConv+'</div><div class="mc-l">Negociações</div><div class="mc-s a">base</div></div>';
@@ -3570,8 +3572,6 @@ function renderInsights(){
     });
     h+='</div></div>';
   }
-  // ── PISSIFÃ ──
-  h+='<div class="divider"></div><div class="slbl">Pissif&#227; &mdash; clientes recorrentes</div><div id="ins-pissifa-bloco"></div>';
   document.getElementById('ins-content').innerHTML=h;
   renderInsightsPissifa();
 }
