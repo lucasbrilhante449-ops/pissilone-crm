@@ -483,6 +483,7 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
       <option value="12">Dezembro</option>
     </select>
     <select class="fi" id="filtro-oficina-c" style="width:auto;font-size:13px;height:32px" onchange="setFiltroOficinaContatos(this.value)"><option value="">🎨 Todas oficinas</option></select>
+    <span id="contatos-total" style="margin-left:auto;font-size:13px;color:var(--G3);white-space:nowrap"></span>
   </div>
   <div id="lista-c"></div>
 </div>
@@ -2730,6 +2731,13 @@ function renderContatos(){
     }
     return true;
   });
+  // Total com os filtros aplicados. Pessoas = telefones distintos (a mesma
+  // cliente pode ter card no D2C e no Pissifã).
+  var totEl=document.getElementById('contatos-total');
+  if(totEl){
+    var pessoas=Object.keys(lista.reduce(function(o,c){o[chaveCliente(c.tel,c.id)]=1;return o;},{})).length;
+    totEl.innerHTML='<b style="color:var(--K);font-size:15px">'+lista.length+'</b> contato'+(lista.length!==1?'s':'')+(pessoas!==lista.length?' · '+pessoas+' pessoa'+(pessoas!==1?'s':''):'');
+  }
   const el=document.getElementById('lista-c');
   if(!lista.length){el.innerHTML=`<div class="empty">${contatos.length?'Nenhum encontrado':'Nenhum contato ainda'}</div>`;return;}
   var listaFinal=lista.slice();
