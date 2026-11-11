@@ -637,7 +637,7 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
 <div class="modal">
   <div class="mtitle"><span id="mc-title">Novo contato</span><button class="mcl" onclick="closeM('modal-c')">✕</button></div>
   <div class="fg fg2">
-    <div class="cat-sw"><label class="flbl">Nome *</label><input class="fi" id="f-nome" placeholder="Nome do cliente" oninput="buscarClienteExistente()" onblur="setTimeout(function(){fecharClienteSug();},220)" autocomplete="off"><div class="cat-sd" id="csd-cliente"></div></div>
+    <div class="cat-sw"><label class="flbl">Nome *</label><input class="fi" id="f-nome" placeholder="Nome ou telefone · se já for cliente, escolha na lista" oninput="buscarClienteExistente()" onblur="setTimeout(function(){fecharClienteSug();},220)" autocomplete="off"><div class="cat-sd" id="csd-cliente"></div></div>
     <div><label class="flbl">Telefone</label><input class="fi" id="f-tel" placeholder="(84) 9..."></div>
   </div>
   <div class="fg fg1" style="margin-bottom:.75rem">
@@ -2026,6 +2026,7 @@ function kcardHtml(c,busca){
       <div class="kc-left">
         <button class="btn xs" onclick="openContatoDetail('${c.id}')" title="Editar contato">${ic('pencil')}</button>
         <button class="btn xs" onclick="abrirMover('${c.id}')" title="Mover para outro funil">${ic('mover')}</button>
+        ${c.funil!=='servicos'?`<button class="btn xs" onclick="copiarParaServicos('${c.id}')" title="Inscrever em oficina (copia para Serviços)">${ic('cap')}</button>`:''}
         ${delBtnHtml}
       </div>
       ${atvDotHtml(c)}
@@ -2380,6 +2381,8 @@ function cancelPerda(){perdaCid=null;closeM('modal-perda');renderFunil();}
 // Só etapas em aberto (e o "Ativo" do Pissifã): ganho e perda continuam pelos
 // botões ✓/✗, que pedem itens, pagamento e motivo.
 var moverCid=null;
+// Dois lados: vendas (D2C, B2B, Pissifã e outros) e oficina (Serviços).
+function ladoFunil(fid){return fid==='servicos'?'oficina':'vendas';}
 function etapasDestinoMover(fid){
   var f=getFunil(fid);if(!f)return[];
   return f.etapas.filter(function(e){return etapaAberta(fid,e.id)||(fid==='pissifa'&&/ativo/i.test(e.nome)&&!/inativo/i.test(e.nome));});
@@ -2389,7 +2392,8 @@ function abrirMover(id){
   moverCid=id;
   document.getElementById('mover-titulo').textContent='Mover '+c.nome;
   var sf=document.getElementById('f-mover-funil');
-  sf.innerHTML=cfg.funis.filter(function(f){return etapasDestinoMover(f.id).length;}).map(function(f){return'<option value="'+f.id+'">'+escHtml(f.nome)+'</option>';}).join('');
+  // Só funis do mesmo lado: vendas ↔ vendas, oficina ↔ oficina.
+  sf.innerHTML=cfg.funis.filter(function(f){return ladoFunil(f.id)===ladoFunil(c.funil)&&etapasDestinoMover(f.id).length;}).map(function(f){return'<option value="'+f.id+'">'+escHtml(f.nome)+'</option>';}).join('');
   sf.value=c.funil;if(!sf.value&&sf.options.length)sf.value=sf.options[0].value;
   var ofs=oficinasCatalogo(),so=document.getElementById('f-mover-oficina');
   so.innerHTML=ofs.map(function(o){return'<option value="'+escHtml(o)+'">'+escHtml(o)+'</option>';}).join('');
@@ -2526,53 +2530,74 @@ async function checkpointAtv(){
 
 // ── CONTATO MODAL ────────────────────────────────────────
 // ── BUSCA DE CLIENTE EXISTENTE (ao criar novo contato) ───
+// Sugestão de cliente já cadastrada no cadastro de card novo: busca por nome
+// ou telefone, uma linha por pessoa, dizendo onde ela já tem card.
 function buscarClienteExistente(){
   if(editCid)return;
   var q=document.getElementById('f-nome').value.trim().toLowerCase();
   var el=document.getElementById('csd-cliente');
   if(!el)return;
   if(q.length<2){el.style.display='none';el.innerHTML='';return;}
-  var vistos={};
-  var matches=contatos.filter(function(c){
-    if(!c.nome||!c.nome.toLowerCase().includes(q))return false;
-    var chave=(c.tel||c.nome).toLowerCase();
-    if(vistos[chave])return false;
-    vistos[chave]=true;
-    return true;
-  }).slice(0,8);
+  var qd=q.replace(/\D/g,'');
+  var porPessoa={},ordem=[];
+  contatos.forEach(function(c){
+    var achou=(c.nome&&c.nome.toLowerCase().includes(q))||(qd.length>=4&&String(c.tel||'').replace(/\D/g,'').includes(qd));
+    if(!achou)return;
+    var k=chaveCliente(c.tel,c.id,c.nome);
+    if(!porPessoa[k]){porPessoa[k]=[];ordem.push(k);}
+    porPessoa[k].push(c);
+  });
+  var matches=ordem.slice(0,8);
   if(!matches.length){el.style.display='none';el.innerHTML='';return;}
   var h='';
-  matches.forEach(function(c){
-    var f=getFunil(c.funil);
-    var sub=(f?f.nome:'')+(c.tel?' · '+c.tel:'');
-    h+='<div class="cat-sd-opt" onmousedown="selecionarClienteExistente(\''+c.id+'\')"><div style="font-weight:600">'+c.nome+'</div><div style="font-size:11.5px;color:var(--G3)">'+sub+'</div></div>';
+  matches.forEach(function(k){
+    var cs=porPessoa[k],c=cs[0];
+    var onde=cs.map(function(x){var f=getFunil(x.funil);return f?f.nome:'';}).join(' + ');
+    h+='<div class="cat-sd-opt" onmousedown="selecionarClienteExistente(\''+c.id+'\')"><div style="font-weight:600">'+escHtml(c.nome)+'</div><div style="font-size:11.5px;color:var(--G3)">'+escHtml(onde)+(c.tel?' · '+escHtml(c.tel):'')+'</div></div>';
   });
   el.innerHTML=h;
   el.style.display='block';
 }
 function fecharClienteSug(){var el=document.getElementById('csd-cliente');if(el)el.style.display='none';}
-// Cliente já cadastrada: em vez de copiar os dados para um card novo (isso
-// criava cópias), o formulário passa a editar o card dela. Funil, etapa,
-// oficina e turma escolhidos no formulário ficam: ao salvar, o card é movido
-// para lá com todo o histórico.
+// Escolheu uma cliente já cadastrada. Se ela já tem card DESTE lado (vendas
+// ou oficina), o formulário passa a editar esse card: funil, etapa, oficina e
+// turma escolhidos no formulário viram a mudança ao salvar, com o histórico.
+// Se não tem, os dados dela são copiados para um card novo deste lado e o card
+// do outro lado continua onde está (cópia entre lados não distorce os Insights).
 function selecionarClienteExistente(cid){
   var c=contatos.find(function(x){return x.id===cid;});if(!c)return;
-  editCid=cid;
+  var lado=ladoFunil(document.getElementById('f-funil').value);
+  var k=chaveCliente(c.tel,c.id,c.nome);
+  var doLado=contatos.find(function(x){return ladoFunil(x.funil)===lado&&chaveCliente(x.tel,x.id,x.nome)===k;});
   var set=function(id,v){var el=document.getElementById(id);if(el)el.value=v||'';};
-  set('f-nome',c.nome);set('f-tel',c.tel);set('f-email',c.email);set('f-cpf',c.cpf);
-  set('f-aniversario',c.aniversario);set('f-endereco',c.endereco);set('f-cidade',c.cidade);
-  set('f-uf',c.uf);set('f-cep',c.cep);set('f-cod-marketup',c.cod_marketup);
-  set('f-obs',c.obs);set('f-valor',c.valor||'');set('f-card-titulo',c.card_titulo);
-  if(!document.getElementById('f-user').value)set('f-user',c.usuario);
-  popularSelectsCanal(c.canal);set('f-canal-desc',c.canal_desc);
-  popularSelectCampanha(c.campanha_id);
-  // Fora de Serviços, mantém os produtos anotados no card.
-  if(document.getElementById('f-funil').value!=='servicos'){set('f-produto',c.produto);cardItens=Array.isArray(c.itens)?c.itens.map(function(it){return Object.assign({},it);}):[];renderItensCard();}
-  document.getElementById('mc-title').textContent='Editar contato';
-  document.getElementById('btn-sc').textContent='Salvar alterações';
+  var src=doLado||c;
+  set('f-nome',src.nome);set('f-tel',src.tel);set('f-email',src.email);set('f-cpf',src.cpf);
+  set('f-aniversario',src.aniversario);set('f-endereco',src.endereco);set('f-cidade',src.cidade);
+  set('f-uf',src.uf);set('f-cep',src.cep);set('f-cod-marketup',src.cod_marketup);
+  if(!document.getElementById('f-user').value)set('f-user',src.usuario);
+  popularSelectsCanal(src.canal);set('f-canal-desc',src.canal_desc);
   fecharClienteSug();
-  var f=getFunil(c.funil),e=getEtapa(c.funil,c.etapa);
-  setFb('fb-c','Usando o card de '+c.nome+' (hoje em '+(f?f.nome:'')+(e?' · '+e.nome:'')+'). Ao salvar, ele vai para o funil e a etapa escolhidos acima, com todo o histórico.','ok');
+  if(doLado){
+    editCid=doLado.id;
+    set('f-obs',doLado.obs);set('f-valor',doLado.valor||'');set('f-card-titulo',doLado.card_titulo);
+    popularSelectCampanha(doLado.campanha_id);
+    if(lado==='vendas'){set('f-produto',doLado.produto);cardItens=Array.isArray(doLado.itens)?doLado.itens.map(function(it){return Object.assign({},it);}):[];renderItensCard();}
+    document.getElementById('mc-title').textContent='Editar contato';
+    document.getElementById('btn-sc').textContent='Salvar alterações';
+    var f=getFunil(doLado.funil),e=getEtapa(doLado.funil,doLado.etapa);
+    setFb('fb-c','Usando o card '+(lado==='oficina'?'de oficina':'de vendas')+' de '+doLado.nome+' (hoje em '+(f?f.nome:'')+(e?' · '+e.nome:'')+'). Ao salvar, ele vai para a etapa escolhida acima, com todo o histórico.','ok');
+  }else{
+    var fo=getFunil(c.funil);
+    setFb('fb-c','Dados copiados de '+c.nome+'. O card dela em '+(fo?fo.nome:'')+' continua onde está.','ok');
+  }
+}
+// Botão do card de vendas: abre o cadastro de inscrição em Serviços com os
+// dados da cliente (ou o card de oficina dela, se já existir).
+function copiarParaServicos(id){
+  var c=contatos.find(function(x){return x.id===id;});if(!c)return;
+  openContato(null,'servicos');
+  document.getElementById('f-funil').value='servicos';updEtapas();
+  selecionarClienteExistente(id);
 }
 // Ao trocar o card de funil, grava em cada venda o funil em que ela aconteceu
 // (e, venda antiga sem itens, o produto anotado no card). Senão a camiseta
@@ -2693,21 +2718,26 @@ function onOficinaChange(){document.getElementById('f-produto').value=document.g
 async function saveContato(){
   const nome=document.getElementById('f-nome').value.trim();
   if(!nome){setFb('fb-c','Nome obrigatório','er');return;}
-  // Um card por pessoa (telefone + primeiro nome). Mesmo telefone com outro
-  // nome é aceito depois de confirmar (mãe e filha dividem o número).
+  // No máximo 1 card de VENDAS e 1 de OFICINA por pessoa (telefone + primeiro
+  // nome). Cópia no outro lado não distorce os Insights: cada venda fica em um
+  // card só, e a pessoa é juntada pela chave. Mesmo telefone com outro nome é
+  // aceito depois de confirmar (mãe e filha dividem o número).
   var telNovo=document.getElementById('f-tel').value.trim();
   var prevC=editCid?contatos.find(function(x){return x.id===editCid;}):null;
-  if(telNovo.replace(/\D/g,'').length>=8&&(!prevC||prevC.tel!==telNovo||primeiroNome(prevC.nome)!==primeiroNome(nome))){
+  var ladoNovo=ladoFunil(document.getElementById('f-funil').value);
+  if(telNovo.replace(/\D/g,'').length>=8){
     var kNovo=chaveCliente(telNovo,editCid||'novo',nome);
-    var mesma=contatos.find(function(x){return x.id!==editCid&&chaveCliente(x.tel,x.id,x.nome)===kNovo;});
+    var mesma=contatos.find(function(x){return x.id!==editCid&&ladoFunil(x.funil)===ladoNovo&&chaveCliente(x.tel,x.id,x.nome)===kNovo;});
     if(mesma){
       var fm=getFunil(mesma.funil),em=getEtapa(mesma.funil,mesma.etapa);
       var fb=document.getElementById('fb-c');fb.className='fb er';
-      fb.innerHTML=escHtml(mesma.nome)+' já tem card ('+escHtml(fm?fm.nome:'')+(em?' · '+escHtml(em.nome):'')+'). Use esse card e mova de funil se precisar. <a href="#" style="color:var(--L);font-weight:600" onclick="event.preventDefault();closeM(\'modal-c\');openContatoDetail(\''+mesma.id+'\')">Abrir card →</a>';
+      fb.innerHTML=escHtml(mesma.nome)+' já tem card '+(ladoNovo==='oficina'?'de oficina':'de vendas')+' ('+escHtml(fm?fm.nome:'')+(em?' · '+escHtml(em.nome):'')+'). Use esse card. <a href="#" style="color:var(--L);font-weight:600" onclick="event.preventDefault();closeM(\'modal-c\');openContatoDetail(\''+mesma.id+'\')">Abrir card →</a>';
       return;
     }
+  }
+  if(telNovo.replace(/\D/g,'').length>=8&&(!prevC||prevC.tel!==telNovo||primeiroNome(prevC.nome)!==primeiroNome(nome))){
     var d8=telNovo.replace(/\D/g,'').slice(-8);
-    var mesmoTel=contatos.find(function(x){return x.id!==editCid&&String(x.tel||'').replace(/\D/g,'').slice(-8)===d8;});
+    var mesmoTel=contatos.find(function(x){return x.id!==editCid&&String(x.tel||'').replace(/\D/g,'').slice(-8)===d8&&primeiroNome(x.nome)!==primeiroNome(nome);});
     if(mesmoTel&&!confirm('Já existe card com este telefone: '+mesmoTel.nome+'. É outra pessoa (ex.: mãe e filha no mesmo número)?\n\nOK = criar/salvar mesmo assim · Cancelar = voltar'))return;
   }
   setFb('fb-c','Salvando...','info');document.getElementById('btn-sc').disabled=true;
