@@ -819,6 +819,21 @@ table.est-table td.est-td.est-zero{background:var(--VM2)}
 </div>
 </div>
 
+<!-- MODAL MOVER DE FUNIL -->
+<div class="overlay" id="modal-mover" style="display:none">
+<div class="modal" style="max-width:420px">
+  <div class="mtitle"><span id="mover-titulo">Mover card</span><button class="mcl" onclick="closeM('modal-mover')">✕</button></div>
+  <div style="font-size:12.5px;color:var(--G3);margin-bottom:.75rem">O card vai inteiro, com todas as compras e o histórico.</div>
+  <div class="fg fg2" style="margin-bottom:.75rem">
+    <div><label class="flbl">Funil</label><select class="fi" id="f-mover-funil" onchange="updMoverEtapas()"></select></div>
+    <div><label class="flbl">Etapa</label><select class="fi" id="f-mover-etapa"></select></div>
+  </div>
+  <div class="fg fg1" id="wrap-mover-servico" style="display:none;margin-bottom:.75rem"><div><label class="flbl">Oficina</label><select class="fi" id="f-mover-oficina"></select></div></div>
+  <button class="btn primary full" onclick="confirmarMover()">Mover</button>
+  <div class="fb" id="fb-mover"></div>
+</div>
+</div>
+
 <!-- MODAL ATIVIDADE -->
 <div class="overlay" id="modal-atv" style="display:none">
 <div class="modal">
@@ -1323,11 +1338,11 @@ var __ganhosPessoa={ref:null,map:{}};
 function ganhosDaPessoa(c){
   if(__ganhosPessoa.ref!==contatos){
     var map={};
-    contatos.forEach(function(x){var k=chaveCliente(x.tel,x.id);parseNegHist(x).forEach(function(h){if(h.r==='ganho')(map[k]=map[k]||[]).push(h);});});
+    contatos.forEach(function(x){var k=chaveCliente(x.tel,x.id,x.nome);parseNegHist(x).forEach(function(h){if(h.r==='ganho')(map[k]=map[k]||[]).push(h);});});
     Object.keys(map).forEach(function(k){map[k].sort(function(a,b){return String(b.d).localeCompare(String(a.d));});});
     __ganhosPessoa={ref:contatos,map:map};
   }
-  return __ganhosPessoa.map[chaveCliente(c.tel,c.id)]||[];
+  return __ganhosPessoa.map[chaveCliente(c.tel,c.id,c.nome)]||[];
 }
 function getTierCliente(nCompras,ltv){
   if(nCompras>4&&ltv>600)return{label:'Pissifã Ouro',icone:'🥇',cor:'#9A6F00',bg:'#FFFAEB',borda:'#D4AF37',sub:nCompras+' compras · LTV R$'+Math.round(ltv)};
@@ -2010,7 +2025,7 @@ function kcardHtml(c,busca){
     <div class="kc-actions">
       <div class="kc-left">
         <button class="btn xs" onclick="openContatoDetail('${c.id}')" title="Editar contato">${ic('pencil')}</button>
-        ${c.funil!=='pissifa'?`<button class="btn xs" onclick="moverParaPissifa('${c.id}')" title="Mover para Pissifã">${ic('mover')}</button>`:''}
+        <button class="btn xs" onclick="abrirMover('${c.id}')" title="Mover para outro funil">${ic('mover')}</button>
         ${delBtnHtml}
       </div>
       ${atvDotHtml(c)}
@@ -2284,7 +2299,7 @@ async function confirmarGanho(){
   var vendaId=c.id+'_'+Date.now();
   // Canal e campanha ficam na venda (a 3ª compra de uma Pissifã pode vir de
   // outro canal que a 1ª); o card guarda o canal de origem e a última campanha.
-  var vendaNeg={r:'ganho',d:dataGanho,m:'',v:valorNeg,itens:itensGanho,nf:false,fp:fpNeg,venda_id:vendaId,canal:canalNeg};
+  var vendaNeg={r:'ganho',d:dataGanho,m:'',v:valorNeg,itens:itensGanho,nf:false,fp:fpNeg,venda_id:vendaId,canal:canalNeg,funil:c.funil};
   if(canalNeg==='outro')vendaNeg.canal_desc=canalDescNeg;
   if(campanhaNeg)vendaNeg.campanha_id=campanhaNeg;
   hist.push(vendaNeg);
@@ -2344,7 +2359,7 @@ async function confirmPerda(){
   const motivo=motivoSel==='Outro'?'Outro: '+outro:motivoSel;
   const c=contatos.find(x=>x.id===perdaCid);if(!c){closeM('modal-perda');return;}
   const hist=parseNegHist(c);
-  const regPerda={r:'perda',d:hojeISO(),m:motivoSel};
+  const regPerda={r:'perda',d:hojeISO(),m:motivoSel,funil:c.funil};
   if(motivoSel==='Outro')regPerda.mt=outro;
   hist.push(regPerda);
   c.neg_hist=JSON.stringify(hist);
@@ -2358,19 +2373,54 @@ async function confirmPerda(){
 }
 function cancelPerda(){perdaCid=null;closeM('modal-perda');renderFunil();}
 
-// ── DUPLICAR ─────────────────────────────────────────────
-// Leva a cliente para o Pissifã MOVENDO o card (mesmo id e histórico), como
-// a 2ª compra já faz sozinha. Antes duplicava: a cópia fazia a mesma pessoa
-// aparecer duas vezes e distorcia contagem e recompra.
-async function moverParaPissifa(id){
+// ── MOVER DE FUNIL ───────────────────────────────────────
+// Um card por pessoa: para levar a cliente a outro funil (ex.: Pissifã que se
+// inscreve na oficina), MOVE o card, com todo o histórico. Antes duplicava, e a
+// cópia fazia a mesma pessoa aparecer duas vezes.
+// Só etapas em aberto (e o "Ativo" do Pissifã): ganho e perda continuam pelos
+// botões ✓/✗, que pedem itens, pagamento e motivo.
+var moverCid=null;
+function etapasDestinoMover(fid){
+  var f=getFunil(fid);if(!f)return[];
+  return f.etapas.filter(function(e){return etapaAberta(fid,e.id)||(fid==='pissifa'&&/ativo/i.test(e.nome)&&!/inativo/i.test(e.nome));});
+}
+function abrirMover(id){
   var c=contatos.find(function(x){return x.id===id;});if(!c)return;
-  var funilPsf=getFunil('pissifa');if(!funilPsf){alert('Funil Pissifã não encontrado.');return;}
-  var k=chaveCliente(c.tel,c.id);
-  var outro=contatos.find(function(x){return x.id!==c.id&&x.funil==='pissifa'&&chaveCliente(x.tel,x.id)===k;});
-  if(outro){ss('er','Esta cliente já está no Pissifã');setTimeout(function(){ss('ok',contatos.length+' contatos');},3000);return;}
-  if(!confirm('Mover "'+c.nome+'" para o funil Pissifã? O card sai do funil atual e leva todo o histórico.'))return;
-  c.funil='pissifa';c.etapa=funilPsf.etapas[0].id;c.et='atendimento';c.resultado='';
-  ss('ld','Movendo...');try{await apiSave(c);logAction('card_movido_pissifa',c.nome);await doSync();}catch(ex){ss('er','Erro');}
+  moverCid=id;
+  document.getElementById('mover-titulo').textContent='Mover '+c.nome;
+  var sf=document.getElementById('f-mover-funil');
+  sf.innerHTML=cfg.funis.filter(function(f){return etapasDestinoMover(f.id).length;}).map(function(f){return'<option value="'+f.id+'">'+escHtml(f.nome)+'</option>';}).join('');
+  sf.value=c.funil;if(!sf.value&&sf.options.length)sf.value=sf.options[0].value;
+  var ofs=oficinasCatalogo(),so=document.getElementById('f-mover-oficina');
+  so.innerHTML=ofs.map(function(o){return'<option value="'+escHtml(o)+'">'+escHtml(o)+'</option>';}).join('');
+  if(ofs.indexOf(c.produto)>=0)so.value=c.produto;
+  updMoverEtapas(c.etapa);
+  setFb('fb-mover','','');
+  document.getElementById('modal-mover').style.display='flex';
+}
+function updMoverEtapas(atual){
+  var fid=document.getElementById('f-mover-funil').value,se=document.getElementById('f-mover-etapa');
+  var lista=etapasDestinoMover(fid);
+  se.innerHTML=lista.map(function(e){return'<option value="'+e.id+'">'+escHtml(e.nome)+'</option>';}).join('');
+  if(atual&&lista.some(function(e){return e.id===atual;}))se.value=atual;
+  // Serviços: mostra a oficina/turma, que o card mantém ao voltar depois.
+  document.getElementById('wrap-mover-servico').style.display=fid==='servicos'?'block':'none';
+}
+async function confirmarMover(){
+  var c=contatos.find(function(x){return x.id===moverCid;});if(!c)return;
+  var fid=document.getElementById('f-mover-funil').value,eid=document.getElementById('f-mover-etapa').value;
+  if(!fid||!eid){setFb('fb-mover','Escolha o funil e a etapa','er');return;}
+  if(fid===c.funil&&eid===c.etapa){closeM('modal-mover');return;}
+  var de=(getFunil(c.funil)||{}).nome+' · '+((getEtapa(c.funil,c.etapa)||{}).nome||'');
+  if(fid!==c.funil)congelarFunilVendas(c,c.funil,c.produto);
+  c.funil=fid;c.etapa=eid;c.et='atendimento';c.resultado='';c.motivo_perda='';
+  if(fid==='servicos'){var of=document.getElementById('f-mover-oficina').value;if(of){c.produto=of;c.oficina_atual=of;}}
+  agendarFollowupSeVazio(c);
+  if(!Array.isArray(c.log_hist))c.log_hist=[];
+  c.log_hist.push({tipo:'card_movido',d:new Date().toISOString(),txt:'Movido de '+de+' para '+(getFunil(fid)||{}).nome+' · '+((getEtapa(fid,eid)||{}).nome||'')});
+  closeM('modal-mover');
+  ss('ld','Movendo...');try{await apiSave(c);logAction('card_movido',c.nome+' → '+(getFunil(fid)||{}).nome);await doSync();ss('ok','Card movido');}catch(ex){ss('er','Erro ao mover');}
+  moverCid=null;
 }
 
 // ── REABRIR ──────────────────────────────────────────────
@@ -2501,20 +2551,36 @@ function buscarClienteExistente(){
   el.style.display='block';
 }
 function fecharClienteSug(){var el=document.getElementById('csd-cliente');if(el)el.style.display='none';}
+// Cliente já cadastrada: em vez de copiar os dados para um card novo (isso
+// criava cópias), o formulário passa a editar o card dela. Funil, etapa,
+// oficina e turma escolhidos no formulário ficam: ao salvar, o card é movido
+// para lá com todo o histórico.
 function selecionarClienteExistente(cid){
   var c=contatos.find(function(x){return x.id===cid;});if(!c)return;
-  document.getElementById('f-nome').value=c.nome;
-  document.getElementById('f-tel').value=c.tel||'';
-  document.getElementById('f-email').value=c.email||'';
-  document.getElementById('f-cpf').value=c.cpf||'';
-  document.getElementById('f-aniversario').value=c.aniversario||'';
-  document.getElementById('f-endereco').value=c.endereco||'';
-  document.getElementById('f-cidade').value=c.cidade||'';
-  document.getElementById('f-uf').value=c.uf||'';
-  document.getElementById('f-cep').value=c.cep||'';
-  document.getElementById('f-cod-marketup').value=c.cod_marketup||'';
+  editCid=cid;
+  var set=function(id,v){var el=document.getElementById(id);if(el)el.value=v||'';};
+  set('f-nome',c.nome);set('f-tel',c.tel);set('f-email',c.email);set('f-cpf',c.cpf);
+  set('f-aniversario',c.aniversario);set('f-endereco',c.endereco);set('f-cidade',c.cidade);
+  set('f-uf',c.uf);set('f-cep',c.cep);set('f-cod-marketup',c.cod_marketup);
+  set('f-obs',c.obs);set('f-valor',c.valor||'');set('f-card-titulo',c.card_titulo);
+  if(!document.getElementById('f-user').value)set('f-user',c.usuario);
+  popularSelectsCanal(c.canal);set('f-canal-desc',c.canal_desc);
+  popularSelectCampanha(c.campanha_id);
+  // Fora de Serviços, mantém os produtos anotados no card.
+  if(document.getElementById('f-funil').value!=='servicos'){set('f-produto',c.produto);cardItens=Array.isArray(c.itens)?c.itens.map(function(it){return Object.assign({},it);}):[];renderItensCard();}
+  document.getElementById('mc-title').textContent='Editar contato';
+  document.getElementById('btn-sc').textContent='Salvar alterações';
   fecharClienteSug();
-  setFb('fb-c','Dados copiados de um contato já cadastrado','ok');
+  var f=getFunil(c.funil),e=getEtapa(c.funil,c.etapa);
+  setFb('fb-c','Usando o card de '+c.nome+' (hoje em '+(f?f.nome:'')+(e?' · '+e.nome:'')+'). Ao salvar, ele vai para o funil e a etapa escolhidos acima, com todo o histórico.','ok');
+}
+// Ao trocar o card de funil, grava em cada venda o funil em que ela aconteceu
+// (e, venda antiga sem itens, o produto anotado no card). Senão a camiseta
+// vendida no D2C viraria "serviço" depois que o card fosse para Serviços.
+function congelarFunilVendas(c,funilAntigo,produtoAntigo){
+  var hist=parseNegHist(c);if(!hist.length)return;
+  hist.forEach(function(h){if(!h.funil)h.funil=funilAntigo;if(h.r==='ganho'&&!(h.itens&&h.itens.length)&&produtoAntigo)h.itens=[{produto:produtoAntigo,qty:1}];});
+  c.neg_hist=JSON.stringify(hist);
 }
 
 function openContato(id=null,fid=null,eid=null){
@@ -2627,6 +2693,23 @@ function onOficinaChange(){document.getElementById('f-produto').value=document.g
 async function saveContato(){
   const nome=document.getElementById('f-nome').value.trim();
   if(!nome){setFb('fb-c','Nome obrigatório','er');return;}
+  // Um card por pessoa (telefone + primeiro nome). Mesmo telefone com outro
+  // nome é aceito depois de confirmar (mãe e filha dividem o número).
+  var telNovo=document.getElementById('f-tel').value.trim();
+  var prevC=editCid?contatos.find(function(x){return x.id===editCid;}):null;
+  if(telNovo.replace(/\D/g,'').length>=8&&(!prevC||prevC.tel!==telNovo||primeiroNome(prevC.nome)!==primeiroNome(nome))){
+    var kNovo=chaveCliente(telNovo,editCid||'novo',nome);
+    var mesma=contatos.find(function(x){return x.id!==editCid&&chaveCliente(x.tel,x.id,x.nome)===kNovo;});
+    if(mesma){
+      var fm=getFunil(mesma.funil),em=getEtapa(mesma.funil,mesma.etapa);
+      var fb=document.getElementById('fb-c');fb.className='fb er';
+      fb.innerHTML=escHtml(mesma.nome)+' já tem card ('+escHtml(fm?fm.nome:'')+(em?' · '+escHtml(em.nome):'')+'). Use esse card e mova de funil se precisar. <a href="#" style="color:var(--L);font-weight:600" onclick="event.preventDefault();closeM(\'modal-c\');openContatoDetail(\''+mesma.id+'\')">Abrir card →</a>';
+      return;
+    }
+    var d8=telNovo.replace(/\D/g,'').slice(-8);
+    var mesmoTel=contatos.find(function(x){return x.id!==editCid&&String(x.tel||'').replace(/\D/g,'').slice(-8)===d8;});
+    if(mesmoTel&&!confirm('Já existe card com este telefone: '+mesmoTel.nome+'. É outra pessoa (ex.: mãe e filha no mesmo número)?\n\nOK = criar/salvar mesmo assim · Cancelar = voltar'))return;
+  }
   setFb('fb-c','Salvando...','info');document.getElementById('btn-sc').disabled=true;
   const prev=editCid?(contatos.find(x=>x.id===editCid)||{}):{};
   const fid=document.getElementById('f-funil').value;
@@ -2675,6 +2758,7 @@ async function saveContato(){
     oficina_atual:fid==='servicos'?document.getElementById('f-produto').value.trim():(prev.oficina_atual||''),
     aniversario_ano_enviado:prev.aniversario_ano_enviado||''
   };
+  if(editCid&&prev.funil&&prev.funil!==c.funil)congelarFunilVendas(c,prev.funil,prev.produto);
   // Card novo ou que mudou de etapa: todo card aberto sai com próxima atividade.
   if(!editCid||prev.etapa!==c.etapa)agendarFollowupSeVazio(c);
   if(editCid&&prev.canal&&prev.canal!==c.canal){
@@ -2752,7 +2836,7 @@ function renderContatos(){
   // cliente pode ter card no D2C e no Pissifã).
   var totEl=document.getElementById('contatos-total');
   if(totEl){
-    var pessoas=Object.keys(lista.reduce(function(o,c){o[chaveCliente(c.tel,c.id)]=1;return o;},{})).length;
+    var pessoas=Object.keys(lista.reduce(function(o,c){o[chaveCliente(c.tel,c.id,c.nome)]=1;return o;},{})).length;
     totEl.innerHTML='<b style="color:var(--K);font-size:15px">'+lista.length+'</b> contato'+(lista.length!==1?'s':'')+(pessoas!==lista.length?' · '+pessoas+' pessoa'+(pessoas!==1?'s':''):'');
   }
   const el=document.getElementById('lista-c');
@@ -3085,9 +3169,15 @@ function metaDoPeriodo(tipo){
   }
   return total;
 }
-// Mesma cliente em cards diferentes: últimos 8 dígitos do telefone (os números
-// estão gravados em formatos variados: "84 9905-7739", "5584999057739").
-function chaveCliente(tel,cid){var d=String(tel||'').replace(/\D/g,'');return d.length>=8?d.slice(-8):'id:'+cid;}
+// Pessoa = últimos 8 dígitos do telefone + primeiro nome sem acento. Só o
+// telefone não basta: mãe e filha inscritas na oficina dividem o número.
+// (Os números estão gravados em formatos variados: "84 9905-7739", "5584999057739".)
+function primeiroNome(nome){return String(nome||'').trim().split(/\s+/)[0].normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z]/g,'');}
+function chaveCliente(tel,cid,nome){
+  var d=String(tel||'').replace(/\D/g,'');if(d.length<8)return'id:'+cid;
+  if(nome===undefined){var c=contatos.find(function(x){return x.id===cid;});nome=c?c.nome:'';}
+  return d.slice(-8)+'|'+primeiroNome(nome);
+}
 // Etapa em aberto = nem ganho nem perda nem "cliente em repouso" (Cliente Novo,
 // Resgate, Pissifã Ativo/Inativo, inscrito/participou, cancelado). Pelo nome,
 // porque as etapas são editáveis na Config.
@@ -3181,17 +3271,31 @@ function vendasProdutoPorCliente(allNegs){
 // 4.A OFICINA → PRODUTO. Aluna = card do funil Serviços com ganho ou em
 // Inscrito/Participou (sem cancelamento). Data da oficina = data da turma;
 // sem ela, a data da inscrição (ganho).
+// Aluna = card com venda de oficina (item de serviço) no histórico, ou ainda
+// no funil Serviços em Inscrito/Participou. Vale com o card em qualquer funil
+// (a Pissifã que fez oficina e voltou para o Pissifã continua aluna).
+// Devolve null se não for aluna; senão as vendas de oficina, a receita delas e
+// se participou.
+function dadosAluna(c){
+  var g=parseNegHist(c).filter(function(h){
+    if(h.r!=='ganho')return false;
+    return ratearVenda({v:h.v,itens:h.itens||[],cid:c.id,funil:h.funil||c.funil}).some(function(r){return r.cls.tipo==='servico';});
+  });
+  var inscritaAgora=c.funil==='servicos'&&c.resultado!=='perda'&&isGanho('servicos',c.etapa);
+  if(!g.length&&!inscritaAgora)return null;
+  if(c.funil==='servicos'&&c.resultado==='perda')return null;
+  var e=getEtapa(c.funil,c.etapa);
+  var participou=Boolean(c.funil==='servicos'&&e&&/participou/i.test(e.nome))||(c.oficinas_hist||[]).some(function(o){return o.status==='participou';});
+  return{g:g,receita:g.reduce(function(a,x){return a+(x.v||0);},0),participou:participou};
+}
 function insOficinasHtml(ctx){
   var turmaPorNome={};(cfg.turmas||[]).forEach(function(t){turmaPorNome[t.nome]=t;});
   var alunas=[];
   ctx.baseContatos.forEach(function(c){
-    if(c.funil!=='servicos'||c.resultado==='perda')return;
-    var hist=parseNegHist(c),g=hist.filter(function(x){return x.r==='ganho';});
-    if(!g.length&&!isGanho('servicos',c.etapa))return;
+    var al=dadosAluna(c);if(!al)return;
     var t=turmaPorNome[c.turma];
-    var e=getEtapa(c.funil,c.etapa);
-    alunas.push({c:c,k:chaveCliente(c.tel,c.id),turma:c.turma||'Sem turma',d:(t&&t.data)||(g[0]&&g[0].d)||String(c.data).slice(0,10),
-      receita:g.reduce(function(a,x){return a+(x.v||0);},0),participou:Boolean(e&&/participou/i.test(e.nome))});
+    alunas.push({c:c,k:chaveCliente(c.tel,c.id,c.nome),turma:c.turma||'Sem turma',d:(t&&t.data)||(al.g[0]&&al.g[0].d)||String(c.data).slice(0,10),
+      receita:al.receita,participou:al.participou});
   });
   var prod=vendasProdutoPorCliente(ctx.allNegs);
   var alunasPer=filtNegsPer(alunas,false);
@@ -3363,7 +3467,7 @@ function renderInsights(){
     // canal: o gravado na venda (Insights v2) ou o do card. primeiro: 1º ganho
     // do card, base do ciclo de venda (criação do card → ganho).
     var jaGanhou=false;
-    negHist.forEach(function(x){var primeiro=x.r==='ganho'&&!jaGanhou;if(x.r==='ganho')jaGanhou=true;allNegs.push({r:x.r,d:x.d||fb,m:x.m,mt:x.mt||'',v:x.v,itens:x.itens||[],fp:x.fp||'',canal:x.canal||c.canal||'outro',canal_desc:x.canal?(x.canal_desc||''):(c.canal_desc||''),campanha_id:x.campanha_id||'',primeiro:primeiro,cdata:fb,cid:c.id,tel:c.tel,funil:c.funil,usuario:c.usuario});});
+    negHist.forEach(function(x){var primeiro=x.r==='ganho'&&!jaGanhou;if(x.r==='ganho')jaGanhou=true;allNegs.push({r:x.r,d:x.d||fb,m:x.m,mt:x.mt||'',v:x.v,itens:x.itens||[],fp:x.fp||'',canal:x.canal||c.canal||'outro',canal_desc:x.canal?(x.canal_desc||''):(c.canal_desc||''),campanha_id:x.campanha_id||'',primeiro:primeiro,cdata:fb,cid:c.id,tel:c.tel,funil:x.funil||c.funil,usuario:c.usuario});});
     // Contatos em "Cliente Novo" (D2C) ou "Fechado" (B2B) sem entrada formal de ganho = ganho implícito
     var temGanho=negHist.some(function(x){return x.r==='ganho';});
     var eAlvo=getEtapa(c.funil,c.etapa);var nAlvo=eAlvo?eAlvo.nome.toLowerCase():'';
@@ -3384,7 +3488,7 @@ function renderInsights(){
   // 2ª compra (em vez de duplicar), a 1ª compra pode acabar "dentro" de um card hoje com
   // funil==='pissifa'. Agrupar por telefone garante 1 "primeira compra" por cliente real, e ainda
   // funciona pra cards antigos duplicados (mesmo telefone em 2 cards = mesma chave, sem contar 2x).
-  allNegs.forEach(function(n){if(n.r!=='ganho')return;var chave=n.tel||n.cid;if(!ganhosPorCliente[chave])ganhosPorCliente[chave]=[];ganhosPorCliente[chave].push({d:n.d,cid:n.cid,v:n.v});});
+  allNegs.forEach(function(n){if(n.r!=='ganho')return;var chave=chaveCliente(n.tel,n.cid);if(!ganhosPorCliente[chave])ganhosPorCliente[chave]=[];ganhosPorCliente[chave].push({d:n.d,cid:n.cid,v:n.v});});
   var primeiraCompraList=Object.keys(ganhosPorCliente).map(function(chave){var g=ganhosPorCliente[chave].filter(function(x){return x.d;}).sort(function(a,b){return a.d.localeCompare(b.d);});return g[0]||{d:''};});
   var primeirasNoPeriodo=filtNegsPer(primeiraCompraList,false);var clientesNovos=primeirasNoPeriodo.length;
   var todasNegs=filtNegsPer(allNegs,false);
@@ -3809,7 +3913,7 @@ function clientesComCompras(){
   contatos.forEach(function(c){
     parseNegHist(c).forEach(function(n){
       if(n.r!=='ganho'||!n.d)return;
-      var k=chaveCliente(c.tel,c.id);
+      var k=chaveCliente(c.tel,c.id,c.nome);
       if(!cli[k])cli[k]={nome:c.nome,tel:c.tel,cid:c.id,ultCard:'',compras:[]};
       cli[k].compras.push({d:n.d,v:n.v||0});
       // Abre o card mais recente da cliente.
@@ -5397,7 +5501,7 @@ function turmasDaOficina(nome,contsOficina){
 }
 // Inscritos = cards da turma em etapa de ganho (Inscrito/Participou), sem cancelamento.
 function inscritosDaTurma(t){
-  return contatos.filter(function(c){return c.funil==='servicos'&&c.turma===t.nome&&c.resultado!=='perda'&&isGanho('servicos',c.etapa);});
+  return contatos.filter(function(c){return c.turma===t.nome&&dadosAluna(c);});
 }
 // "+ Inscrito": abre o cadastro do card já no funil Serviços, com oficina e
 // turma preenchidas. A etapa é escolhida no próprio cadastro.
