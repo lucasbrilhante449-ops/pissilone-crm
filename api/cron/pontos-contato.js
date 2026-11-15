@@ -36,7 +36,9 @@ module.exports = async (req, res) => {
     for (const row of contatos || []) {
       if (!row.tel) continue;
       const hist = parseNegHist(row);
-      const vendaElegivel = hist.find((ev) => ev && ev.r === 'ganho' && ev.venda_id && !vendasProcessadas.has(ev.venda_id) && diasDesde(ev.d) >= 5);
+      // Só vendas de 5 a 15 dias atrás: lançar uma venda antiga no CRM (ex.: levantamento retroativo)
+      // não pode disparar pesquisa de satisfação de uma compra de meses atrás.
+      const vendaElegivel = hist.find((ev) => ev && ev.r === 'ganho' && ev.venda_id && !vendasProcessadas.has(ev.venda_id) && diasDesde(ev.d) >= 5 && diasDesde(ev.d) <= 15);
       if (!vendaElegivel) continue;
 
       try {

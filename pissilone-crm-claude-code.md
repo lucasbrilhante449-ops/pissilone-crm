@@ -12,7 +12,7 @@ Fundadores: **Lucas** e **Ana**.
 |------|-------|
 | URL do CRM | `https://lucasbrilhante449-ops.github.io/pissilone-crm` |
 | Repositório | `https://github.com/lucasbrilhante449-ops/pissilone-crm` |
-| Arquivo principal | `index-github.html` na raiz do repositório |
+| Arquivo principal | `index.html` na raiz do repositório |
 | Banco de dados | Supabase (PostgreSQL) |
 | Hospedagem | GitHub Pages (estático) |
 
@@ -165,7 +165,7 @@ O CRM exige login (email/senha via Supabase Auth) pra ler ou escrever qualquer c
 
 Script completo em `supabase-setup-auth.sql` (raiz do projeto) — rodar uma vez no SQL Editor. Depois disso, os logins são criados direto no painel: **Authentication → Users → Add user** (um pra você, um pra Ana). Não tem autocadastro nem tela de gerenciamento de usuários dentro do CRM — pra revogar acesso de alguém, é só desativar/apagar o usuário direto no painel do Supabase.
 
-**Decisão consciente de manter simples por agora:** já existia uma versão desenhada com 3 papéis (superadmin/gerente/consultor), tabela `perfis`, RLS por papel e uma Edge Function (`manage-access`) pra criar acesso de dentro do CRM sem precisar do painel do Supabase. Essa versão ficou complexa demais pro que é preciso agora (só 2 pessoas, ambas com acesso total) e esbarrou num bug do próprio painel do Supabase (erro de `removeChild` causado por extensão/tradutor do navegador) na hora de rodar o SQL. Descartamos por ora — o arquivo `supabase/functions/manage-access/index.ts` ficou no repo sem uso, não é chamado por nada no `index-github.html`, é só um rascunho pronto pra quando for realmente necessário diferenciar papéis (ex: contratar um consultor). Quando isso acontecer, é só recuperar a lógica de `papel`/RLS por papel e religar a Edge Function.
+**Decisão consciente de manter simples por agora:** já existia uma versão desenhada com 3 papéis (superadmin/gerente/consultor), tabela `perfis`, RLS por papel e uma Edge Function (`manage-access`) pra criar acesso de dentro do CRM sem precisar do painel do Supabase. Essa versão ficou complexa demais pro que é preciso agora (só 2 pessoas, ambas com acesso total) e esbarrou num bug do próprio painel do Supabase (erro de `removeChild` causado por extensão/tradutor do navegador) na hora de rodar o SQL. Descartamos por ora — o arquivo `supabase/functions/manage-access/index.ts` ficou no repo sem uso, não é chamado por nada no `index.html`, é só um rascunho pronto pra quando for realmente necessário diferenciar papéis (ex: contratar um consultor). Quando isso acontecer, é só recuperar a lógica de `papel`/RLS por papel e religar a Edge Function.
 
 #### Sessão no cliente
 Sem SDK — login/refresh são `fetch` direto na API de Auth do Supabase (`/auth/v1/token?grant_type=password` / `grant_type=refresh_token`). A sessão (`access_token`/`refresh_token`/`expires_at`) fica em `localStorage` (chave `psn_auth_session`) e é renovada automaticamente a cada 1 min se faltar menos de 2 min pra expirar. `SB_HDR.Authorization` é mutado in-place (não reatribuído) pra sempre carregar o token do usuário logado — é por isso que `sbGet`/`sbUpsert`/`sbDelete` não precisaram mudar de assinatura.
@@ -176,7 +176,7 @@ Sem SDK — login/refresh são `fetch` direto na API de Auth do Supabase (`/auth
 
 ### 3.1 Stack
 - **HTML/CSS/JS puro** — sem frameworks, sem build, sem npm
-- **Single file** — tudo em um único `index-github.html` (~3050 linhas: CSS embutido + HTML + JS embutido)
+- **Single file** — tudo em um único `index.html` (~3050 linhas: CSS embutido + HTML + JS embutido)
 - **Supabase REST API** — chamadas fetch diretas, sem SDK
 - **GitHub Pages** — deploy automático ao fazer push no main
 
@@ -637,7 +637,7 @@ try {
 ```
 
 ### 10.5 Deploy
-Após editar o `index-github.html`:
+Após editar o `index.html`:
 1. Commit no GitHub (branch main)
 2. Aguardar 1-3 minutos para GitHub Pages atualizar
 3. Testar com `Ctrl+Shift+R` para limpar cache
@@ -791,7 +791,7 @@ Layout bem mais extenso que o original, com:
 
 ### Verificação rápida de saúde do arquivo
 ```javascript
-// No arquivo index-github.html, contar backticks no script:
+// No arquivo index.html, contar backticks no script:
 // Se ímpar → SyntaxError garantido
 // Se par → provavelmente ok
 ```
@@ -835,9 +835,9 @@ update public.catalogo set natureza = 'produto' where natureza is null;
 **Lição:** qualquer função que reconstrua o objeto de contato a partir de campos de formulário (em vez de mutar o objeto existente) precisa copiar explicitamente TODOS os campos que não têm input no formulário, não só os "óbvios" — `log_hist` não aparece em nenhum campo do modal "Editar contato", por isso o esquecimento passou despercebido.
 
 ### Edição feita no CRM não aparece no site publicado
-**Causa:** o arquivo `index-github.html` é editado localmente, mas o site (`github.io`) só reflete o que está no repositório — é preciso fazer upload/commit manual do arquivo atualizado.  
+**Causa:** o arquivo `index.html` é editado localmente, mas o site (`github.io`) só reflete o que está no repositório — é preciso fazer upload/commit manual do arquivo atualizado.  
 **Diagnóstico:** se um comportamento corrigido no código continua igual "ao vivo", confirmar se o arquivo foi de fato publicado (upload no GitHub) antes de investigar mais bugs.  
-**Solução:** após editar `index-github.html`, subir o arquivo (substituindo `index.html`) no repositório `pissilone-crm`, aguardar 1-3 min e testar com Ctrl+Shift+R.
+**Solução:** após editar `index.html`, subir o arquivo (substituindo `index.html`) no repositório `pissilone-crm`, aguardar 1-3 min e testar com Ctrl+Shift+R.
 
 ### Dados com funil/etapa trocados
 **Causa:** Deleção de coluna na planilha Google Sheets (antes da migração).  
@@ -847,16 +847,16 @@ update public.catalogo set natureza = 'produto' where natureza is null;
 
 ## 14. Código Fonte Atual
 
-O código-fonte completo e sempre atualizado está em **`index-github.html`**, na raiz do repositório (arquivo único de HTML/CSS/JS, sem build, ~3050 linhas).
+O código-fonte completo e sempre atualizado está em **`index.html`**, na raiz do repositório (arquivo único de HTML/CSS/JS, sem build, ~3050 linhas).
 
-Este documento cobre **arquitetura, estrutura de dados e regras de desenvolvimento** — não uma cópia do código linha a linha. Colar o HTML inteiro aqui duplicaria ~200KB de código dentro do Markdown e garantiria que ele ficasse obsoleto de novo a cada edição (foi exatamente o que aconteceu com a versão anterior desta seção). Para consultar o código real, abra `index-github.html` diretamente.
+Este documento cobre **arquitetura, estrutura de dados e regras de desenvolvimento** — não uma cópia do código linha a linha. Colar o HTML inteiro aqui duplicaria ~200KB de código dentro do Markdown e garantiria que ele ficasse obsoleto de novo a cada edição (foi exatamente o que aconteceu com a versão anterior desta seção). Para consultar o código real, abra `index.html` diretamente.
 
 Estrutura interna do arquivo, para orientação rápida:
 - `<style>` (linhas iniciais) — variáveis de cor `:root{}` e todo o CSS (ver seção 8)
 - `<body>` — sidebar de navegação, panes de cada aba (`#pane-funil`, `#pane-contatos`, `#pane-insights`, `#pane-catalogo`, `#pane-config`, `#pane-aniversario`, `#pane-log`) e todos os `<div class="overlay">` de modais
 - `<script>` (final do arquivo) — nesta ordem: config Supabase (`sbGet`/`sbUpsert`/`sbDelete`), **autenticação** (login/sessão — seção 2.3 e seção 9), estado global (seção 4), helpers de data/formatação, config (`loadCfg`/`saveCfg`/`loadCatalogo`), sync de contatos (`doSync`/`apiSave`), tabs, kanban/drag&drop, resultado (ganho/perda), atividades, modal de contato, lista de contatos, insights, config (funis/etapas/usuários/campos), catálogo, importação CSV, modal de ganhos/NF, aniversários, log de uso, header/usuário ativo, `iniciarApp()` + bloco de inicialização `(async function(){...})()` no final (agora só chama `iniciarApp()` se já existir uma sessão salva válida — antes disso, fica na tela de login)
 
-Arquivos adicionais na raiz do projeto (fora do `index-github.html`):
+Arquivos adicionais na raiz do projeto (fora do `index.html`):
 - `supabase-setup-auth.sql` — script de setup do login (rodar no SQL Editor do Supabase); exige estar logado pra ler/escrever, sem distinção de papel
 - `supabase-migration-estoque.sql` / `supabase-migration-encomendas.sql` / `supabase-migration-oficinas.sql` / `supabase-migration-agente-ia.sql` / `supabase-migration-pontos-contato.sql` — migrações incrementais rodadas uma vez cada no SQL Editor (a REST API do Supabase não faz DDL), na ordem em que as funcionalidades foram adicionadas
 - `integracao-agente-http-e-api.md` — doc **da plataforma aa.app.br** (não escrito por nós) descrevendo como a ferramenta HTTP do agente de IA e a API de envio de mensagens funcionam; é o contrato que `supabase/functions/pissilone-agent/` (seção 15) **e** `api/` (seção 16) implementam do lado do CRM
@@ -885,7 +885,7 @@ Parabéns de aniversário e follow-up pós-venda (ponto de contato) **foram impl
   - `lib.ts` — toda a lógica de negócio replicada em TypeScript: leitura/escrita de `contatos` no mesmo shape de `apiSave()`/`doSync()`, `parseNegHist`, roteamento de etapa por funil, estoque/encomendas, envio de mensagem (Parte 2 do doc da aa.app.br).
   - `routes.ts` — um handler por rota, cada um validando o corpo e chamando os helpers de `lib.ts`.
 - **Auth:** usa `SUPABASE_SERVICE_ROLE_KEY` (injetada automaticamente pelo Supabase em toda Edge Function — não é um secret que a gente seta) pra bypassar RLS, porque o agente não tem sessão de usuário. Quem pode chamar a function é controlado só pelo `AGENT_API_TOKEN`.
-- **Duplicação deliberada de lógica:** `lib.ts` replica em TypeScript as mesmas regras que já existem em `index-github.html` (`confirmarGanho()`, `confirmPerda()`, `saveAtv()`, `checkpointAtv()`, roteamento de etapa por funil, criação de `encomendas`, etc). **Se uma regra de negócio mudar no navegador (ex: pra onde um ganho do funil X vai depois), replique a mudança em `lib.ts`/`routes.ts` também** — não tem teste automatizado nem abstração compartilhada entre os dois lados hoje.
+- **Duplicação deliberada de lógica:** `lib.ts` replica em TypeScript as mesmas regras que já existem em `index.html` (`confirmarGanho()`, `confirmPerda()`, `saveAtv()`, `checkpointAtv()`, roteamento de etapa por funil, criação de `encomendas`, etc). **Se uma regra de negócio mudar no navegador (ex: pra onde um ganho do funil X vai depois), replique a mudança em `lib.ts`/`routes.ts` também** — não tem teste automatizado nem abstração compartilhada entre os dois lados hoje.
 - **Casamento de contato por telefone:** o agente só tem `{{contact_phone}}` entre chamadas (não guarda o `id` interno do card), então toda rota que precisa achar um contato busca por telefone normalizado, comparando os **últimos 10-11 dígitos** (`telSuffixMatch()`) — não igualdade exata, porque `{{contact_phone}}` sempre vem com código de país (`55...`) e o `tel` salvo no CRM geralmente não tem.
 - **Carrinho por telefone (`pedido_agente_pendente`):** como pedidos por WhatsApp costumam ter vários itens e o `[colchete]` da IA preenche texto simples (não array estruturado), o padrão é: `/adicionar-item-pedido` uma vez por item citado na conversa, `/dar-ganho` no fechamento lê tudo que foi acumulado pra aquele telefone. Ver seção 2.2.
 
@@ -942,7 +942,7 @@ Como o repositório já está linkado a um projeto Vercel via GitHub (push → d
 ```
 Vercel Cron (vercel.json) — 09:00 BRT / 12:00 UTC todo dia
   ├─► api/cron/aniversarios.js    → manda parabéns automático via aa.app.br /send
-  └─► api/cron/pontos-contato.js  → 5+ dias após um ganho em neg_hist, cria uma linha
+  └─► api/cron/pontos-contato.js  → 5 a 15 dias após um ganho em neg_hist (ganho mais antigo que 15 dias nunca dispara — lançar venda retroativa não manda pesquisa), cria uma linha
                                       em pontos_contato e manda o link /avaliacao?tok=...
 
 Cliente toca no link → api/avaliacao.js (GET, página com notas 0–10, sem JS)
@@ -970,3 +970,19 @@ Cliente toca no link → api/avaliacao.js (GET, página com notas 0–10, sem JS
 ### 16.4 Deploy
 
 Sem passo manual de deploy — é `git push` na branch conectada à Vercel. Antes do primeiro push com essas mudanças: rodar `supabase-migration-pontos-contato.sql` no SQL Editor (cria a tabela `pontos_contato`) e configurar as env vars da seção 16.3 no projeto Vercel.
+
+---
+
+## 17. Levantamento de nov/2026 (WhatsApp + Instagram) e o que mudou
+
+Em 15/11/2026 o CRM, parado desde junho, foi atualizado a partir de relatórios das conversas do WhatsApp Web (16/08 a 14/11) e das DMs do Instagram, via SQL rodado no SQL Editor (scripts locais, fora do git, por terem dado de cliente).
+
+**Funil Eventos (id `eventos`)** — turmas fechadas pagas por uma cliente/empresa (aniversário, confraternização, evento de empresa). Criado direto no `config` (sem código novo: abas, filtros e Insights leem `cfg.funis`). Etapas: `evt-orc` Pedido de orçamento → `evt-neg` **Negociando 🤑** → `evt-fech` **Fechado** → `evt-real` Evento realizado → `evt-perd` **Perdido**. Os nomes "Negociando", "Fechado" e "Perdido" são obrigatórios: `isNegociacao()`/`isGanho()`/`isPerdido()` decidem botões ✓/✗ e modais pelo nome da etapa. Produto do catálogo: **Oficina Eventos** (`natureza='servico'`). Ganho não move o card sozinho (igual B2B).
+
+**Regra de valor em Serviços** — nas oficinas a cliente paga 50% antecipado; o ganho é lançado com o **valor cheio** (cabeçalho do card), não só o sinal.
+
+**Aba Perfil (detalhe do contato)** — 5ª aba na linha do tempo (`renderDetTimeline`, filtro `'perfil'`), em destaque com a cor da marca e "(vazio)" quando não há perfil. Mostra e edita o campo `obs` (Observação), salvo por `saveDetPerfil()`. O perfil descreve tom, como atender, preferências, sensibilidade a preço, ocasião, relação e pontos de atenção da cliente.
+
+**Pesquisa pós-venda** — `api/cron/pontos-contato.js` só considera ganhos de 5 a 15 dias atrás (antes: qualquer ganho com 5+ dias), para que vendas lançadas retroativamente não disparem pesquisa. Ganhos importados por SQL foram gravados sem `venda_id` pelo mesmo motivo.
+
+**Catálogo** — produtos novos: Kit de Pintura, Taças Pintadas, Bandeja Pintada (Linha Casa) e Vestido Infantil (estampa Mariana, coleção Vestida de Sertão); cor Coral; tamanho 1 ano. Turmas novas: Casa Ttrama 29/08, Pátio Vivace 21/10, CarmoRita 4 (a "CarmoRita - Especial de Natal" foi unificada na "CarmoRita Natal").

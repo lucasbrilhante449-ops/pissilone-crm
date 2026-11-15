@@ -4313,6 +4313,25 @@ async function saveDetNota(){
   }catch(ex){if(btn){btn.textContent='Erro';btn.disabled=false;}}
 }
 
+// Salva o perfil da cliente (campo `obs`) a partir da aba Perfil da linha do tempo.
+async function saveDetPerfil(){
+  if(!currentDetailId)return;
+  var c=contatos.find(function(x){return x.id===currentDetailId;});
+  if(!c)return;
+  var ta=document.getElementById('det-perfil-ta');
+  if(!ta)return;
+  c.obs=ta.value.trim();
+  var btn=document.getElementById('det-perfil-save');
+  if(btn){btn.textContent='Salvando...';btn.disabled=true;}
+  try{
+    await apiSave(c);await doSync();
+    detTimelineFilter='perfil';
+    renderDetTimeline(currentDetailId);
+    var btn2=document.getElementById('det-perfil-save');
+    if(btn2){btn2.textContent='Salvo!';setTimeout(function(){if(btn2){btn2.textContent='Salvar perfil';}},1500);}
+  }catch(ex){if(btn){btn.textContent='Erro';btn.disabled=false;}}
+}
+
 function setDetFilter(f){
   detTimelineFilter=f;
   if(currentDetailId)renderDetTimeline(currentDetailId);
@@ -4342,8 +4361,23 @@ function renderDetTimeline(cid){
   tabs+='<button onclick="setDetFilter(\'notas\')" style="'+base+(f==='notas'?on:'')+'">Notas ('+nNotas+')</button>';
   tabs+='<button onclick="setDetFilter(\'atividades\')" style="'+base+(f==='atividades'?on:'')+'">Atividades ('+nAtv+')</button>';
   tabs+='<button onclick="setDetFilter(\'registros\')" style="'+base+(f==='registros'?on:'')+'">Registros ('+nReg+')</button>';
+  // Aba Perfil: destaque visual (borda/cor da marca) e preenchida quando a cliente já tem perfil.
+  // O perfil é o campo `obs` (Observação) — mesmo dado do painel esquerdo, só que em destaque e editável aqui.
+  var temPerfil=!!(c.obs&&String(c.obs).trim());
+  var perfilStyle='font-size:12px;padding:4px 10px;cursor:pointer;border-radius:20px;border:1px solid var(--L);background:'+(temPerfil?'var(--L3)':'var(--W)')+';color:var(--L);font-family:var(--font-ui);font-weight:700';
+  tabs+='<button onclick="setDetFilter(\'perfil\')" style="'+perfilStyle+(f==='perfil'?on:'')+'">&#128100; Perfil'+(temPerfil?'':' (vazio)')+'</button>';
   tabs+='</div>';
   var tl=tabs;
+  if(f==='perfil'){
+    var escP=function(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
+    tl+='<div style="background:var(--L3);border-radius:8px;padding:.75rem">';
+    tl+='<div style="font-size:12px;color:var(--G3);margin-bottom:6px">Quem &#233; a cliente: tom, como gosta de ser atendida, prefer&#234;ncias, sensibilidade a pre&#231;o e pontos de aten&#231;&#227;o.</div>';
+    tl+='<textarea class="fi" id="det-perfil-ta" style="min-height:140px;resize:vertical;width:100%;box-sizing:border-box" placeholder="Ex: Calorosa, usa muito emoji. Gosta de ver foto antes de decidir. Usa M. Prefere s&#225;bado. Indica amigas.">'+escP(c.obs)+'</textarea>';
+    tl+='<div style="display:flex;justify-content:flex-end;margin-top:8px"><button class="btn xs primary" id="det-perfil-save" onclick="saveDetPerfil()">Salvar perfil</button></div>';
+    tl+='</div>';
+    document.getElementById('det-timeline').innerHTML=tl;
+    return;
+  }
   if(!filtered.length){tl+='<div class="empty" style="padding:.75rem 0">Nenhum item</div>';}
   else{
     filtered.forEach(function(item){
